@@ -27,6 +27,10 @@
   body {
     @apply bg-background text-on-surface font-inter;
   }
+
+  button, a, [role="button"] {
+    cursor: pointer;
+  }
 }
 
 .material-symbols-outlined {
