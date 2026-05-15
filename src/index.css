@@ -21,6 +21,9 @@
   --color-outline-variant: #c4c5d8;
   --color-error: #ba1a1a;
   --color-error-container: #ffdad6;
+  --color-priority: #913000;
+  --color-sidebar: #f2f4f6;
+  --color-secondary: #4b5b9a;
 }
 
 @layer base {
