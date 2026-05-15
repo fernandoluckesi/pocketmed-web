@@ -28,6 +28,7 @@ import {
   ChevronRight,
   Hourglass,
   CheckCircle,
+  ShieldCheck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -599,6 +600,122 @@ function StatsSection() {
   );
 }
 
+// --- Add Patient Modal ---
+
+function AddPatientModal({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+      >
+        <div className="p-8 pb-4 flex justify-between items-start">
+          <div>
+            <div className="text-primary font-black text-[10px] uppercase tracking-widest mb-2">
+              Novo Cadastro
+            </div>
+            <h4 className="text-2xl font-display font-extrabold text-on-surface">
+              Adicionar Paciente
+            </h4>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-on-surface-variant hover:text-on-surface p-2 bg-surface-container-low rounded-full transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="p-8 pt-0 grid grid-cols-2 gap-6">
+          <div className="col-span-2 space-y-2">
+            <label className="text-xs font-bold text-on-surface-variant ml-1">
+              Nome Completo
+            </label>
+            <input
+              className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
+              type="text"
+              placeholder="Ana Maria Silveira"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-on-surface-variant ml-1">
+              Idade
+            </label>
+            <input
+              className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
+              type="number"
+              placeholder="34"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-on-surface-variant ml-1">
+              Sexo
+            </label>
+            <select className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none appearance-none">
+              <option>Feminino</option>
+              <option>Masculino</option>
+              <option>Outro</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-on-surface-variant ml-1">
+              Telefone
+            </label>
+            <input
+              className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
+              type="tel"
+              placeholder="(11) 98877-6655"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-on-surface-variant ml-1">
+              Email
+            </label>
+            <input
+              className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
+              type="email"
+              placeholder="anamaria@email.com"
+            />
+          </div>
+
+          <div className="col-span-2 pt-4 flex gap-4">
+            <button
+              onClick={onClose}
+              className="flex-1 bg-slate-100 py-4 rounded-full font-bold text-slate-700 hover:bg-slate-200 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button className="flex-1 bg-primary py-4 rounded-full font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary-container transition-colors">
+              Confirmar Cadastro
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-blue-50/50 p-4 flex items-center justify-center gap-2 border-t border-outline-variant/5">
+          <ShieldCheck size={16} className="text-primary fill-primary/10" />
+          <p className="text-[10px] font-bold text-blue-700 tracking-wide uppercase">
+            Dados protegidos por criptografia PocketMed
+          </p>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 // --- Tab Content Components ---
 
 function SearchTabContent({
@@ -718,6 +835,7 @@ function SolicitacoesTabContent() {
 export default function Patients() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [activeTab, setActiveTab] = useState<TabType>("Pesquisar Pacientes");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const tabs: TabType[] = [
     "Meus Pacientes",
@@ -744,7 +862,10 @@ export default function Patients() {
                   Pesquise e gerencie sua base de pacientes global.
                 </p>
               </div>
-              <button className="bg-primary text-white px-8 py-3.5 rounded-2xl font-bold text-sm hover:bg-primary-container transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-primary/20">
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="bg-primary text-white px-8 py-3.5 rounded-2xl font-bold text-sm hover:bg-primary-container transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-primary/20"
+              >
                 <Plus className="w-5 h-5" />
                 Adicionar Paciente
               </button>
@@ -777,6 +898,16 @@ export default function Patients() {
           )}
         </div>
       </main>
+
+      {/* Add Patient Modal */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <AddPatientModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
