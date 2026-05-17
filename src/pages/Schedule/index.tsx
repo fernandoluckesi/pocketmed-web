@@ -20,6 +20,9 @@ import {
   FileText,
 } from "lucide-react";
 import { motion } from "motion/react";
+import { NewAppointmentModal } from "../../components/NewAppointmentModal";
+import { AppointmentDetailModal } from "../../components/AppointmentDetailModal";
+import { MainLayout } from "../../components/MainLayout";
 
 // --- Types ---
 
@@ -509,48 +512,283 @@ function DayView() {
   );
 }
 
+// --- Week View Data ---
+
+type WeekAppointment = {
+  id: string;
+  patientName: string;
+  type: string;
+  description: string;
+  startTime: string; // "HH:mm"
+  duration: number; // minutes
+  day: number; // 0-6 (Mon-Sun mapped to displayed days)
+  color: "blue" | "indigo" | "orange" | "slate" | "green";
+};
+
+const WEEK_DAYS = [
+  { name: "Mon", date: "07" },
+  { name: "Tue", date: "08", isToday: true },
+  { name: "Wed", date: "09" },
+  { name: "Thu", date: "10" },
+  { name: "Fri", date: "11" },
+];
+
+const WEEK_TIME_SLOTS = Array.from({ length: 11 }, (_, i) => {
+  const hour = i + 8;
+  return `${String(hour).padStart(2, "0")}:00`;
+});
+
+const WEEK_APPOINTMENTS: WeekAppointment[] = [
+  {
+    id: "w1",
+    patientName: "Ricardo Santos",
+    type: "CONSULTA",
+    description: "Check-up Geral",
+    startTime: "09:00",
+    duration: 90,
+    day: 0,
+    color: "blue",
+  },
+  {
+    id: "w2",
+    patientName: "Ana Paula Costa",
+    type: "ROTINA",
+    description: "10:00 - 10:45",
+    startTime: "10:00",
+    duration: 45,
+    day: 1,
+    color: "slate",
+  },
+  {
+    id: "w3",
+    patientName: "Mariana Ferreira",
+    type: "URGENTE",
+    description: "Cardiologia de Emergência",
+    startTime: "12:00",
+    duration: 90,
+    day: 1,
+    color: "orange",
+  },
+  {
+    id: "w4",
+    patientName: "Carlos Mendes",
+    type: "RETORNO",
+    description: "Acompanhamento Pós-Op",
+    startTime: "14:00",
+    duration: 60,
+    day: 2,
+    color: "green",
+  },
+  {
+    id: "w5",
+    patientName: "Julia Vieira",
+    type: "RESULTADOS",
+    description: "Resultados de Exames",
+    startTime: "09:00",
+    duration: 75,
+    day: 3,
+    color: "indigo",
+  },
+  {
+    id: "w6",
+    patientName: "Pedro Almeida",
+    type: "EXAME",
+    description: "Exame de Imagem",
+    startTime: "13:00",
+    duration: 60,
+    day: 4,
+    color: "slate",
+  },
+  {
+    id: "w7",
+    patientName: "Sofia Lima",
+    type: "CONSULTA",
+    description: "Consulta Dermatológica",
+    startTime: "15:30",
+    duration: 45,
+    day: 3,
+    color: "blue",
+  },
+  {
+    id: "w8",
+    patientName: "Luis Garcia",
+    type: "RETORNO",
+    description: "Revisão de Medicação",
+    startTime: "11:00",
+    duration: 30,
+    day: 4,
+    color: "green",
+  },
+];
+
+function WeekAppointmentCard({ appointment }: { appointment: WeekAppointment }) {
+  const [startHour, startMin] = appointment.startTime.split(":").map(Number);
+  const topOffset = (startHour - 8) * 88 + (startMin / 60) * 88;
+  const height = (appointment.duration / 60) * 88;
+
+  const colorClasses = {
+    blue: "bg-primary/10 border-l-primary text-primary",
+    indigo: "bg-indigo-50 border-l-indigo-500 text-indigo-700",
+    orange: "bg-orange-50 border-l-orange-500 text-orange-700",
+    slate: "bg-slate-100 border-l-slate-400 text-slate-700",
+    green: "bg-emerald-50 border-l-emerald-500 text-emerald-700",
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.02 }}
+      className={`absolute left-1 right-1 rounded-xl border-l-4 p-3 shadow-sm cursor-pointer transition-all z-10 ${colorClasses[appointment.color]}`}
+      style={{ top: `${topOffset}px`, height: `${height}px` }}
+    >
+      <span className="text-[9px] font-bold uppercase tracking-wider opacity-70">
+        {appointment.type}
+      </span>
+      <p className="font-display font-bold text-sm leading-tight mt-1 truncate">
+        {appointment.patientName}
+      </p>
+      {height > 60 && (
+        <p className="opacity-60 text-[10px] font-medium mt-1 truncate">
+          {appointment.description}
+        </p>
+      )}
+    </motion.div>
+  );
+}
+
+function WeekView() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+    >
+      {/* Week Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-3xl font-display font-extrabold text-slate-900 tracking-tight">
+            Weekly Schedule
+          </h2>
+          <p className="text-slate-500 font-medium">October 7 – 11, 2024</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all">
+            <ChevronLeft size={20} className="text-slate-600" />
+          </button>
+          <button className="px-5 py-2 bg-slate-200/50 hover:bg-slate-200 rounded-lg font-bold text-sm text-slate-700 transition-all">
+            Today
+          </button>
+          <button className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all">
+            <ChevronRight size={20} className="text-slate-600" />
+          </button>
+        </div>
+      </div>
+
+      {/* Calendar Grid */}
+      <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 flex flex-col overflow-hidden border border-slate-100">
+        {/* Grid Header — Days */}
+        <div className="grid grid-cols-[80px_repeat(5,1fr)] bg-slate-50/50 border-b border-slate-100">
+          <div className="p-4"></div>
+          {WEEK_DAYS.map((day, idx) => (
+            <div
+              key={idx}
+              className={`p-5 text-center transition-colors ${day.isToday ? "bg-primary/5" : ""}`}
+            >
+              <p
+                className={`text-[10px] font-bold uppercase tracking-widest ${day.isToday ? "text-primary" : "text-slate-400"}`}
+              >
+                {day.name}
+              </p>
+              <p
+                className={`text-2xl font-display font-extrabold mt-1 ${day.isToday ? "text-primary" : "text-slate-900"}`}
+              >
+                {day.date}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Grid Body */}
+        <div className="relative h-[968px] overflow-y-auto">
+          <div className="grid grid-cols-[80px_repeat(5,1fr)] min-h-[968px] relative">
+            {/* Time Slots Labels */}
+            <div className="flex flex-col text-right pr-4 pt-8 text-[10px] font-bold text-slate-400 uppercase tracking-tighter gap-[70px] border-r border-slate-100">
+              {WEEK_TIME_SLOTS.map((time, idx) => (
+                <span key={idx}>{time}</span>
+              ))}
+            </div>
+
+            {/* Day Columns */}
+            {WEEK_DAYS.map((day, dayIdx) => (
+              <div
+                key={dayIdx}
+                className={`relative border-r border-slate-100 p-1 h-full ${day.isToday ? "bg-primary/[0.02]" : ""}`}
+              >
+                {/* Horizontal Grid Lines */}
+                <div className="absolute inset-0 z-0 pointer-events-none">
+                  {WEEK_TIME_SLOTS.map((_, i) => (
+                    <div key={i} className="h-[88px] border-b border-slate-100/50" />
+                  ))}
+                </div>
+
+                {/* Today Line Indicator */}
+                {day.isToday && (
+                  <div className="absolute top-[280px] left-0 right-0 h-0.5 bg-primary z-20 pointer-events-none">
+                    <div className="absolute -left-1 -top-[3px] w-2 h-2 bg-primary rounded-full shadow-sm shadow-primary/40"></div>
+                  </div>
+                )}
+
+                {/* Appointments for this day */}
+                {WEEK_APPOINTMENTS.filter((a) => a.day === dayIdx).map((appt) => (
+                  <WeekAppointmentCard key={appt.id} appointment={appt} />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Bar */}
+      <div className="mt-8 flex gap-6">
+        <StatCard
+          icon={CalendarCheck}
+          label="Total Appts"
+          value="24 This Week"
+          colorClass="bg-primary/10 text-primary"
+        />
+        <StatCard
+          icon={AlertCircle}
+          label="Priority Cases"
+          value="03 High"
+          colorClass="bg-priority/10 text-priority"
+        />
+        <StatCard
+          icon={FileText}
+          label="Post-Op Reviews"
+          value="08 Scheduled"
+          colorClass="bg-secondary/10 text-secondary"
+        />
+      </div>
+    </motion.div>
+  );
+}
+
 // --- Main Page ---
 
 export default function Schedule() {
   const [viewMode, setViewMode] = useState<"Day" | "Week" | "Month">("Month");
+  const [showNewAppointment, setShowNewAppointment] = useState(false);
+  const [showAppointmentDetail, setShowAppointmentDetail] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+
+  const handleAppointmentClick = (appointment: any) => {
+    setSelectedAppointment(appointment);
+    setShowAppointmentDetail(true);
+  };
 
   return (
-    <div className="flex min-h-screen bg-surface">
-      <ScheduleSidebar />
-
-      <main className="flex-1 p-8">
-        {/* Top Navbar */}
-        <header className="flex justify-between items-center mb-10">
-          <div className="flex items-center bg-slate-200/50 rounded-full px-5 py-2.5 gap-3 w-96 border border-white/50 backdrop-blur-sm">
-            <Search className="w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search records..."
-              className="bg-transparent border-none outline-none text-sm w-full placeholder:text-slate-400"
-            />
-          </div>
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <button className="p-2.5 rounded-full hover:bg-slate-100 transition-colors relative">
-                <Bell className="w-5 h-5 text-slate-600" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
-              </button>
-              <button className="p-2.5 rounded-full hover:bg-slate-100 transition-colors">
-                <Settings className="w-5 h-5 text-slate-600" />
-              </button>
-            </div>
-            <div className="flex items-center gap-3 border-l pl-6 border-slate-200">
-              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20 shadow-sm">
-                <img
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDS6Y0zlHGFAdYKiQwLxbZ0y6zVPUrmmM4aCJg55w-lhQNb6ZNTUWVwYi79YSnxijWgoz6LtWBW7XHdblgvmeggklStEb4SUNHYYeQMbOXv60Gd2hdjo7ateMTji-wwZUhAJPLZG2W1SKIPNUAyOFv4lTVIejjnLyXgPDlGd9EIaEOv1sQ1qb9NhYrYOryUewbcF84a4ElAbq1n4lvFZJ0uR8gEJD6y619R-ZOstNQyRQmfGDlprwpaBalGrhWiT7bYpNsh1u1X8E6i"
-                  alt="Doctor Profile"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-          </div>
-        </header>
-
+    <MainLayout>
+      <div>
         {/* Agenda Content */}
         <section>
           <div className="flex justify-between items-end mb-8">
@@ -581,7 +819,10 @@ export default function Schedule() {
                   </button>
                 ))}
               </div>
-              <button className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-full font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
+              <button
+                onClick={() => setShowNewAppointment(true)}
+                className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-full font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+              >
                 <Plus className="w-5 h-5" />
                 Novo Agendamento
               </button>
@@ -591,6 +832,8 @@ export default function Schedule() {
           {/* View Content */}
           {viewMode === "Day" ? (
             <DayView />
+          ) : viewMode === "Week" ? (
+            <WeekView />
           ) : (
             <>
               {/* Calendar Box */}
@@ -668,6 +911,14 @@ export default function Schedule() {
                           {item.appointments.map((appt) => (
                             <motion.div
                               key={appt.id}
+                              onClick={() => handleAppointmentClick({
+                                id: appt.id,
+                                patientName: appt.patient,
+                                doctorName: 'Dr. Roberto Silva',
+                                type: appt.type === 'routine' ? 'Rotina' : appt.type === 'priority' ? 'Prioridade' : 'Pós-Op',
+                                dateTime: `${item.day} Out 2024, ${appt.time}`,
+                                status: 'Confirmado',
+                              })}
                               className={`px-3 py-1.5 rounded-lg border-l-2 text-[10px] font-bold truncate transition-all cursor-pointer hover:shadow-md
                             ${
                               appt.type === "routine"
@@ -721,7 +972,18 @@ export default function Schedule() {
             </>
           )}
         </section>
-      </main>
-    </div>
+     
+
+      <NewAppointmentModal
+        isOpen={showNewAppointment}
+        onClose={() => setShowNewAppointment(false)}
+      />
+      <AppointmentDetailModal
+        isOpen={showAppointmentDetail}
+        onClose={() => setShowAppointmentDetail(false)}
+        appointment={selectedAppointment}
+      />
+      </div>
+    </MainLayout>
   );
 }

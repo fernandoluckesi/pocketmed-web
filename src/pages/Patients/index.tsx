@@ -31,6 +31,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { MainLayout } from "../../components/MainLayout";
 
 // --- Types ---
 
@@ -285,7 +286,7 @@ const SearchHero = () => (
           <Users className="absolute left-4 w-5 h-5 text-white/60" />
           <input
             type="text"
-            placeholder="Nome ou ID do paciente..."
+            placeholder="Nome ou CPF do paciente..."
             className="w-full bg-transparent border-none focus:ring-0 pl-12 py-4 text-white placeholder:text-white/60 text-lg"
           />
         </div>
@@ -844,13 +845,9 @@ export default function Patients() {
   ];
 
   return (
-    <div className="min-h-screen bg-surface selection:bg-primary/10">
-      <PatientsSidebar />
-
-      <main className="ml-64 min-h-screen">
-        <PatientsTopBar />
-
-        <div className="max-w-7xl mx-auto p-10 space-y-12">
+    <MainLayout>
+      <div className="min-h-screen bg-surface selection:bg-primary/10">
+        <div className="space-y-12">
           {/* Header Action */}
           <div className="space-y-6">
             <div className="flex items-end justify-between">
@@ -897,17 +894,17 @@ export default function Patients() {
             <SearchTabContent view={view} setView={setView} />
           )}
         </div>
-      </main>
 
-      {/* Add Patient Modal */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <AddPatientModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-          />
-        )}
-      </AnimatePresence>
-    </div>
+        {/* Add Patient Modal */}
+        <AnimatePresence>
+          {isModalOpen && (
+            <AddPatientModal
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+            />
+          )}
+        </AnimatePresence>
+      </div>
+    </MainLayout>
   );
 }

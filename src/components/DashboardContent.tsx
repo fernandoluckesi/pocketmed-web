@@ -19,7 +19,7 @@ const itemVariants = {
 export const DashboardContent = () => {
   return (
     <motion.div
-      className="p-8 space-y-8"
+      className="space-y-8"
       initial="hidden"
       animate="visible"
       variants={containerVariants}
