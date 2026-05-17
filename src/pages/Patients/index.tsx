@@ -1,16 +1,7 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
 import {
   Users,
-  Stethoscope,
-  CalendarDays,
-  HeartPulse,
-  UserCircle,
-  CreditCard,
-  LogOut,
   Search,
-  Bell,
-  Settings,
   Plus,
   MapPin,
   Activity,
@@ -19,7 +10,6 @@ import {
   Info,
   LayoutGrid,
   List,
-  LayoutDashboard,
   Eye,
   X,
   Trash2,
@@ -145,122 +135,6 @@ const statusDots = {
   Aprovado: "bg-green-500",
   Recusado: "bg-red-500",
 };
-
-// --- Sidebar & TopBar ---
-
-const SidebarItem = ({
-  icon: Icon,
-  label,
-  to,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  to: string;
-}) => {
-  const location = useLocation();
-  const active = location.pathname === to;
-  return (
-    <Link
-      to={to}
-      className={`flex items-center px-4 py-3 rounded-full transition-all duration-200 group ${active ? "bg-white shadow-sm text-primary font-bold" : "text-gray-500 hover:text-primary hover:bg-gray-100"}`}
-    >
-      <Icon
-        className={`mr-3 w-5 h-5 ${active ? "fill-primary" : "group-hover:fill-primary/20"}`}
-      />
-      <span className="font-display text-sm tracking-tight">{label}</span>
-    </Link>
-  );
-};
-
-const PatientsSidebar = () => (
-  <aside className="fixed left-0 top-0 h-screen w-64 bg-[#f1f3f5] border-r border-gray-200 p-6 flex flex-col space-y-8 z-50">
-    <div className="flex items-center space-x-3 group cursor-pointer">
-      <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
-        <HeartPulse className="w-6 h-6 fill-white" />
-      </div>
-      <div>
-        <h1 className="text-xl font-black text-primary leading-none font-display">
-          PocketMed
-        </h1>
-        <p className="text-[10px] font-bold uppercase tracking-widest text-[#747687]">
-          Clinical Excellence
-        </p>
-      </div>
-    </div>
-    <nav className="flex-1 space-y-1">
-      <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/dashboard" />
-      <SidebarItem icon={Users} label="Patients" to="/patients" />
-      <SidebarItem icon={Stethoscope} label="Doctors" to="/doctors" />
-      <SidebarItem icon={CalendarDays} label="Schedule" to="/schedule" />
-      <SidebarItem
-        icon={HeartPulse}
-        label="Clinical Management"
-        to="/clinical-management"
-      />
-      <div className="pt-4 mt-4 border-t border-gray-200">
-        <SidebarItem icon={UserCircle} label="My Account" to="/account" />
-        <SidebarItem icon={CreditCard} label="Plans" to="/plans" />
-      </div>
-    </nav>
-    <div className="mt-auto">
-      <button className="w-full flex items-center px-4 py-3 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-all font-display text-sm font-semibold group">
-        <LogOut className="mr-3 w-5 h-5 group-hover:rotate-180 transition-transform" />
-        Logout
-      </button>
-    </div>
-  </aside>
-);
-
-const PatientsTopBar = () => (
-  <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 flex justify-between items-center px-8 py-4">
-    <div className="flex items-center gap-4">
-      <span className="text-2xl font-extrabold text-primary font-display tracking-tighter">
-        PocketMed
-      </span>
-      <nav className="hidden md:flex ml-8 space-x-2">
-        {["Home", "Pacientes", "Agenda"].map((item) => (
-          <a
-            key={item}
-            href="#"
-            className={`px-4 py-1.5 rounded-lg text-lg font-medium font-display tracking-tight transition-colors ${item === "Pacientes" ? "text-primary font-bold bg-primary/5" : "text-gray-500 hover:bg-gray-50"}`}
-          >
-            {item}
-          </a>
-        ))}
-      </nav>
-    </div>
-    <div className="flex items-center gap-4">
-      <div className="relative hidden lg:block group">
-        <input
-          type="text"
-          placeholder="Pesquisar..."
-          className="bg-gray-100 border-none rounded-full px-6 py-2 w-64 focus:ring-2 focus:ring-primary/40 text-sm tonal-shift"
-        />
-        <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-primary" />
-      </div>
-      <div className="flex gap-1">
-        {[Bell, Settings].map((Icon, i) => (
-          <button
-            key={i}
-            className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors relative"
-          >
-            <Icon className="w-5 h-5" />
-            {i === 0 && (
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
-            )}
-          </button>
-        ))}
-      </div>
-      <div className="w-9 h-9 rounded-full bg-blue-100 overflow-hidden border-2 border-white shadow-sm cursor-pointer hover:scale-105 transition-transform">
-        <img
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwgVMqvfl1-ERzdaASfoagg2ImZFT00_OFANLk2uyWItyYVUqiAJBnu3y62zB2BrlD2HvtJdJDst6LMfK2y85PB4twOo7ZLKaE-X2XdQZeOB5Ms7zoJXq10GXG5BobD31n_o_gO3dU3nYi_2kSObKO9UgFMMP0coo5U-ULGUnv0ul3SKR8Wi6UX1EQ3KabF4PpvYMV68VE2ekg32Gv_R3eZCHDGoAPftRQBeN_tStAIx5E9rj2tJzJgfHK0i6Cpnmh_Qs5HLqjMYCg"
-          alt="Profile"
-          className="w-full h-full object-cover"
-        />
-      </div>
-    </div>
-  </header>
-);
 
 // --- Search Tab Components ---
 

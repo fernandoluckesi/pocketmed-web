@@ -14,18 +14,20 @@ import { MainLayout } from "../../components/MainLayout";
 
 // --- Types ---
 
-enum DoctorStatus {
-  AVAILABLE = "AVAILABLE",
-  IN_CONSULTATION = "IN_CONSULTATION",
-  AWAY = "AWAY",
-}
+const DoctorStatus = {
+  AVAILABLE: "AVAILABLE",
+  IN_CONSULTATION: "IN_CONSULTATION",
+  AWAY: "AWAY",
+} as const;
+
+type DoctorStatusType = typeof DoctorStatus[keyof typeof DoctorStatus];
 
 interface Doctor {
   id: string;
   name: string;
   specialty: string;
   crm: string;
-  status: DoctorStatus;
+  status: DoctorStatusType;
   image: string;
 }
 
@@ -85,7 +87,7 @@ function SpecialtyIcon({ specialty }: { specialty: string }) {
   return <Award size={14} />;
 }
 
-function StatusBadge({ status }: { status: DoctorStatus }) {
+function StatusBadge({ status }: { status: DoctorStatusType }) {
   switch (status) {
     case DoctorStatus.AVAILABLE:
       return (

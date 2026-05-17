@@ -1,18 +1,6 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard,
-  Stethoscope,
-  CalendarDays,
-  Users,
-  HeartPulse,
-  UserCircle,
-  CreditCard,
-  LogOut,
   Plus,
-  Search,
-  Bell,
-  Settings,
   ChevronRight,
   ChevronLeft,
   CalendarCheck,
@@ -168,97 +156,6 @@ const timelineHours = Array.from(
 );
 
 // --- Sidebar ---
-
-function ScheduleSidebar() {
-  const location = useLocation();
-
-  const navItems = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-    { icon: Users, label: "Patients", path: "/patients" },
-    { icon: Stethoscope, label: "Doctors", path: "/doctors" },
-    { icon: CalendarDays, label: "Schedule", path: "/schedule" },
-    {
-      icon: HeartPulse,
-      label: "Clinical Management",
-      path: "/clinical-management",
-    },
-  ];
-
-  const personalItems = [
-    { icon: UserCircle, label: "My Account", path: "/account" },
-    { icon: CreditCard, label: "Plans", path: "/plans" },
-  ];
-
-  return (
-    <aside className="w-72 bg-sidebar border-r border-slate-200 flex flex-col py-8 sticky top-0 h-screen">
-      <div className="px-8 mb-10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
-            <Stethoscope className="w-6 h-6" />
-          </div>
-          <div>
-            <h2 className="font-display font-bold text-primary leading-tight">
-              PocketMed
-            </h2>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-              Clinical Excellence
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <nav className="flex-1 space-y-1 pr-4">
-        {navItems.map((item) => {
-          const active = location.pathname === item.path;
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`w-full flex items-center gap-4 px-6 py-4 transition-all duration-200 relative group
-                ${
-                  active
-                    ? "text-primary font-bold bg-white/50 rounded-r-3xl"
-                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-100/50 hover:rounded-r-3xl"
-                }`}
-            >
-              {active && (
-                <div className="absolute left-0 w-1 h-6 bg-primary rounded-full" />
-              )}
-              <item.icon
-                className={`w-5 h-5 ${active ? "fill-primary/10" : ""}`}
-              />
-              <span className="text-sm tracking-wide">{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="px-6 mt-6 space-y-6">
-        <div className="pt-6 border-t border-slate-200 space-y-1">
-          {personalItems.map((item) => {
-            const active = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-4 px-6 py-3 w-full transition-colors text-sm
-                  ${active ? "text-primary font-bold" : "text-slate-500 hover:text-primary"}`}
-              >
-                <item.icon className="w-5 h-5" />
-                {item.label}
-              </Link>
-            );
-          })}
-          <button className="flex items-center gap-4 px-6 py-3 w-full text-slate-500 hover:text-rose-600 transition-colors text-sm">
-            <LogOut className="w-5 h-5" />
-            Sign Out
-          </button>
-        </div>
-      </div>
-    </aside>
-  );
-}
-
 // --- Stat Card ---
 
 function StatCard({
