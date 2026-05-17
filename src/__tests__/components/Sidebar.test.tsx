@@ -6,14 +6,15 @@ import { Sidebar } from '../../components/Sidebar';
 // Mock motion/react to render plain divs
 vi.mock('motion/react', () => ({
   motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+    div: ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => <div {...props}>{children}</div>,
+    button: ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => <button {...props}>{children}</button>,
   },
 }));
 
 // Mock lucide-react icons as simple spans
 vi.mock('lucide-react', () => {
-  const MockIcon = ({ size, ...props }: any) => <span data-testid="icon" {...props} />;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const MockIcon = (_props: Record<string, unknown>) => <span data-testid="icon" />;
   return {
     LayoutDashboard: MockIcon,
     Users: MockIcon,

@@ -676,9 +676,23 @@ export default function Schedule() {
   const [viewMode, setViewMode] = useState<"Day" | "Week" | "Month">("Month");
   const [showNewAppointment, setShowNewAppointment] = useState(false);
   const [showAppointmentDetail, setShowAppointmentDetail] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<{
+    id: string;
+    patientName: string;
+    doctorName: string;
+    type: string;
+    dateTime: string;
+    status: string;
+  } | null>(null);
 
-  const handleAppointmentClick = (appointment: any) => {
+  const handleAppointmentClick = (appointment: {
+    id: string;
+    patientName: string;
+    doctorName: string;
+    type: string;
+    dateTime: string;
+    status: string;
+  }) => {
     setSelectedAppointment(appointment);
     setShowAppointmentDetail(true);
   };
