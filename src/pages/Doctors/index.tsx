@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   PlusCircle,
   Filter,
@@ -8,6 +9,11 @@ import {
   Brain,
   Microscope,
   Bone,
+  Search,
+  MapPin,
+  BadgeCheck,
+  Star,
+  Eye,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { MainLayout } from "../../components/MainLayout";
@@ -29,6 +35,19 @@ interface Doctor {
   crm: string;
   status: DoctorStatusType;
   image: string;
+}
+
+interface SearchDoctor {
+  id: string;
+  name: string;
+  specialty: string;
+  crm: string;
+  location: string;
+  distance: string;
+  rating: number;
+  reviews: number;
+  imageUrl: string;
+  verified: boolean;
 }
 
 // --- Mock Data ---
@@ -75,6 +94,47 @@ const MOCK_DOCTORS: Doctor[] = [
     image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBHnl677367I-M6dSeDVivKf_uJYqD-eI_e3bqTy7NF3R0S17TioshxZxQj966_AKfzz8ctU1dEj5GRWfNEnP8fsEVKdz1vl8oTHPMRk5WwTdaS8I8CN7NGr_Yov-Ibesm1H98jbzG5bqqXPeTJ4qdyNuRcHZVHzFH5JvDyqcxjncC72f_KOX1uI25rS1FuwI15e_vqDL5RD7T05W9BU3jb0pYILNFXjEeUH6WFS9cyjBaVGzE1WZ3n_rcGUER-ETHTOwQu57FIkqHh",
   },
 ];
+
+const MOCK_SEARCH_DOCTORS: SearchDoctor[] = [
+  {
+    id: "1",
+    name: "Dr. André Santos",
+    specialty: "Cardiologia",
+    crm: "CRM/SP 123456",
+    location: "São Paulo, SP",
+    distance: "2.4km",
+    rating: 4.9,
+    reviews: 128,
+    imageUrl: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=256&h=256&auto=format&fit=crop",
+    verified: true,
+  },
+  {
+    id: "2",
+    name: "Dra. Juliana Lima",
+    specialty: "Neurologia",
+    crm: "CRM/RJ 789012",
+    location: "Rio de Janeiro, RJ",
+    distance: "5.1km",
+    rating: 5.0,
+    reviews: 94,
+    imageUrl: "https://images.unsplash.com/photo-1559839734-2b71f15367ef?q=80&w=256&h=256&auto=format&fit=crop",
+    verified: true,
+  },
+  {
+    id: "3",
+    name: "Dr. Ricardo Alves",
+    specialty: "Pediatria",
+    crm: "CRM/MG 456789",
+    location: "Belo Horizonte, MG",
+    distance: "3.8km",
+    rating: 4.8,
+    reviews: 215,
+    imageUrl: "https://images.unsplash.com/photo-1622253692010-333f2da6028d?q=80&w=256&h=256&auto=format&fit=crop",
+    verified: true,
+  },
+];
+
+const QUICK_FILTERS = ["Cardiologia", "Pediatria", "Neurologia", "Ortopedia"];
 
 // --- Helper Components ---
 
@@ -175,9 +235,111 @@ function DoctorCard({ doctor, isAddCard }: { doctor?: Doctor; isAddCard?: boolea
   );
 }
 
+function SearchDoctorCard({ doctor }: { doctor: SearchDoctor }) {
+  return (
+    <div className="group rounded-2xl bg-white p-6 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5">
+      <div className="mb-6 flex items-start gap-4">
+        <div className="relative">
+          <img
+            src={doctor.imageUrl}
+            alt={doctor.name}
+            className="h-20 w-20 rounded-2xl object-cover shadow-md"
+          />
+          {doctor.verified && (
+            <div className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full border-4 border-white bg-primary text-white">
+              <BadgeCheck size={16} fill="white" />
+            </div>
+          )}
+        </div>
+        <div className="flex-1">
+          <h5 className="font-display text-lg font-bold text-on-surface transition-colors group-hover:text-primary">
+            {doctor.name}
+          </h5>
+          <p className="text-sm font-bold text-primary">{doctor.specialty}</p>
+          <p className="mt-1 flex items-center gap-1 text-xs text-on-surface-variant">
+            {doctor.crm}
+          </p>
+        </div>
+      </div>
+
+      <div className="mb-6 space-y-3">
+        <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+          <MapPin size={18} />
+          <span>{doctor.location} • {doctor.distance} de distância</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+          <Star size={18} className="text-amber-400 fill-amber-400" />
+          <span className="font-bold text-on-surface">{doctor.rating.toFixed(1)}</span>
+          <span>({doctor.reviews} avaliações)</span>
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <button className="flex-1 rounded-xl bg-primary py-3 text-sm font-bold text-white shadow-md shadow-primary/10 transition-all hover:bg-primary-container">
+          Solicitar Acesso
+        </button>
+        <button className="rounded-xl bg-surface-container-high px-4 py-3 text-on-surface-variant transition-all hover:bg-surface-container-highest">
+          <Eye size={20} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SearchHero() {
+  return (
+    <div className="relative mb-12 overflow-hidden rounded-[2rem] bg-surface-container-low p-12">
+      <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
+      <div className="absolute -left-24 -bottom-24 h-64 w-64 rounded-full bg-indigo-400/10 blur-3xl" />
+
+      <div className="relative z-10 mx-auto max-w-3xl text-center">
+        <h3 className="mb-4 font-display text-4xl font-extrabold text-on-surface">Encontre Novos Profissionais</h3>
+        <p className="mb-10 text-on-surface-variant">Pesquise na rede global do PocketMed por especialidade, CRM ou localização.</p>
+
+        <div className="flex flex-col gap-2 rounded-2xl bg-white p-2 shadow-xl shadow-on-surface/5 md:flex-row">
+          <div className="flex flex-1 items-center gap-3 border-outline-variant/20 px-4 md:border-r">
+            <Search className="text-primary" size={20} />
+            <input
+              type="text"
+              placeholder="Nome, especialidade ou CRM"
+              className="w-full border-none py-3 text-on-surface placeholder:text-on-surface-variant/50 outline-none focus:ring-0"
+            />
+          </div>
+          <div className="flex flex-1 items-center gap-3 px-4">
+            <MapPin className="text-primary" size={20} />
+            <input
+              type="text"
+              placeholder="Localização"
+              className="w-full border-none py-3 text-on-surface placeholder:text-on-surface-variant/50 outline-none focus:ring-0"
+            />
+          </div>
+          <button className="rounded-xl bg-primary px-10 py-3 font-bold text-white transition-all hover:bg-primary-container active:scale-95">
+            Pesquisar
+          </button>
+        </div>
+
+        {/* Quick Filters */}
+        <div className="mt-8 flex flex-wrap justify-center items-center gap-3">
+          <span className="mr-2 text-sm font-bold text-on-surface-variant">Filtros rápidos:</span>
+          {QUICK_FILTERS.map((filter) => (
+            <button
+              key={filter}
+              className="rounded-full bg-surface-container-high px-5 py-2 text-sm font-medium transition-colors hover:bg-primary/10 hover:text-primary"
+            >
+              {filter}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // --- Main Page ---
 
 export default function Doctors() {
+  const [activeTab, setActiveTab] = useState<"my-doctors" | "search">("my-doctors");
+
   return (
     <MainLayout>
       <div className="space-y-10">
@@ -198,54 +360,109 @@ export default function Doctors() {
         {/* Tabs + Filters */}
         <div className="flex items-center justify-between">
           <div className="flex bg-slate-100 p-1.5 rounded-full w-fit">
-            <button className="px-8 py-2.5 rounded-full bg-white text-primary font-bold shadow-sm transition-all cursor-pointer border-none">
+            <button
+              onClick={() => setActiveTab("my-doctors")}
+              className={`px-8 py-2.5 rounded-full font-bold transition-all cursor-pointer border-none ${
+                activeTab === "my-doctors"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
               Meus Médicos
             </button>
-            <button className="px-8 py-2.5 rounded-full text-slate-500 hover:text-slate-900 font-medium transition-all cursor-pointer border-none">
+            <button
+              onClick={() => setActiveTab("search")}
+              className={`px-8 py-2.5 rounded-full font-bold transition-all cursor-pointer border-none ${
+                activeTab === "search"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
               Pesquisar Médicos
             </button>
           </div>
-          <div className="flex gap-3">
-            <button className="p-3 bg-white rounded-xl text-slate-500 hover:text-primary transition-colors flex items-center gap-2 shadow-sm cursor-pointer border border-slate-100">
-              <Filter size={18} />
-              <span className="text-sm font-semibold">Filtros</span>
-            </button>
-            <button className="p-3 bg-white rounded-xl text-slate-500 hover:text-primary transition-colors shadow-sm cursor-pointer border border-slate-100">
-              <LayoutGrid size={18} />
-            </button>
-          </div>
+          {activeTab === "my-doctors" && (
+            <div className="flex gap-3">
+              <button className="p-3 bg-white rounded-xl text-slate-500 hover:text-primary transition-colors flex items-center gap-2 shadow-sm cursor-pointer border border-slate-100">
+                <Filter size={18} />
+                <span className="text-sm font-semibold">Filtros</span>
+              </button>
+              <button className="p-3 bg-white rounded-xl text-slate-500 hover:text-primary transition-colors shadow-sm cursor-pointer border border-slate-100">
+                <LayoutGrid size={18} />
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Doctor Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {MOCK_DOCTORS.map((doctor) => (
-            <DoctorCard key={doctor.id} doctor={doctor} />
-          ))}
-          <DoctorCard isAddCard />
-        </div>
+        {/* Tab Content */}
+        {activeTab === "my-doctors" ? (
+          <>
+            {/* Doctor Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {MOCK_DOCTORS.map((doctor) => (
+                <DoctorCard key={doctor.id} doctor={doctor} />
+              ))}
+              <DoctorCard isAddCard />
+            </div>
 
-        {/* Stats Footer */}
-        <div className="bg-primary text-white rounded-[2.5rem] p-10 flex flex-col md:flex-row justify-between items-center gap-10 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary to-blue-800 opacity-50"></div>
-          <div className="relative z-10 space-y-2">
-            <h3 className="text-3xl font-display font-extrabold">Resumo da Equipe</h3>
-            <p className="text-blue-100 text-base opacity-90">Cidade Hospitalar Geral • 2024</p>
-          </div>
-          <div className="relative z-10 flex gap-14">
-            <div className="text-center">
-              <p className="text-5xl font-display font-extrabold mb-1">24</p>
-              <p className="text-[10px] uppercase font-bold tracking-[0.2em] opacity-80">Médicos Ativos</p>
+            {/* Stats Footer */}
+            <div className="bg-primary text-white rounded-[2.5rem] p-10 flex flex-col md:flex-row justify-between items-center gap-10 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary to-blue-800 opacity-50"></div>
+              <div className="relative z-10 space-y-2">
+                <h3 className="text-3xl font-display font-extrabold">Resumo da Equipe</h3>
+                <p className="text-blue-100 text-base opacity-90">Cidade Hospitalar Geral • 2024</p>
+              </div>
+              <div className="relative z-10 flex gap-14">
+                <div className="text-center">
+                  <p className="text-5xl font-display font-extrabold mb-1">24</p>
+                  <p className="text-[10px] uppercase font-bold tracking-[0.2em] opacity-80">Médicos Ativos</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-5xl font-display font-extrabold mb-1">12</p>
+                  <p className="text-[10px] uppercase font-bold tracking-[0.2em] opacity-80">Em Plantão</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-5xl font-display font-extrabold mb-1">98%</p>
+                  <p className="text-[10px] uppercase font-bold tracking-[0.2em] opacity-80">Disponibilidade</p>
+                </div>
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-5xl font-display font-extrabold mb-1">12</p>
-              <p className="text-[10px] uppercase font-bold tracking-[0.2em] opacity-80">Em Plantão</p>
+          </>
+        ) : (
+          <>
+            {/* Search Hero */}
+            <SearchHero />
+
+            {/* Results Section */}
+            <div>
+              <div className="mb-8 flex items-center justify-between">
+                <h4 className="font-display text-2xl font-bold text-on-surface">Resultados da Busca</h4>
+                <p className="text-sm font-medium text-on-surface-variant">Exibindo {MOCK_SEARCH_DOCTORS.length} especialistas próximos a você</p>
+              </div>
+
+              {/* Grid for Results */}
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {MOCK_SEARCH_DOCTORS.map((doctor, index) => (
+                  <motion.div
+                    key={doctor.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <SearchDoctorCard doctor={doctor} />
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Load More */}
+              <div className="mt-12 flex justify-center">
+                <button className="rounded-full border border-primary/10 bg-surface-container-low px-8 py-3 font-bold text-primary transition-all hover:bg-surface-container-high">
+                  Carregar mais profissionais
+                </button>
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-5xl font-display font-extrabold mb-1">98%</p>
-              <p className="text-[10px] uppercase font-bold tracking-[0.2em] opacity-80">Disponibilidade</p>
-            </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </MainLayout>
   );
