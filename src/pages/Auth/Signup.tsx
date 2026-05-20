@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { User, Shield, Badge, Building, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { useState, useRef } from "react";
+import { User, Shield, Badge, Building, Mail, Lock, Eye, EyeOff, FileUp, CheckCircle, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function Signup() {
@@ -12,6 +12,17 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [error, setError] = useState("");
+
+  // Document uploads
+  const [docCIM, setDocCIM] = useState<File | null>(null);
+  const [docDiploma, setDocDiploma] = useState<File | null>(null);
+  const [docRegularidade, setDocRegularidade] = useState<File | null>(null);
+  const [docRQE, setDocRQE] = useState<File | null>(null);
+
+  const cimRef = useRef<HTMLInputElement>(null);
+  const diplomaRef = useRef<HTMLInputElement>(null);
+  const regularidadeRef = useRef<HTMLInputElement>(null);
+  const rqeRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -192,6 +203,142 @@ export default function Signup() {
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
+                </div>
+              </div>
+
+              {/* Document Uploads */}
+              <div className="space-y-3 pt-4 border-t border-slate-100">
+                <div>
+                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Documentos Obrigatórios</p>
+                  <p className="text-[11px] text-slate-400">Aceitos: PDF, JPG, PNG (máx. 10MB cada)</p>
+                </div>
+
+                {/* CIM */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 block">
+                    Carteira de Identidade Médica (CIM)
+                  </label>
+                  <input
+                    ref={cimRef}
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="hidden"
+                    onChange={(e) => setDocCIM(e.target.files?.[0] || null)}
+                  />
+                  {docCIM ? (
+                    <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                      <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
+                      <span className="text-sm text-green-800 font-medium truncate flex-1">{docCIM.name}</span>
+                      <button type="button" onClick={() => setDocCIM(null)} className="text-slate-400 hover:text-red-500 border-none bg-transparent cursor-pointer">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => cimRef.current?.click()}
+                      className="w-full flex items-center gap-3 bg-[#f2f4f6] rounded-xl px-4 py-3 text-sm text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer border border-dashed border-slate-300"
+                    >
+                      <FileUp className="w-4 h-4 text-slate-400" />
+                      Selecionar arquivo
+                    </button>
+                  )}
+                </div>
+
+                {/* Diploma */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 block">
+                    Diploma de Graduação em Medicina
+                  </label>
+                  <input
+                    ref={diplomaRef}
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="hidden"
+                    onChange={(e) => setDocDiploma(e.target.files?.[0] || null)}
+                  />
+                  {docDiploma ? (
+                    <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                      <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
+                      <span className="text-sm text-green-800 font-medium truncate flex-1">{docDiploma.name}</span>
+                      <button type="button" onClick={() => setDocDiploma(null)} className="text-slate-400 hover:text-red-500 border-none bg-transparent cursor-pointer">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => diplomaRef.current?.click()}
+                      className="w-full flex items-center gap-3 bg-[#f2f4f6] rounded-xl px-4 py-3 text-sm text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer border border-dashed border-slate-300"
+                    >
+                      <FileUp className="w-4 h-4 text-slate-400" />
+                      Selecionar arquivo
+                    </button>
+                  )}
+                </div>
+
+                {/* Certificado de Regularidade */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 block">
+                    Certificado de Regularidade de Inscrição
+                  </label>
+                  <input
+                    ref={regularidadeRef}
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="hidden"
+                    onChange={(e) => setDocRegularidade(e.target.files?.[0] || null)}
+                  />
+                  {docRegularidade ? (
+                    <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                      <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
+                      <span className="text-sm text-green-800 font-medium truncate flex-1">{docRegularidade.name}</span>
+                      <button type="button" onClick={() => setDocRegularidade(null)} className="text-slate-400 hover:text-red-500 border-none bg-transparent cursor-pointer">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => regularidadeRef.current?.click()}
+                      className="w-full flex items-center gap-3 bg-[#f2f4f6] rounded-xl px-4 py-3 text-sm text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer border border-dashed border-slate-300"
+                    >
+                      <FileUp className="w-4 h-4 text-slate-400" />
+                      Selecionar arquivo
+                    </button>
+                  )}
+                </div>
+
+                {/* RQE */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 block">
+                    Comprovante de RQE (Registro de Qualificação de Especialista)
+                  </label>
+                  <input
+                    ref={rqeRef}
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="hidden"
+                    onChange={(e) => setDocRQE(e.target.files?.[0] || null)}
+                  />
+                  {docRQE ? (
+                    <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                      <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
+                      <span className="text-sm text-green-800 font-medium truncate flex-1">{docRQE.name}</span>
+                      <button type="button" onClick={() => setDocRQE(null)} className="text-slate-400 hover:text-red-500 border-none bg-transparent cursor-pointer">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => rqeRef.current?.click()}
+                      className="w-full flex items-center gap-3 bg-[#f2f4f6] rounded-xl px-4 py-3 text-sm text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer border border-dashed border-slate-300"
+                    >
+                      <FileUp className="w-4 h-4 text-slate-400" />
+                      Selecionar arquivo
+                    </button>
+                  )}
                 </div>
               </div>
 
