@@ -16,6 +16,7 @@ import {
   Eye,
 } from "lucide-react";
 import { motion } from "motion/react";
+import { useNavigate } from "react-router-dom";
 import { MainLayout } from "../../components/MainLayout";
 
 // --- Types ---
@@ -171,6 +172,8 @@ function StatusBadge({ status }: { status: DoctorStatusType }) {
 }
 
 function DoctorCard({ doctor, isAddCard }: { doctor?: Doctor; isAddCard?: boolean }) {
+  const navigate = useNavigate();
+
   if (isAddCard) {
     return (
       <motion.div
@@ -221,7 +224,10 @@ function DoctorCard({ doctor, isAddCard }: { doctor?: Doctor; isAddCard?: boolea
       </div>
 
       <div className="flex gap-3">
-        <button className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-2xl font-bold hover:bg-slate-200 transition-colors cursor-pointer border-none">
+        <button
+          onClick={() => navigate(`/doctors/${doctor.id}`)}
+          className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-2xl font-bold hover:bg-slate-200 transition-colors cursor-pointer border-none"
+        >
           Ver Perfil
         </button>
         <button
@@ -236,6 +242,8 @@ function DoctorCard({ doctor, isAddCard }: { doctor?: Doctor; isAddCard?: boolea
 }
 
 function SearchDoctorCard({ doctor }: { doctor: SearchDoctor }) {
+  const navigate = useNavigate();
+
   return (
     <div className="group rounded-2xl bg-white p-6 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5">
       <div className="mb-6 flex items-start gap-4">
@@ -276,9 +284,12 @@ function SearchDoctorCard({ doctor }: { doctor: SearchDoctor }) {
 
       <div className="flex gap-3">
         <button className="flex-1 rounded-xl bg-primary py-3 text-sm font-bold text-white shadow-md shadow-primary/10 transition-all hover:bg-primary-container">
-          Solicitar Acesso
+          Enviar Convite
         </button>
-        <button className="rounded-xl bg-surface-container-high px-4 py-3 text-on-surface-variant transition-all hover:bg-surface-container-highest">
+        <button
+          onClick={() => navigate(`/doctors/${doctor.id}`)}
+          className="rounded-xl bg-surface-container-high px-4 py-3 text-on-surface-variant transition-all hover:bg-surface-container-highest"
+        >
           <Eye size={20} />
         </button>
       </div>

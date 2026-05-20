@@ -2,6 +2,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "../pages/Dashboard";
 import Patients from "../pages/Patients";
 import Doctors from "../pages/Doctors";
+import DoctorClinicView from "../pages/Doctors/DoctorClinicView";
+import DoctorProfile from "../pages/Doctors/DoctorProfile";
 import Schedule from "../pages/Schedule";
 import ClinicalManagement from "../pages/ClinicalManagement";
 import Account from "../pages/Account";
@@ -13,6 +15,8 @@ export default function AppRoutes() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/patients" element={<Patients />} />
       <Route path="/doctors" element={<Doctors />} />
+      <Route path="/doctors/:id" element={<DoctorClinicView />} />
+      <Route path="/doctors/:id/profile" element={<DoctorProfile />} />
       <Route path="/schedule" element={<Schedule />} />
       <Route path="/clinical-management" element={<ClinicalManagement />} />
       <Route path="/account" element={<Account />} />
