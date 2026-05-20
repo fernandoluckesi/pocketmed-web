@@ -1,11 +1,12 @@
 import { type ReactNode } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { ICONS, IMAGES } from "../constants";
 import {
   Search,
   Bell,
   Settings,
+  ShieldAlert,
 } from "lucide-react";
 
 const navItems = [
@@ -27,6 +28,7 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
   const location = useLocation();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen flex bg-surface text-on-surface">
@@ -171,6 +173,26 @@ export function MainLayout({ children }: MainLayoutProps) {
 
         {/* Page Content */}
         <div className="p-6 flex-1">
+          {/* Verification Alert Banner */}
+          {location.pathname !== "/verification" && (
+            <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-4">
+              <div className="p-2.5 bg-amber-100 rounded-xl shrink-0">
+                <ShieldAlert className="w-5 h-5 text-amber-700" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-amber-900">Verificação pendente</p>
+                <p className="text-xs text-amber-700">
+                  Envie seus documentos profissionais para ativar todas as funcionalidades da plataforma.
+                </p>
+              </div>
+              <button
+                onClick={() => navigate("/verification")}
+                className="shrink-0 bg-amber-600 text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-amber-700 transition-colors cursor-pointer border-none"
+              >
+                Completar Verificação
+              </button>
+            </div>
+          )}
           {children}
         </div>
       </main>

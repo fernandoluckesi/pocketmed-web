@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/Auth/Login";
 import Signup from "../pages/Auth/Signup";
+import Verification from "../pages/Verification";
 import Dashboard from "../pages/Dashboard";
 import Patients from "../pages/Patients";
 import PatientDetail from "../pages/Patients/PatientDetail";
@@ -17,6 +18,7 @@ export default function AppRoutes() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/verification" element={<Verification />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/patients" element={<Patients />} />
       <Route path="/patients/:id" element={<PatientDetail />} />
