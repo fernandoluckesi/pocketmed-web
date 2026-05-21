@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Eye, EyeOff, Lock, Mail, ChevronRight, Activity } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { login } from "../../services/auth";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -9,8 +10,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
       setLoginError("O campo de e-mail é obrigatório.");
@@ -21,12 +23,20 @@ export default function Login() {
       return;
     }
     setLoginError(null);
-    // TODO: integrate with real auth
-    navigate("/dashboard");
+    setLoading(true);
+
+    try {
+      await login({ email, password });
+      navigate("/dashboard");
+    } catch (err) {
+      setLoginError(err instanceof Error ? err.message : "Erro ao fazer login. Verifique suas credenciais.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-stretch overflow-hidden">
+    <div className="min-h-screen flex overflow-hidden">
       {/* Left Side: Visual */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-neutral-900 overflow-hidden select-none">
         <img
@@ -51,11 +61,9 @@ export default function Login() {
         <div className="w-full max-w-md space-y-8 my-auto">
           {/* Header */}
           <header className="text-center lg:text-left space-y-4">
-            <div className="inline-flex items-center gap-3 justify-center lg:justify-start">
-              <div className="p-2 bg-blue-50 rounded-xl text-blue-600">
-                <Activity className="w-8 h-8 stroke-[2.5]" />
-              </div>
-              <h1 className="text-2xl font-display font-extrabold text-blue-700 tracking-tight">PocketMed</h1>
+            <div className="inline-flex items-center gap-3 justify-center lg:justify-start mb-6">
+              <img src="/src/assets/images/icon.png" alt="PocketMed" className="w-[72px] h-[72px] rounded-xl" />
+              <h1 className="text-4xl font-display font-extrabold text-blue-700 tracking-tight">PocketMed</h1>
             </div>
             <div className="space-y-2">
               <h2 className="text-3xl font-display font-bold text-slate-900 tracking-tight">Bem-vindo de volta</h2>
@@ -139,11 +147,12 @@ export default function Login() {
 
             {/* Submit */}
             <button
-              className="w-full bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-700 text-white font-semibold py-4 rounded-xl shadow-md shadow-blue-500/10 hover:shadow-blue-500/20 active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-2.5 border-none"
+              className="w-full bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-700 text-white font-semibold py-4 rounded-xl shadow-md shadow-blue-500/10 hover:shadow-blue-500/20 active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-2.5 border-none disabled:opacity-60 disabled:cursor-not-allowed"
               type="submit"
+              disabled={loading}
             >
-              <span>Entrar no Sistema</span>
-              <ChevronRight className="w-4 h-4 stroke-[2.5]" />
+              <span>{loading ? "Entrando..." : "Entrar no Sistema"}</span>
+              {!loading && <ChevronRight className="w-4 h-4 stroke-[2.5]" />}
             </button>
           </form>
 

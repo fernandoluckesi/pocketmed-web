@@ -25,9 +25,7 @@ export const Sidebar = () => {
   return (
     <aside className="h-screen w-64 fixed left-0 top-0 bg-slate-100 flex flex-col p-6 space-y-8 z-50">
       <div className="flex items-center space-x-3 px-2">
-        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
-          <ICONS.Doctors size={20} />
-        </div>
+        <img src="/src/assets/images/icon.png" alt="PocketMed" className="w-10 h-10 rounded-xl" />
         <div>
           <h2 className="text-xl font-black text-primary tracking-tight font-manrope">
             PocketMed
