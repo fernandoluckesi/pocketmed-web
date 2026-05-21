@@ -61,7 +61,7 @@ export default function Login() {
         <div className="w-full max-w-md space-y-8 my-auto">
           {/* Header */}
           <header className="text-center lg:text-left space-y-4">
-            <div className="inline-flex items-center gap-3 justify-center lg:justify-start mb-6">
+            <div className="inline-flex items-center gap-3 justify-center mb-12 w-full">
               <img src="/src/assets/images/icon.png" alt="PocketMed" className="w-[72px] h-[72px] rounded-xl" />
               <h1 className="text-4xl font-display font-extrabold text-blue-700 tracking-tight">PocketMed</h1>
             </div>
