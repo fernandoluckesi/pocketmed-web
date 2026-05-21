@@ -82,7 +82,7 @@ export default function Register() {
   return (
     <div className="min-h-screen bg-surface flex">
       {/* Left Panel */}
-      <div className="hidden lg:flex lg:w-2/5 bg-gradient-to-br from-primary to-primary-container p-12 flex-col justify-between relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-2/5 sticky top-0 h-screen bg-gradient-to-br from-primary to-primary-container p-12 flex-col justify-between relative overflow-hidden">
         <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-[40rem] h-[40rem] bg-white/5 rounded-full blur-[100px]" />
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-16">
@@ -94,7 +94,7 @@ export default function Register() {
                 PocketMed
               </h1>
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">
-                Clinical Excellence
+                Excelência Clínica
               </p>
             </div>
           </div>

@@ -4,7 +4,7 @@ export const TopBar = () => {
   return (
     <header className="w-full sticky top-0 z-40 bg-slate-50/80 backdrop-blur-lg flex justify-between items-center px-8 py-4">
       <h1 className="font-manrope font-bold text-lg tracking-tight text-primary">
-        Dashboard
+        Painel
       </h1>
 
       <div className="flex items-center space-x-4">
@@ -14,7 +14,7 @@ export const TopBar = () => {
           </span>
           <input
             className="bg-slate-200/50 border-none rounded-full py-2 pl-10 pr-4 w-64 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none"
-            placeholder="Search patients or records..."
+            placeholder="Pesquisar pacientes ou registros..."
             type="text"
           />
         </div>
@@ -33,7 +33,7 @@ export const TopBar = () => {
           <div className="text-right hidden sm:block">
             <p className="text-xs font-bold text-on-surface">Dr. Smith</p>
             <p className="text-[10px] text-on-surface-variant">
-              Senior Cardiologist
+              Cardiologista Sênior
             </p>
           </div>
           <img

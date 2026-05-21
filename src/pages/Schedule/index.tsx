@@ -107,8 +107,8 @@ const dayAppointments = [
   {
     id: "1",
     time: "08:30 — 09:45",
-    title: "Weekly Department Review",
-    subtitle: "Conference Room B • 4 Attendees",
+    title: "Reunião Semanal do Departamento",
+    subtitle: "Sala de Conferência B • 4 Participantes",
     category: "Rotina" as const,
     top: 100,
     height: 120,
@@ -117,8 +117,8 @@ const dayAppointments = [
   {
     id: "2",
     time: "10:15 — 11:45",
-    title: "Patient: Sarah Jenkins",
-    subtitle: "Cardiology Consultation • New Patient",
+    title: "Paciente: Sarah Jenkins",
+    subtitle: "Consulta de Cardiologia • Paciente Novo",
     category: "Prioridade" as const,
     top: 280,
     height: 160,
@@ -130,19 +130,19 @@ const dayAppointments = [
   {
     id: "3",
     time: "13:30 — 15:00",
-    title: "Robert Miller - Follow Up",
-    subtitle: "Knee Replacement Recovery • Room 402",
+    title: "Robert Miller - Retorno",
+    subtitle: "Recuperação de Prótese de Joelho • Sala 402",
     category: "Pós-Op" as const,
     top: 600,
     height: 160,
     color: "orange" as const,
-    info: "Reviewing physical therapy progress",
+    info: "Revisando progresso da fisioterapia",
   },
   {
     id: "4",
     time: "16:30 — 17:30",
-    title: "Telehealth: Marcella Rossi",
-    subtitle: "General Checkup • Link sent",
+    title: "Teleconsulta: Marcella Rossi",
+    subtitle: "Check-up Geral • Link enviado",
     category: "Rotina" as const,
     top: 850,
     height: 100,
@@ -201,7 +201,7 @@ function DayView() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-3xl font-display font-extrabold text-blue-900 tracking-tight">
-              Today's Agenda
+              Agenda de Hoje
             </h2>
             <p className="text-slate-500 font-medium">
               Monday, October 24, 2023
@@ -212,7 +212,7 @@ function DayView() {
               <ChevronLeft size={20} className="text-slate-600" />
             </button>
             <button className="px-5 py-2 bg-slate-200/50 hover:bg-slate-200 rounded-lg font-bold text-sm text-slate-700 transition-all">
-              Today
+              Hoje
             </button>
             <button className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all">
               <ChevronRight size={20} className="text-slate-600" />
@@ -326,12 +326,12 @@ function DayView() {
         {/* Daily Progress */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <h3 className="font-display font-extrabold text-slate-900 mb-6">
-            Daily Load
+            Carga Diária
           </h3>
           <div className="space-y-6">
             <div>
               <div className="flex justify-between text-xs font-bold text-slate-500 mb-2">
-                <span>Appointments</span>
+                <span>Consultas</span>
                 <span className="text-blue-600">12/15</span>
               </div>
               <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -346,7 +346,7 @@ function DayView() {
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-slate-50 p-4 rounded-xl text-center border border-slate-100">
                 <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">
-                  Remaining
+                  Restantes
                 </p>
                 <p className="text-2xl font-display font-extrabold text-blue-600">
                   3
@@ -354,7 +354,7 @@ function DayView() {
               </div>
               <div className="bg-slate-50 p-4 rounded-xl text-center border border-slate-100">
                 <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">
-                  Completed
+                  Concluídas
                 </p>
                 <p className="text-2xl font-display font-extrabold text-indigo-600">
                   9
@@ -367,7 +367,7 @@ function DayView() {
         {/* Categories */}
         <div className="space-y-4">
           <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest px-1">
-            Categories
+            Categorias
           </h3>
           <div className="space-y-2">
             {[
@@ -395,12 +395,12 @@ function DayView() {
           <div className="bg-blue-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-200 relative overflow-hidden">
             <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
             <h4 className="font-display font-bold mb-3 flex items-center gap-2">
-              💡 Pro Tip
+              💡 Dica Pro
             </h4>
             <p className="text-xs text-blue-50 leading-relaxed opacity-90">
-              You have a 15-minute gap between{" "}
-              <span className="font-bold underline">Jenkins</span> and your
-              lunch break. Perfect for completing medical reports.
+              Você tem um intervalo de 15 minutos entre{" "}
+              <span className="font-bold underline">Jenkins</span> e seu horário
+              de almoço. Perfeito para completar relatórios médicos.
             </p>
           </div>
         </div>
@@ -423,11 +423,11 @@ type WeekAppointment = {
 };
 
 const WEEK_DAYS = [
-  { name: "Mon", date: "07" },
-  { name: "Tue", date: "08", isToday: true },
-  { name: "Wed", date: "09" },
-  { name: "Thu", date: "10" },
-  { name: "Fri", date: "11" },
+  { name: "Seg", date: "07" },
+  { name: "Ter", date: "08", isToday: true },
+  { name: "Qua", date: "09" },
+  { name: "Qui", date: "10" },
+  { name: "Sex", date: "11" },
 ];
 
 const WEEK_TIME_SLOTS = Array.from({ length: 11 }, (_, i) => {
@@ -518,7 +518,11 @@ const WEEK_APPOINTMENTS: WeekAppointment[] = [
   },
 ];
 
-function WeekAppointmentCard({ appointment }: { appointment: WeekAppointment }) {
+function WeekAppointmentCard({
+  appointment,
+}: {
+  appointment: WeekAppointment;
+}) {
   const [startHour, startMin] = appointment.startTime.split(":").map(Number);
   const topOffset = (startHour - 8) * 88 + (startMin / 60) * 88;
   const height = (appointment.duration / 60) * 88;
@@ -564,7 +568,7 @@ function WeekView() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-3xl font-display font-extrabold text-slate-900 tracking-tight">
-            Weekly Schedule
+            Agenda Semanal
           </h2>
           <p className="text-slate-500 font-medium">October 7 – 11, 2024</p>
         </div>
@@ -573,7 +577,7 @@ function WeekView() {
             <ChevronLeft size={20} className="text-slate-600" />
           </button>
           <button className="px-5 py-2 bg-slate-200/50 hover:bg-slate-200 rounded-lg font-bold text-sm text-slate-700 transition-all">
-            Today
+            Hoje
           </button>
           <button className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all">
             <ChevronRight size={20} className="text-slate-600" />
@@ -624,7 +628,10 @@ function WeekView() {
                 {/* Horizontal Grid Lines */}
                 <div className="absolute inset-0 z-0 pointer-events-none">
                   {WEEK_TIME_SLOTS.map((_, i) => (
-                    <div key={i} className="h-[88px] border-b border-slate-100/50" />
+                    <div
+                      key={i}
+                      className="h-[88px] border-b border-slate-100/50"
+                    />
                   ))}
                 </div>
 
@@ -636,9 +643,11 @@ function WeekView() {
                 )}
 
                 {/* Appointments for this day */}
-                {WEEK_APPOINTMENTS.filter((a) => a.day === dayIdx).map((appt) => (
-                  <WeekAppointmentCard key={appt.id} appointment={appt} />
-                ))}
+                {WEEK_APPOINTMENTS.filter((a) => a.day === dayIdx).map(
+                  (appt) => (
+                    <WeekAppointmentCard key={appt.id} appointment={appt} />
+                  ),
+                )}
               </div>
             ))}
           </div>
@@ -649,20 +658,20 @@ function WeekView() {
       <div className="mt-8 flex gap-6">
         <StatCard
           icon={CalendarCheck}
-          label="Total Appts"
-          value="24 This Week"
+          label="Total Consultas"
+          value="24 Esta Semana"
           colorClass="bg-primary/10 text-primary"
         />
         <StatCard
           icon={AlertCircle}
-          label="Priority Cases"
-          value="03 High"
+          label="Casos Prioritários"
+          value="03 Alta"
           colorClass="bg-priority/10 text-priority"
         />
         <StatCard
           icon={FileText}
-          label="Post-Op Reviews"
-          value="08 Scheduled"
+          label="Revisões Pós-Op"
+          value="08 Agendadas"
           colorClass="bg-secondary/10 text-secondary"
         />
       </div>
@@ -673,7 +682,7 @@ function WeekView() {
 // --- Main Page ---
 
 export default function Schedule() {
-  const [viewMode, setViewMode] = useState<"Day" | "Week" | "Month">("Month");
+  const [viewMode, setViewMode] = useState<"Dia" | "Semana" | "Mês">("Mês");
   const [showNewAppointment, setShowNewAppointment] = useState(false);
   const [showAppointmentDetail, setShowAppointmentDetail] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<{
@@ -705,7 +714,7 @@ export default function Schedule() {
           <div className="flex justify-between items-end mb-8">
             <div>
               <nav className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2">
-                <span>Management</span>
+                <span>Gestão</span>
                 <ChevronRight className="w-3 h-3" />
                 <span className="text-primary">Agenda Médica</span>
               </nav>
@@ -716,7 +725,7 @@ export default function Schedule() {
 
             <div className="flex items-center gap-4">
               <div className="p-1 bg-slate-100 rounded-full flex gap-1">
-                {(["Day", "Week", "Month"] as const).map((view) => (
+                {(["Dia", "Semana", "Mês"] as const).map((view) => (
                   <button
                     key={view}
                     onClick={() => setViewMode(view)}
@@ -741,9 +750,9 @@ export default function Schedule() {
           </div>
 
           {/* View Content */}
-          {viewMode === "Day" ? (
+          {viewMode === "Dia" ? (
             <DayView />
-          ) : viewMode === "Week" ? (
+          ) : viewMode === "Semana" ? (
             <WeekView />
           ) : (
             <>
@@ -771,15 +780,15 @@ export default function Schedule() {
                   <div className="flex gap-4 bg-white/50 px-5 py-2.5 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-slate-500">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-primary" />{" "}
-                      Routine
+                      Rotina
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-priority" />{" "}
-                      Priority
+                      Prioridade
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-secondary" />{" "}
-                      Post-Op
+                      Pós-Op
                     </div>
                   </div>
                 </div>
@@ -787,7 +796,7 @@ export default function Schedule() {
                 {/* Grid */}
                 <div className="bg-white rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm">
                   <div className="grid grid-cols-7 border-b border-slate-100">
-                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+                    {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map(
                       (day) => (
                         <div
                           key={day}
@@ -822,14 +831,21 @@ export default function Schedule() {
                           {item.appointments.map((appt) => (
                             <motion.div
                               key={appt.id}
-                              onClick={() => handleAppointmentClick({
-                                id: appt.id,
-                                patientName: appt.patient,
-                                doctorName: 'Dr. Roberto Silva',
-                                type: appt.type === 'routine' ? 'Rotina' : appt.type === 'priority' ? 'Prioridade' : 'Pós-Op',
-                                dateTime: `${item.day} Out 2024, ${appt.time}`,
-                                status: 'Confirmado',
-                              })}
+                              onClick={() =>
+                                handleAppointmentClick({
+                                  id: appt.id,
+                                  patientName: appt.patient,
+                                  doctorName: "Dr. Roberto Silva",
+                                  type:
+                                    appt.type === "routine"
+                                      ? "Rotina"
+                                      : appt.type === "priority"
+                                        ? "Prioridade"
+                                        : "Pós-Op",
+                                  dateTime: `${item.day} Out 2024, ${appt.time}`,
+                                  status: "Confirmado",
+                                })
+                              }
                               className={`px-3 py-1.5 rounded-lg border-l-2 text-[10px] font-bold truncate transition-all cursor-pointer hover:shadow-md
                             ${
                               appt.type === "routine"
@@ -863,37 +879,36 @@ export default function Schedule() {
               <div className="mt-8 flex gap-6">
                 <StatCard
                   icon={CalendarCheck}
-                  label="Total Appts"
-                  value="24 Today"
+                  label="Total Consultas"
+                  value="24 Hoje"
                   colorClass="bg-primary/10 text-primary"
                 />
                 <StatCard
                   icon={AlertCircle}
-                  label="Priority Cases"
-                  value="03 High"
+                  label="Casos Prioritários"
+                  value="03 Alta"
                   colorClass="bg-priority/10 text-priority"
                 />
                 <StatCard
                   icon={FileText}
-                  label="Post-Op Reviews"
-                  value="08 Scheduled"
+                  label="Revisões Pós-Op"
+                  value="08 Agendadas"
                   colorClass="bg-secondary/10 text-secondary"
                 />
               </div>
             </>
           )}
         </section>
-     
 
-      <NewAppointmentModal
-        isOpen={showNewAppointment}
-        onClose={() => setShowNewAppointment(false)}
-      />
-      <AppointmentDetailModal
-        isOpen={showAppointmentDetail}
-        onClose={() => setShowAppointmentDetail(false)}
-        appointment={selectedAppointment}
-      />
+        <NewAppointmentModal
+          isOpen={showNewAppointment}
+          onClose={() => setShowNewAppointment(false)}
+        />
+        <AppointmentDetailModal
+          isOpen={showAppointmentDetail}
+          onClose={() => setShowAppointmentDetail(false)}
+          appointment={selectedAppointment}
+        />
       </div>
     </MainLayout>
   );

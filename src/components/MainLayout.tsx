@@ -2,25 +2,24 @@ import { type ReactNode } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { ICONS, IMAGES } from "../constants";
-import {
-  Search,
-  Bell,
-  Settings,
-  ShieldAlert,
-} from "lucide-react";
+import { Search, Bell, Settings, ShieldAlert } from "lucide-react";
 import { logout } from "../services/auth";
 
 const navItems = [
-  { icon: ICONS.Dashboard, label: "Dashboard", path: "/dashboard" },
-  { icon: ICONS.Patients, label: "Patients", path: "/patients" },
-  { icon: ICONS.Doctors, label: "Doctors", path: "/doctors" },
-  { icon: ICONS.Schedule, label: "Schedule", path: "/schedule" },
-  { icon: ICONS.Management, label: "Clinical Management", path: "/clinical-management" },
+  { icon: ICONS.Dashboard, label: "Painel", path: "/dashboard" },
+  { icon: ICONS.Patients, label: "Pacientes", path: "/patients" },
+  { icon: ICONS.Doctors, label: "Médicos", path: "/doctors" },
+  { icon: ICONS.Schedule, label: "Agenda", path: "/schedule" },
+  {
+    icon: ICONS.Management,
+    label: "Gestão Clínica",
+    path: "/clinical-management",
+  },
 ];
 
 const personalItems = [
-  { icon: ICONS.Account, label: "My Account", path: "/account" },
-  { icon: ICONS.Plans, label: "Plans", path: "/plans" },
+  { icon: ICONS.Account, label: "Minha Conta", path: "/account" },
+  { icon: ICONS.Plans, label: "Planos", path: "/plans" },
 ];
 
 interface MainLayoutProps {
@@ -36,13 +35,17 @@ export function MainLayout({ children }: MainLayoutProps) {
       {/* Sidebar */}
       <aside className="h-screen w-64 fixed left-0 top-0 bg-slate-100 flex flex-col p-6 space-y-8 z-50">
         <div className="flex items-center space-x-3 px-2">
-          <img src="/src/assets/images/icon.png" alt="PocketMed" className="w-10 h-10 rounded-xl" />
+          <img
+            src="/src/assets/images/icon.png"
+            alt="PocketMed"
+            className="w-10 h-10 rounded-xl"
+          />
           <div>
             <h2 className="text-xl font-black text-primary tracking-tight font-manrope">
               PocketMed
             </h2>
             <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">
-              Clinical Excellence
+              Excelência Clínica
             </p>
           </div>
         </div>
@@ -69,7 +72,7 @@ export function MainLayout({ children }: MainLayoutProps) {
 
           <div className="pt-6 pb-2 px-4">
             <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/40">
-              Personal
+              Pessoal
             </p>
           </div>
 
@@ -99,7 +102,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             className="flex items-center space-x-3 px-4 py-3 text-error hover:bg-error-container/20 transition-all rounded-full font-manrope text-sm font-semibold cursor-pointer w-full border-none bg-transparent"
           >
             <ICONS.Logout size={18} />
-            <span>Logout</span>
+            <span>Sair</span>
           </button>
         </div>
       </aside>
@@ -110,9 +113,9 @@ export function MainLayout({ children }: MainLayoutProps) {
         <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 flex justify-between items-center px-8 py-4">
           {/* Left: Navigation */}
           <nav className="flex items-center space-x-1">
-            {["Dashboard", "Pacientes", "Agenda"].map((item) => {
+            {["Painel", "Pacientes", "Agenda"].map((item) => {
               const pathMap: Record<string, string> = {
-                Dashboard: "/dashboard",
+                Painel: "/dashboard",
                 Pacientes: "/patients",
                 Agenda: "/schedule",
               };
@@ -139,7 +142,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search patients or records..."
+                placeholder="Pesquisar pacientes ou registros..."
                 className="bg-slate-100 border-none rounded-full py-2 pl-10 pr-4 w-64 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none"
               />
             </div>
@@ -158,8 +161,12 @@ export function MainLayout({ children }: MainLayoutProps) {
 
             <div className="flex items-center gap-3 cursor-pointer group">
               <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold text-slate-900 group-hover:text-primary transition-colors">Dr. Smith</p>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Senior Cardiologist</p>
+                <p className="text-xs font-bold text-slate-900 group-hover:text-primary transition-colors">
+                  Dr. Smith
+                </p>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                  Cardiologista Sênior
+                </p>
               </div>
               <img
                 alt="Profile"
@@ -179,9 +186,12 @@ export function MainLayout({ children }: MainLayoutProps) {
                 <ShieldAlert className="w-5 h-5 text-amber-700" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-bold text-amber-900">Verificação pendente</p>
+                <p className="text-sm font-bold text-amber-900">
+                  Verificação pendente
+                </p>
                 <p className="text-xs text-amber-700">
-                  Envie seus documentos profissionais para ativar todas as funcionalidades da plataforma.
+                  Envie seus documentos profissionais para ativar todas as
+                  funcionalidades da plataforma.
                 </p>
               </div>
               <button

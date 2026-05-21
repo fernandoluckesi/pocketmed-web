@@ -32,7 +32,7 @@ export const DashboardContent = () => {
         >
           <div className="relative z-10">
             <p className="text-white/80 text-sm font-semibold font-inter">
-              Total Patients Managed
+              Total de Pacientes Gerenciados
             </p>
             <h3 className="text-4xl font-extrabold text-white mt-2 tracking-tight font-manrope">
               1,284
@@ -40,7 +40,7 @@ export const DashboardContent = () => {
             <div className="flex items-center mt-4 space-x-2 bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-md">
               <ICONS.TrendingUp size={14} className="text-white" />
               <span className="text-white text-xs font-bold">
-                +12% this month
+                +12% este mês
               </span>
             </div>
           </div>
@@ -59,7 +59,7 @@ export const DashboardContent = () => {
               <ICONS.Schedule size={24} />
             </div>
             <p className="text-on-surface-variant text-xs font-bold uppercase tracking-widest">
-              Appointments Today
+              Consultas Hoje
             </p>
             <h3 className="text-3xl font-bold text-on-surface mt-1 font-manrope">
               18
@@ -69,7 +69,7 @@ export const DashboardContent = () => {
             <div className="bg-primary h-full w-2/3"></div>
           </div>
           <p className="text-[10px] text-on-surface-variant mt-2 font-medium">
-            12 completed of 18 total
+            12 concluídas de 18 total
           </p>
         </motion.div>
 
@@ -82,14 +82,14 @@ export const DashboardContent = () => {
               <span className="text-xl font-bold font-manrope">!</span>
             </div>
             <p className="text-on-surface-variant text-xs font-bold uppercase tracking-widest">
-              Urgent Reviews
+              Revisões Urgentes
             </p>
             <h3 className="text-3xl font-bold text-on-surface mt-1 font-manrope">
               3
             </h3>
           </div>
           <button className="mt-4 text-xs font-bold text-orange-600 flex items-center hover:translate-x-1 transition-transform">
-            VIEW TASKS <ICONS.ChevronRight size={14} className="ml-1" />
+            VER TAREFAS <ICONS.ChevronRight size={14} className="ml-1" />
           </button>
         </motion.div>
       </div>
@@ -107,7 +107,7 @@ export const DashboardContent = () => {
                 Consultas de Hoje
               </h2>
               <span className="bg-primary/10 text-primary text-[10px] font-black px-2 py-1 rounded">
-                LIVE
+                AO VIVO
               </span>
             </div>
             <div className="space-y-3">
@@ -129,7 +129,7 @@ export const DashboardContent = () => {
                   period: "NOW",
                   name: "Maria Heloísa Silva",
                   type: "Análise de Exames",
-                  status: "Waiting",
+                  status: "Aguardando",
                   active: true,
                 },
                 {
@@ -188,7 +188,7 @@ export const DashboardContent = () => {
               ))}
             </div>
             <button className="w-full mt-6 py-3 rounded-full bg-white text-primary font-bold text-xs hover:bg-primary hover:text-white transition-colors uppercase tracking-widest border border-slate-100">
-              View All Today
+              Ver Todas de Hoje
             </button>
           </div>
         </motion.section>
@@ -204,7 +204,7 @@ export const DashboardContent = () => {
                 Próximas Consultas
               </h2>
               <p className="text-xs text-on-surface-variant font-medium">
-                Schedule for the next 30 days
+                Agenda para os próximos 30 dias
               </p>
             </div>
             <button className="p-2 rounded-full hover:bg-slate-50 transition-colors text-on-surface-variant">
@@ -215,7 +215,7 @@ export const DashboardContent = () => {
           <div className="space-y-6">
             <div>
               <p className="text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-[0.2em] mb-4">
-                Monday, Oct 24
+                Segunda, 24 Out
               </p>
               <div className="flex items-start space-x-4">
                 <div className="w-10 h-10 rounded-full bg-blue-50 text-primary flex items-center justify-center flex-shrink-0 font-bold text-xs">
@@ -227,8 +227,8 @@ export const DashboardContent = () => {
                   </p>
                   <div className="flex items-center text-[10px] text-on-surface-variant mt-1">
                     <ICONS.Clock size={12} className="mr-1" /> 08:30 AM
-                    <span className="mx-2 text-slate-300">•</span> Cardiogram
-                    Test
+                    <span className="mx-2 text-slate-300">•</span> Teste de
+                    Cardiograma
                   </div>
                 </div>
               </div>
@@ -236,7 +236,7 @@ export const DashboardContent = () => {
 
             <div>
               <p className="text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-[0.2em] mb-4">
-                Wednesday, Oct 26
+                Quarta, 26 Out
               </p>
               <div className="space-y-4">
                 <div className="flex items-start space-x-4">
@@ -276,7 +276,7 @@ export const DashboardContent = () => {
 
             <div>
               <p className="text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-[0.2em] mb-4">
-                Friday, Oct 28
+                Sexta, 28 Out
               </p>
               <div className="flex items-start space-x-4">
                 <div className="w-10 h-10 rounded-full bg-slate-50 text-on-surface flex items-center justify-center flex-shrink-0 font-bold text-xs">
@@ -288,7 +288,7 @@ export const DashboardContent = () => {
                   </p>
                   <div className="flex items-center text-[10px] text-on-surface-variant mt-1">
                     <ICONS.Clock size={12} className="mr-1" /> 10:00 AM
-                    <span className="mx-2 text-slate-300">•</span> Consultation
+                    <span className="mx-2 text-slate-300">•</span> Consulta
                   </div>
                 </div>
               </div>
@@ -304,15 +304,15 @@ export const DashboardContent = () => {
       >
         <div className="max-w-md text-center md:text-left">
           <h4 className="text-2xl font-black text-on-surface mb-2 tracking-tighter font-manrope">
-            Clinical Performance Insights
+            Insights de Desempenho Clínico
           </h4>
           <p className="text-sm text-on-surface-variant leading-relaxed">
-            Your clinic's patient retention has increased by 15% this quarter.
-            Explore the new analytics module to see detailed demographics and
-            health outcome trends.
+            A retenção de pacientes da sua clínica aumentou 15% neste trimestre.
+            Explore o novo módulo de análises para ver dados demográficos
+            detalhados e tendências de resultados de saúde.
           </p>
           <button className="mt-6 px-6 py-3 bg-on-surface text-white rounded-full text-xs font-black uppercase tracking-widest active:scale-95 transition-transform">
-            Explore Reports
+            Explorar Relatórios
           </button>
         </div>
         <div className="mt-8 md:mt-0 flex -space-x-4">

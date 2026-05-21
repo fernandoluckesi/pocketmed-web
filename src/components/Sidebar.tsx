@@ -3,20 +3,20 @@ import { ICONS } from "../constants";
 import { motion } from "motion/react";
 
 const navItems = [
-  { icon: ICONS.Dashboard, label: "Dashboard", path: "/dashboard" },
-  { icon: ICONS.Patients, label: "Patients", path: "/patients" },
-  { icon: ICONS.Doctors, label: "Doctors", path: "/doctors" },
-  { icon: ICONS.Schedule, label: "Schedule", path: "/schedule" },
+  { icon: ICONS.Dashboard, label: "Painel", path: "/dashboard" },
+  { icon: ICONS.Patients, label: "Pacientes", path: "/patients" },
+  { icon: ICONS.Doctors, label: "Médicos", path: "/doctors" },
+  { icon: ICONS.Schedule, label: "Agenda", path: "/schedule" },
   {
     icon: ICONS.Management,
-    label: "Clinical Management",
+    label: "Gestão Clínica",
     path: "/clinical-management",
   },
 ];
 
 const personalItems = [
-  { icon: ICONS.Account, label: "My Account", path: "/account" },
-  { icon: ICONS.Plans, label: "Plans", path: "/plans" },
+  { icon: ICONS.Account, label: "Minha Conta", path: "/account" },
+  { icon: ICONS.Plans, label: "Planos", path: "/plans" },
 ];
 
 export const Sidebar = () => {
@@ -25,13 +25,17 @@ export const Sidebar = () => {
   return (
     <aside className="h-screen w-64 fixed left-0 top-0 bg-slate-100 flex flex-col p-6 space-y-8 z-50">
       <div className="flex items-center space-x-3 px-2">
-        <img src="/src/assets/images/icon.png" alt="PocketMed" className="w-10 h-10 rounded-xl" />
+        <img
+          src="/src/assets/images/icon.png"
+          alt="PocketMed"
+          className="w-10 h-10 rounded-xl"
+        />
         <div>
           <h2 className="text-xl font-black text-primary tracking-tight font-manrope">
             PocketMed
           </h2>
           <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">
-            Clinical Excellence
+            Excelência Clínica
           </p>
         </div>
       </div>
@@ -58,7 +62,7 @@ export const Sidebar = () => {
 
         <div className="pt-6 pb-2 px-4">
           <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/40">
-            Personal
+            Pessoal
           </p>
         </div>
 
@@ -88,7 +92,7 @@ export const Sidebar = () => {
           href="#"
         >
           <ICONS.Logout size={18} />
-          <span>Logout</span>
+          <span>Sair</span>
         </a>
       </div>
     </aside>
