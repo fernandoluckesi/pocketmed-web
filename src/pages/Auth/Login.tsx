@@ -1,43 +1,52 @@
 import { useState } from "react";
 import { Eye, EyeOff, Lock, Mail, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 import { login } from "../../services/auth";
+import { ApiError } from "../../services/api";
+import { Snackbar } from "../../components/Snackbar";
+import iconLogo from "../../assets/images/icon.png";
+
+const loginSchema = Yup.object({
+  email: Yup.string().email("E-mail inválido").required("E-mail é obrigatório"),
+  password: Yup.string().required("Senha é obrigatória"),
+});
 
 export default function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
-  const [loginError, setLoginError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({ visible: false, message: "" });
 
-  const handleLoginSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) {
-      setLoginError("O campo de e-mail é obrigatório.");
-      return;
-    }
-    if (!password) {
-      setLoginError("O campo de senha é obrigatório.");
-      return;
-    }
-    setLoginError(null);
-    setLoading(true);
+  const formik = useFormik({
+    initialValues: {
+      email: "",
+      password: "",
+      rememberMe: true,
+    },
+    validationSchema: loginSchema,
+    onSubmit: async (values, { setSubmitting, setFieldError }) => {
+      try {
+        await login({ email: values.email, password: values.password });
+        navigate("/dashboard");
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 401) {
+          setFieldError("password", "E-mail ou senha incorretos");
+        } else {
+          setSnackbar({ visible: true, message: "Erro inesperado. Tente novamente." });
+        }
+      } finally {
+        setSubmitting(false);
+      }
+    },
+  });
 
-    try {
-      await login({ email, password });
-      navigate("/dashboard");
-    } catch (err) {
-      setLoginError(err instanceof Error ? err.message : "Erro ao fazer login. Verifique suas credenciais.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fieldError = (field: "email" | "password") =>
+    formik.touched[field] && formik.errors[field] ? formik.errors[field] : null;
 
   return (
     <div className="h-screen flex overflow-hidden">
-      {/* Left Side: Visual - Fixed height */}
+      {/* Left Side: Visual */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-neutral-900 overflow-hidden select-none h-screen sticky top-0">
         <img
           className="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-luminosity grayscale-[20%] brightness-75"
@@ -60,9 +69,9 @@ export default function Login() {
       <main className="w-full lg:w-1/2 min-h-screen flex flex-col items-center p-6 sm:p-12 md:p-16 lg:p-24 bg-white relative z-10 overflow-y-auto">
         <div className="w-full max-w-md space-y-8 my-auto">
           {/* Header */}
-          <header className="text-center lg:text-left space-y-4">
+          <header className="text-center space-y-4">
             <div className="inline-flex items-center gap-3 justify-center mb-12 w-full">
-              <img src="/src/assets/images/icon.png" alt="PocketMed" className="w-[72px] h-[72px] rounded-xl" />
+              <img src={iconLogo} alt="PocketMed" className="w-[72px] h-[72px] rounded-xl" />
               <h1 className="text-4xl font-display font-extrabold text-blue-700 tracking-tight">PocketMed</h1>
             </div>
             <div className="space-y-2">
@@ -72,57 +81,49 @@ export default function Login() {
           </header>
 
           {/* Form */}
-          <form onSubmit={handleLoginSubmit} className="space-y-5">
-            {loginError && (
-              <div className="p-3 bg-rose-50 text-rose-700 text-sm rounded-xl font-medium border border-rose-100 flex items-center gap-2">
-                <span>{loginError}</span>
-              </div>
-            )}
-
+          <form onSubmit={formik.handleSubmit} noValidate className="space-y-5">
             <div className="space-y-4">
               {/* Email */}
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider" htmlFor="email-input">
                   E-mail Profissional
                 </label>
                 <div className="relative group">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors w-5 h-5" />
                   <input
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 rounded-xl py-3.5 pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-blue-100"
+                    className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-blue-100 ${fieldError("email") ? "border-red-400 focus:border-red-400" : "border-slate-200 focus:border-blue-500"}`}
                     id="email-input"
                     placeholder="dr.exemplo@hospital.com"
                     type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
+                    {...formik.getFieldProps("email")}
                   />
                 </div>
+                {fieldError("email") && <p className="text-xs text-red-500 mt-1">{fieldError("email")}</p>}
               </div>
 
               {/* Password */}
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider" htmlFor="password-input">
                   Senha
                 </label>
                 <div className="relative group">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors w-5 h-5" />
                   <input
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 rounded-xl py-3.5 pl-12 pr-12 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-blue-100"
+                    className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-12 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-blue-100 ${fieldError("password") ? "border-red-400 focus:border-red-400" : "border-slate-200 focus:border-blue-500"}`}
                     id="password-input"
                     placeholder="••••••••"
                     type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
+                    {...formik.getFieldProps("password")}
                   />
                   <button
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-md"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-md border-none bg-transparent cursor-pointer"
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {fieldError("password") && <p className="text-xs text-red-500 mt-1">{fieldError("password")}</p>}
               </div>
             </div>
 
@@ -132,8 +133,9 @@ export default function Login() {
                 <input
                   className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 transition-all cursor-pointer"
                   type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
+                  name="rememberMe"
+                  checked={formik.values.rememberMe}
+                  onChange={formik.handleChange}
                 />
                 <span className="text-slate-600 group-hover:text-slate-900 transition-colors">Lembrar-me</span>
               </label>
@@ -149,10 +151,10 @@ export default function Login() {
             <button
               className="w-full bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-700 text-white font-semibold py-4 rounded-xl shadow-md shadow-blue-500/10 hover:shadow-blue-500/20 active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-2.5 border-none disabled:opacity-60 disabled:cursor-not-allowed"
               type="submit"
-              disabled={loading}
+              disabled={formik.isSubmitting}
             >
-              <span>{loading ? "Entrando..." : "Entrar no Sistema"}</span>
-              {!loading && <ChevronRight className="w-4 h-4 stroke-[2.5]" />}
+              <span>{formik.isSubmitting ? "Entrando..." : "Entrar no Sistema"}</span>
+              {!formik.isSubmitting && <ChevronRight className="w-4 h-4 stroke-[2.5]" />}
             </button>
           </form>
 
@@ -192,7 +194,7 @@ export default function Login() {
           </footer>
         </div>
 
-        {/* Bottom footer pinned */}
+        {/* Bottom footer */}
         <div className="mt-auto pt-8 pb-6 text-center lg:text-left space-y-2 w-full max-w-md">
           <div className="flex items-center gap-3 justify-center lg:justify-start text-[10px] font-semibold uppercase tracking-wider text-slate-400 whitespace-nowrap">
             <span>Políticas de Privacidade</span>
@@ -208,6 +210,12 @@ export default function Login() {
 
         <div className="absolute top-0 right-0 w-80 h-80 bg-blue-50/40 rounded-full blur-3xl -z-10 pointer-events-none" />
       </main>
+
+      <Snackbar
+        message={snackbar.message}
+        visible={snackbar.visible}
+        onClose={() => setSnackbar({ visible: false, message: "" })}
+      />
     </div>
   );
 }

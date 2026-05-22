@@ -4,6 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { register } from "../../services/auth";
+import { ApiError } from "../../services/api";
+import { Snackbar } from "../../components/Snackbar";
+import iconLogo from "../../assets/images/icon.png";
 
 const UF_LIST = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
@@ -36,7 +39,7 @@ export default function Signup() {
   const navigate = useNavigate();
   const [signupType, setSignupType] = useState<"select" | "doctor" | "clinic">("select");
   const [showPassword, setShowPassword] = useState(false);
-  const [apiError, setApiError] = useState("");
+  const [snackbar, setSnackbar] = useState({ visible: false, message: "" });
 
   const formik = useFormik({
     initialValues: {
@@ -49,8 +52,7 @@ export default function Signup() {
       acceptTerms: false,
     },
     validationSchema: doctorSchema,
-    onSubmit: async (values, { setSubmitting }) => {
-      setApiError("");
+    onSubmit: async (values, { setSubmitting, setFieldError }) => {
       try {
         await register({
           name: values.name,
@@ -65,7 +67,34 @@ export default function Signup() {
         });
         navigate("/dashboard");
       } catch (err) {
-        setApiError(err instanceof Error ? err.message : "Erro ao criar conta. Tente novamente.");
+        if (err instanceof ApiError && err.status === 409) {
+          const conflicts: string[] = (err.data as { conflicts?: string[] }).conflicts || [];
+          if (conflicts.length > 0) {
+            if (conflicts.includes("email")) {
+              setFieldError("email", "Este e-mail já está cadastrado");
+            }
+            if (conflicts.includes("crm")) {
+              setFieldError("crm", "Este CRM já está cadastrado");
+            }
+            if (conflicts.includes("phone")) {
+              setFieldError("phone", "Este celular já está cadastrado");
+            }
+          } else {
+            // Fallback for old-style single message
+            const msg = (err.data.message || "").toLowerCase();
+            if (msg.includes("email")) {
+              setFieldError("email", "Este e-mail já está cadastrado");
+            } else if (msg.includes("crm")) {
+              setFieldError("crm", "Este CRM já está cadastrado");
+            } else if (msg.includes("phone")) {
+              setFieldError("phone", "Este celular já está cadastrado");
+            } else {
+              setSnackbar({ visible: true, message: "Dados já cadastrados. Verifique os campos." });
+            }
+          }
+        } else {
+          setSnackbar({ visible: true, message: "Erro inesperado. Tente novamente." });
+        }
       } finally {
         setSubmitting(false);
       }
@@ -115,7 +144,7 @@ export default function Signup() {
           {/* Header */}
           <header className="text-center space-y-4">
             <div className="inline-flex items-center gap-3 justify-center mb-12 w-full">
-              <img src="/src/assets/images/icon.png" alt="PocketMed" className="w-[72px] h-[72px] rounded-xl" />
+              <img src={iconLogo} alt="PocketMed" className="w-[72px] h-[72px] rounded-xl" />
               <h1 className="text-4xl font-display font-extrabold text-primary tracking-tight">PocketMed</h1>
             </div>
             <div className="space-y-2">
@@ -179,12 +208,7 @@ export default function Signup() {
                 ← Voltar para seleção
               </button>
 
-              {apiError && (
-                <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm border border-red-100 font-medium">
-                  {apiError}
-                </div>
-              )}
-
+              {/* Form */}
               <form className="space-y-4" onSubmit={formik.handleSubmit} noValidate>
                 {/* Name */}
                 <div className="space-y-1.5">
@@ -385,6 +409,12 @@ export default function Signup() {
 
         <div className="absolute top-0 right-0 w-80 h-80 bg-blue-50/40 rounded-full blur-3xl -z-10 pointer-events-none" />
       </main>
+
+      <Snackbar
+        message={snackbar.message}
+        visible={snackbar.visible}
+        onClose={() => setSnackbar({ visible: false, message: "" })}
+      />
     </div>
   );
 }

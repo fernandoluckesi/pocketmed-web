@@ -1,6 +1,7 @@
 import { useLocation, Link } from "react-router-dom";
 import { ICONS } from "../constants";
 import { motion } from "motion/react";
+import iconLogo from "../assets/images/icon.png";
 
 const navItems = [
   { icon: ICONS.Dashboard, label: "Painel", path: "/dashboard" },
@@ -26,7 +27,7 @@ export const Sidebar = () => {
     <aside className="h-screen w-64 fixed left-0 top-0 bg-slate-100 flex flex-col p-6 space-y-8 z-50">
       <div className="flex items-center space-x-3 px-2">
         <img
-          src="/src/assets/images/icon.png"
+          src={iconLogo}
           alt="PocketMed"
           className="w-10 h-10 rounded-xl"
         />

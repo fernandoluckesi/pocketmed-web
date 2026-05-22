@@ -6,6 +6,17 @@ interface ApiOptions {
   headers?: Record<string, string>;
 }
 
+export class ApiError extends Error {
+  status: number;
+  data: { message?: string; statusCode?: number; [key: string]: unknown };
+
+  constructor(status: number, data: { message?: string; statusCode?: number; [key: string]: unknown }) {
+    super(data.message || "Erro na requisição");
+    this.status = status;
+    this.data = data;
+  }
+}
+
 export async function api(path: string, options: ApiOptions = {}) {
   const token = localStorage.getItem("pocketmed_token");
 
@@ -28,13 +39,13 @@ export async function api(path: string, options: ApiOptions = {}) {
     localStorage.removeItem("pocketmed_token");
     localStorage.removeItem("pocketmed_user");
     window.location.href = "/login";
-    throw new Error("Unauthorized");
+    throw new ApiError(401, { message: "Unauthorized" });
   }
 
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || "Erro na requisição");
+    throw new ApiError(response.status, data);
   }
 
   return data;

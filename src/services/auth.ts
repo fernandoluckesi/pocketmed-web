@@ -40,7 +40,7 @@ export async function login(payload: LoginPayload): Promise<AuthResponse> {
 }
 
 export async function register(payload: RegisterPayload): Promise<AuthResponse> {
-  const data = await api("/auth/register-doctor", {
+  const data = await api("/auth/register/doctor", {
     method: "POST",
     body: payload,
   });
