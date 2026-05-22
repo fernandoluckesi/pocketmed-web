@@ -1,10 +1,5 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  type ReactNode,
-} from "react";
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../config/api";
 
@@ -28,31 +23,35 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(
-    localStorage.getItem("token"),
-  );
-  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (token) {
-      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      // Decode basic info from token
+  // Initialize auth state from stored token (runs once on mount)
+  const [initialized] = useState(() => {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) {
+      api.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
       try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        setUser({
-          userId: payload.sub,
-          email: payload.email,
-          type: payload.type,
-          role: payload.role,
-        });
+        const payload = JSON.parse(atob(storedToken.split(".")[1]));
+        return {
+          user: {
+            userId: payload.sub,
+            email: payload.email,
+            type: payload.type,
+            role: payload.role,
+          } as User,
+          token: storedToken,
+        };
       } catch {
-        logout();
+        localStorage.removeItem("token");
+        delete api.defaults.headers.common["Authorization"];
       }
     }
-    setIsLoading(false);
-  }, []);
+    return { user: null as User | null, token: null as string | null };
+  });
+
+  const [user, setUser] = useState<User | null>(initialized.user);
+  const [token, setToken] = useState<string | null>(initialized.token);
+  const isLoading = false;
 
   async function login(email: string, password: string) {
     const response = await api.post("/auth/login", { email, password });

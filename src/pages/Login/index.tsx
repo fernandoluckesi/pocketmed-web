@@ -24,8 +24,9 @@ export default function Login() {
       setError("");
       try {
         await login(values.email, values.password);
-      } catch (err: any) {
-        setError(err.response?.data?.message || "Credenciais inválidas");
+      } catch (err: unknown) {
+        const error = err as { response?: { data?: { message?: string } } };
+        setError(error.response?.data?.message || "Credenciais inválidas");
       } finally {
         setSubmitting(false);
       }

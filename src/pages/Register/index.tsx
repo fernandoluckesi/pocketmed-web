@@ -65,7 +65,8 @@ export default function Register() {
     onSubmit: async (values, { setSubmitting }) => {
       setError("");
       try {
-        const { confirmPassword, ...rest } = values;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { confirmPassword: _unused, ...rest } = values;
         const formData = new FormData();
         Object.entries(rest).forEach(([key, value]) => {
           formData.append(key, value);
@@ -78,9 +79,11 @@ export default function Register() {
         });
         setSuccess(true);
         setTimeout(() => navigate("/login"), 2000);
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const error = err as { response?: { data?: { message?: string } } };
         setError(
-          err.response?.data?.message || "Erro ao cadastrar. Tente novamente.",
+          error.response?.data?.message ||
+            "Erro ao cadastrar. Tente novamente.",
         );
       } finally {
         setSubmitting(false);
