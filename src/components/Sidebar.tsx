@@ -1,17 +1,34 @@
 import { useLocation, Link } from "react-router-dom";
 import { ICONS } from "../constants";
 import { motion } from "motion/react";
+import { useAuth } from "../contexts/AuthContext";
 import iconLogo from "../assets/images/icon.png";
 
 const navItems = [
-  { icon: ICONS.Dashboard, label: "Painel", path: "/dashboard" },
-  { icon: ICONS.Patients, label: "Pacientes", path: "/patients" },
-  { icon: ICONS.Doctors, label: "Médicos", path: "/doctors" },
-  { icon: ICONS.Schedule, label: "Agenda", path: "/schedule" },
+  {
+    icon: ICONS.Dashboard,
+    label: "Painel",
+    path: "/dashboard",
+    adminOnly: false,
+  },
+  {
+    icon: ICONS.Patients,
+    label: "Pacientes",
+    path: "/patients",
+    adminOnly: false,
+  },
+  { icon: ICONS.Doctors, label: "Médicos", path: "/doctors", adminOnly: false },
+  {
+    icon: ICONS.Schedule,
+    label: "Agenda",
+    path: "/schedule",
+    adminOnly: false,
+  },
   {
     icon: ICONS.Management,
     label: "Gestão Clínica",
     path: "/clinical-management",
+    adminOnly: true,
   },
 ];
 
@@ -22,15 +39,17 @@ const personalItems = [
 
 export const Sidebar = () => {
   const location = useLocation();
+  const { user } = useAuth();
+
+  const isAdmin = user?.role === "admin";
+  const filteredNavItems = navItems.filter(
+    (item) => !item.adminOnly || isAdmin,
+  );
 
   return (
     <aside className="h-screen w-64 fixed left-0 top-0 bg-slate-100 flex flex-col p-6 space-y-8 z-50">
       <div className="flex items-center space-x-3 px-2">
-        <img
-          src={iconLogo}
-          alt="PocketMed"
-          className="w-10 h-10 rounded-xl"
-        />
+        <img src={iconLogo} alt="PocketMed" className="w-10 h-10 rounded-xl" />
         <div>
           <h2 className="text-xl font-black text-primary tracking-tight font-manrope">
             PocketMed
@@ -42,7 +61,7 @@ export const Sidebar = () => {
       </div>
 
       <nav className="flex-grow space-y-1">
-        {navItems.map((item, idx) => {
+        {filteredNavItems.map((item, idx) => {
           const isActive = location.pathname === item.path;
           return (
             <motion.div key={idx} whileHover={{ x: 4 }}>

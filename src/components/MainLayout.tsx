@@ -4,17 +4,34 @@ import { motion } from "motion/react";
 import { ICONS, IMAGES } from "../constants";
 import { Search, Bell, Settings, ShieldAlert } from "lucide-react";
 import { logout } from "../services/auth";
+import { useAuth } from "../contexts/AuthContext";
 import iconLogo from "../assets/images/icon.png";
 
 const navItems = [
-  { icon: ICONS.Dashboard, label: "Painel", path: "/dashboard" },
-  { icon: ICONS.Patients, label: "Pacientes", path: "/patients" },
-  { icon: ICONS.Doctors, label: "Médicos", path: "/doctors" },
-  { icon: ICONS.Schedule, label: "Agenda", path: "/schedule" },
+  {
+    icon: ICONS.Dashboard,
+    label: "Painel",
+    path: "/dashboard",
+    adminOnly: false,
+  },
+  {
+    icon: ICONS.Patients,
+    label: "Pacientes",
+    path: "/patients",
+    adminOnly: false,
+  },
+  { icon: ICONS.Doctors, label: "Médicos", path: "/doctors", adminOnly: false },
+  {
+    icon: ICONS.Schedule,
+    label: "Agenda",
+    path: "/schedule",
+    adminOnly: false,
+  },
   {
     icon: ICONS.Management,
     label: "Gestão Clínica",
     path: "/clinical-management",
+    adminOnly: true,
   },
 ];
 
@@ -30,6 +47,12 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const isAdmin = user?.role === "admin";
+  const filteredNavItems = navItems.filter(
+    (item) => !item.adminOnly || isAdmin,
+  );
 
   return (
     <div className="min-h-screen flex bg-surface text-on-surface">
@@ -52,7 +75,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         </div>
 
         <nav className="flex-grow space-y-1">
-          {navItems.map((item, idx) => {
+          {filteredNavItems.map((item, idx) => {
             const isActive = location.pathname === item.path;
             return (
               <motion.div key={idx} whileHover={{ x: 4 }}>

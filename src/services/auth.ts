@@ -39,7 +39,26 @@ export async function login(payload: LoginPayload): Promise<AuthResponse> {
   return data;
 }
 
-export async function register(payload: RegisterPayload): Promise<AuthResponse> {
+export async function register(
+  payload: RegisterPayload,
+  profileImage?: File,
+): Promise<AuthResponse> {
+  if (profileImage) {
+    const formData = new FormData();
+    Object.entries(payload).forEach(([key, value]) => {
+      formData.append(key, String(value));
+    });
+    formData.append("profileImage", profileImage);
+    const data = await api("/auth/register/doctor", {
+      method: "POST",
+      body: formData,
+      isFormData: true,
+    });
+    localStorage.setItem("pocketmed_token", data.token);
+    localStorage.setItem("pocketmed_user", JSON.stringify(data.user));
+    return data;
+  }
+
   const data = await api("/auth/register/doctor", {
     method: "POST",
     body: payload,

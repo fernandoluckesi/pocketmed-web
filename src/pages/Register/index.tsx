@@ -1,8 +1,15 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import { Stethoscope, Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
+import {
+  Stethoscope,
+  Eye,
+  EyeOff,
+  Loader2,
+  ArrowLeft,
+  Camera,
+} from "lucide-react";
 import api from "../../config/api";
 
 const registerSchema = Yup.object({
@@ -29,6 +36,17 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [profilePreview, setProfilePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setProfileImage(file);
+      setProfilePreview(URL.createObjectURL(file));
+    }
+  }
 
   const formik = useFormik({
     initialValues: {
@@ -47,8 +65,17 @@ export default function Register() {
     onSubmit: async (values, { setSubmitting }) => {
       setError("");
       try {
-        const { confirmPassword, ...payload } = values;
-        await api.post("/auth/register/doctor", payload);
+        const { confirmPassword, ...rest } = values;
+        const formData = new FormData();
+        Object.entries(rest).forEach(([key, value]) => {
+          formData.append(key, value);
+        });
+        if (profileImage) {
+          formData.append("profileImage", profileImage);
+        }
+        await api.post("/auth/register/doctor", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
         setSuccess(true);
         setTimeout(() => navigate("/login"), 2000);
       } catch (err: any) {
@@ -140,6 +167,39 @@ export default function Register() {
           )}
 
           <form onSubmit={formik.handleSubmit} className="space-y-5">
+            {/* Profile Image */}
+            <div className="flex justify-center">
+              <div className="relative">
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-24 h-24 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden hover:border-primary hover:bg-primary/5 transition-all group"
+                >
+                  {profilePreview ? (
+                    <img
+                      src={profilePreview}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Camera
+                      size={28}
+                      className="text-slate-400 group-hover:text-primary transition-colors"
+                    />
+                  )}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+                <p className="text-[10px] text-on-surface-variant text-center mt-2 font-medium">
+                  Foto de perfil (opcional)
+                </p>
+              </div>
+            </div>
+
             {/* Name */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-on-surface-variant ml-1">

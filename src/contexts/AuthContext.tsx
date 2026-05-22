@@ -12,6 +12,7 @@ interface User {
   userId: string;
   email: string;
   type: string;
+  role?: string;
   name?: string;
 }
 
@@ -44,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           userId: payload.sub,
           email: payload.email,
           type: payload.type,
+          role: payload.role,
         });
       } catch {
         logout();
