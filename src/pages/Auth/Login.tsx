@@ -33,7 +33,10 @@ export default function Login() {
         if (err instanceof ApiError && err.status === 401) {
           setFieldError("password", "E-mail ou senha incorretos");
         } else {
-          setSnackbar({ visible: true, message: "Erro inesperado. Tente novamente." });
+          setSnackbar({
+            visible: true,
+            message: "Erro inesperado. Tente novamente.",
+          });
         }
       } finally {
         setSubmitting(false);
@@ -59,7 +62,8 @@ export default function Login() {
             Precisão Clínica Digital.
           </h2>
           <p className="text-lg text-slate-300 max-w-md leading-relaxed">
-            Acesse sua plataforma integrada para gestão de prontuários, diagnósticos e apoio à decisão clínica em tempo real.
+            Acesse sua plataforma integrada para gestão de prontuários,
+            diagnósticos e apoio à decisão clínica em tempo real.
           </p>
         </div>
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none" />
@@ -71,12 +75,22 @@ export default function Login() {
           {/* Header */}
           <header className="text-center space-y-4">
             <div className="inline-flex items-center gap-3 justify-center mb-12 w-full">
-              <img src={iconLogo} alt="PocketMed" className="w-[72px] h-[72px] rounded-xl" />
-              <h1 className="text-4xl font-display font-extrabold text-blue-700 tracking-tight">PocketMed</h1>
+              <img
+                src={iconLogo}
+                alt="PocketMed"
+                className="w-[72px] h-[72px] rounded-xl"
+              />
+              <h1 className="text-4xl font-display font-extrabold text-blue-700 tracking-tight">
+                PocketMed
+              </h1>
             </div>
             <div className="space-y-2">
-              <h2 className="text-3xl font-display font-bold text-slate-900 tracking-tight">Bem-vindo de volta</h2>
-              <p className="text-slate-500 text-base">Insira suas credenciais para acessar o portal clínico.</p>
+              <h2 className="text-3xl font-display font-bold text-slate-900 tracking-tight">
+                Bem-vindo de volta
+              </h2>
+              <p className="text-slate-500 text-base">
+                Insira suas credenciais para acessar o portal clínico.
+              </p>
             </div>
           </header>
 
@@ -85,7 +99,10 @@ export default function Login() {
             <div className="space-y-4">
               {/* Email */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider" htmlFor="email-input">
+                <label
+                  className="block text-xs font-semibold text-slate-500 uppercase tracking-wider"
+                  htmlFor="email-input"
+                >
                   E-mail Profissional
                 </label>
                 <div className="relative group">
@@ -98,12 +115,19 @@ export default function Login() {
                     {...formik.getFieldProps("email")}
                   />
                 </div>
-                {fieldError("email") && <p className="text-xs text-red-500 mt-1">{fieldError("email")}</p>}
+                {fieldError("email") && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldError("email")}
+                  </p>
+                )}
               </div>
 
               {/* Password */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider" htmlFor="password-input">
+                <label
+                  className="block text-xs font-semibold text-slate-500 uppercase tracking-wider"
+                  htmlFor="password-input"
+                >
                   Senha
                 </label>
                 <div className="relative group">
@@ -120,10 +144,18 @@ export default function Login() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
-                {fieldError("password") && <p className="text-xs text-red-500 mt-1">{fieldError("password")}</p>}
+                {fieldError("password") && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldError("password")}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -137,7 +169,9 @@ export default function Login() {
                   checked={formik.values.rememberMe}
                   onChange={formik.handleChange}
                 />
-                <span className="text-slate-600 group-hover:text-slate-900 transition-colors">Lembrar-me</span>
+                <span className="text-slate-600 group-hover:text-slate-900 transition-colors">
+                  Lembrar-me
+                </span>
               </label>
               <button
                 type="button"
@@ -153,32 +187,14 @@ export default function Login() {
               type="submit"
               disabled={formik.isSubmitting}
             >
-              <span>{formik.isSubmitting ? "Entrando..." : "Entrar no Sistema"}</span>
-              {!formik.isSubmitting && <ChevronRight className="w-4 h-4 stroke-[2.5]" />}
+              <span>
+                {formik.isSubmitting ? "Entrando..." : "Entrar no Sistema"}
+              </span>
+              {!formik.isSubmitting && (
+                <ChevronRight className="w-4 h-4 stroke-[2.5]" />
+              )}
             </button>
           </form>
-
-          {/* Institutional */}
-          <div className="relative py-2">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200"></div>
-            </div>
-            <div className="relative flex justify-center text-xs uppercase tracking-widest font-semibold">
-              <span className="bg-white px-4 text-slate-400">Acesso Institucional</span>
-            </div>
-          </div>
-
-          <div className="flex gap-4">
-            <button className="flex-1 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-all py-3.5 rounded-xl flex items-center justify-center gap-3 text-slate-600 hover:text-slate-900 font-medium cursor-pointer">
-              <img
-                className="w-5 h-5 object-contain"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4OzmSmb0NDXEVivXaNwY1W4bAZJ9AmpNF0zhfoBvmOHWO6rfzgOH18BM3bNtCS22lEM5QlLLob4bPpIM7xaphAYrn-w_1j8P0vlRRn6XAfeAiPMsi0BYNSaA7_5UQyHYF6ba6DMvSj8-T1mrk67x2Tnh2U_8P12wYbpAVEBNpv-er5Ntjk_X4jjg_7BPfbZsV01PWE4lGD1L7R2CHul1NsYpnEH26s5X70ITExGBCCm0Z4I5YDTXFD5nkqS0GTg0lP3720z1MHp2i"
-                alt="Google Logo"
-                referrerPolicy="no-referrer"
-              />
-              <span>Google Workspace</span>
-            </button>
-          </div>
 
           {/* Footer */}
           <footer className="pt-6 border-t border-slate-100 text-center lg:text-left space-y-4">

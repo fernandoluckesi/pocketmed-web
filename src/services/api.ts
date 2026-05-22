@@ -49,10 +49,17 @@ export async function api(path: string, options: ApiOptions = {}) {
   });
 
   if (response.status === 401) {
-    localStorage.removeItem("pocketmed_token");
-    localStorage.removeItem("pocketmed_user");
-    window.location.href = "/login";
-    throw new ApiError(401, { message: "Unauthorized" });
+    // Only redirect to login if we're not already on a public auth route
+    const isAuthRoute = path.startsWith("/auth/");
+    if (!isAuthRoute) {
+      localStorage.removeItem("pocketmed_token");
+      localStorage.removeItem("pocketmed_user");
+      window.location.href = "/login";
+    }
+    const data = await response
+      .json()
+      .catch(() => ({ message: "Unauthorized" }));
+    throw new ApiError(401, data);
   }
 
   const data = await response.json();

@@ -9,6 +9,7 @@ interface User {
   type: string;
   role?: string;
   name?: string;
+  profileImage?: string;
 }
 
 interface AuthContextType {
@@ -27,22 +28,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Initialize auth state from stored token (runs once on mount)
   const [initialized] = useState(() => {
-    const storedToken = localStorage.getItem("token");
+    const storedToken =
+      localStorage.getItem("token") || localStorage.getItem("pocketmed_token");
+    const storedUser = localStorage.getItem("pocketmed_user");
     if (storedToken) {
       api.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
       try {
         const payload = JSON.parse(atob(storedToken.split(".")[1]));
+        const savedUser = storedUser ? JSON.parse(storedUser) : null;
         return {
           user: {
             userId: payload.sub,
             email: payload.email,
             type: payload.type,
             role: payload.role,
+            name: savedUser?.name || payload.name,
+            profileImage: savedUser?.profileImage,
           } as User,
           token: storedToken,
         };
       } catch {
         localStorage.removeItem("token");
+        localStorage.removeItem("pocketmed_token");
+        localStorage.removeItem("pocketmed_user");
         delete api.defaults.headers.common["Authorization"];
       }
     }
@@ -58,6 +66,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { access_token, user: userData } = response.data;
 
     localStorage.setItem("token", access_token);
+    localStorage.setItem("pocketmed_token", access_token);
+    localStorage.setItem("pocketmed_user", JSON.stringify(userData));
     api.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
     setToken(access_token);
     setUser(userData);

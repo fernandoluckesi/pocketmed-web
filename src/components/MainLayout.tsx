@@ -1,7 +1,7 @@
 import { type ReactNode } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { ICONS, IMAGES } from "../constants";
+import { ICONS } from "../constants";
 import { Search, Bell, Settings, ShieldAlert } from "lucide-react";
 import { logout } from "../services/auth";
 import { useAuth } from "../contexts/AuthContext";
@@ -64,14 +64,9 @@ export function MainLayout({ children }: MainLayoutProps) {
             alt="PocketMed"
             className="w-10 h-10 rounded-xl"
           />
-          <div>
-            <h2 className="text-xl font-black text-primary tracking-tight font-manrope">
-              PocketMed
-            </h2>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">
-              Excelência Clínica
-            </p>
-          </div>
+          <h2 className="text-xl font-black text-primary tracking-tight font-manrope">
+            PocketMed
+          </h2>
         </div>
 
         <nav className="flex-grow space-y-1">
@@ -186,17 +181,23 @@ export function MainLayout({ children }: MainLayoutProps) {
             <div className="flex items-center gap-3 cursor-pointer group">
               <div className="text-right hidden sm:block">
                 <p className="text-xs font-bold text-slate-900 group-hover:text-primary transition-colors">
-                  Dr. Smith
+                  {user?.name || user?.email || "Usuário"}
                 </p>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                  Cardiologista Sênior
+                  {user?.role === "admin" ? "Administrador" : "Médico"}
                 </p>
               </div>
-              <img
-                alt="Profile"
-                className="w-9 h-9 rounded-full object-cover ring-2 ring-primary/10 group-hover:ring-primary transition-all"
-                src={IMAGES.Profile}
-              />
+              {user?.profileImage ? (
+                <img
+                  alt="Profile"
+                  className="w-9 h-9 rounded-full object-cover ring-2 ring-primary/10 group-hover:ring-primary transition-all"
+                  src={user.profileImage}
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-primary/10 ring-2 ring-primary/10 group-hover:ring-primary transition-all flex items-center justify-center text-primary font-bold text-xs">
+                  {(user?.name || user?.email || "U").charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
           </div>
         </header>
