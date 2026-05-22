@@ -36,9 +36,9 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex overflow-hidden">
-      {/* Left Side: Visual */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-neutral-900 overflow-hidden select-none">
+    <div className="h-screen flex overflow-hidden">
+      {/* Left Side: Visual - Fixed height */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-neutral-900 overflow-hidden select-none h-screen sticky top-0">
         <img
           className="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-luminosity grayscale-[20%] brightness-75"
           src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_ICKjyHccRapfSsJLM5KtqB36YSgA0OSqydYRQHI1kyzLT3F_cCOwAJFlGud13vCWc6Tw3TWe5-r-ig-Vk9A__dGC0svSPrgq3ssWrxubtRzChSeoYZ405V5UbzoPwFA5n3Nq9-c-Ftgugjb15HDDF94OOKzGJ7fkkovFS7F0GcEjYqK1cZZG_vSf0hRRR0QK_IaVt3V4aEw3o3le5txnSXH1YVexcnQ-BUcG7OYgbIPCzdx5x3hOD2sbfnpFYlszrdLO4BGvZw2H"
@@ -57,7 +57,7 @@ export default function Login() {
       </div>
 
       {/* Right Side: Form */}
-      <main className="w-full lg:w-1/2 flex flex-col items-center justify-center p-6 sm:p-12 md:p-16 lg:p-24 bg-white relative z-10 overflow-y-auto">
+      <main className="w-full lg:w-1/2 min-h-screen flex flex-col items-center p-6 sm:p-12 md:p-16 lg:p-24 bg-white relative z-10 overflow-y-auto">
         <div className="w-full max-w-md space-y-8 my-auto">
           {/* Header */}
           <header className="text-center lg:text-left space-y-4">
@@ -189,17 +189,21 @@ export default function Login() {
                 Cadastre-se agora
               </button>
             </p>
-            <div className="flex flex-wrap gap-x-3 gap-y-1.5 justify-center lg:justify-start text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-              <span>Políticas de Privacidade</span>
-              <span className="w-1 h-1 bg-slate-300 rounded-full mt-1.5 self-center"></span>
-              <span>Termos de Serviço</span>
-              <span className="w-1 h-1 bg-slate-300 rounded-full mt-1.5 self-center"></span>
-              <span>Padrões de Segurança</span>
-            </div>
-            <p className="text-[10px] text-slate-400">
-              © 2026 PocketMed Clinical Systems. Todos os direitos reservados.
-            </p>
           </footer>
+        </div>
+
+        {/* Bottom footer pinned */}
+        <div className="mt-auto pt-8 pb-6 text-center lg:text-left space-y-2 w-full max-w-md">
+          <div className="flex items-center gap-3 justify-center lg:justify-start text-[10px] font-semibold uppercase tracking-wider text-slate-400 whitespace-nowrap">
+            <span>Políticas de Privacidade</span>
+            <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+            <span>Termos de Serviço</span>
+            <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+            <span>Padrões de Segurança</span>
+          </div>
+          <p className="text-[10px] text-slate-400">
+            © 2026 PocketMed Clinical Systems. Todos os direitos reservados.
+          </p>
         </div>
 
         <div className="absolute top-0 right-0 w-80 h-80 bg-blue-50/40 rounded-full blur-3xl -z-10 pointer-events-none" />
