@@ -1,5 +1,6 @@
 import { ICONS, IMAGES } from "../constants";
 import { motion } from "motion/react";
+import { PromoBanner } from "./PromoBanner";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -24,75 +25,8 @@ export const DashboardContent = () => {
       animate="visible"
       variants={containerVariants}
     >
-      {/* Bento Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <motion.div
-          variants={itemVariants}
-          className="md:col-span-2 bg-gradient-to-br from-primary to-primary-container p-6 rounded-xl shadow-xl shadow-primary/10 flex flex-col justify-between overflow-hidden relative group"
-        >
-          <div className="relative z-10">
-            <p className="text-white/80 text-sm font-semibold font-inter">
-              Total de Pacientes Gerenciados
-            </p>
-            <h3 className="text-4xl font-extrabold text-white mt-2 tracking-tight font-manrope">
-              1,284
-            </h3>
-            <div className="flex items-center mt-4 space-x-2 bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-md">
-              <ICONS.TrendingUp size={14} className="text-white" />
-              <span className="text-white text-xs font-bold">
-                +12% este mês
-              </span>
-            </div>
-          </div>
-          <ICONS.Patients
-            size={120}
-            className="absolute -right-6 -bottom-6 text-white/10 rotate-12 group-hover:rotate-0 transition-transform duration-700"
-          />
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between"
-        >
-          <div>
-            <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-primary mb-4">
-              <ICONS.Schedule size={24} />
-            </div>
-            <p className="text-on-surface-variant text-xs font-bold uppercase tracking-widest">
-              Consultas Hoje
-            </p>
-            <h3 className="text-3xl font-bold text-on-surface mt-1 font-manrope">
-              18
-            </h3>
-          </div>
-          <div className="h-1 bg-slate-100 rounded-full overflow-hidden mt-6">
-            <div className="bg-primary h-full w-2/3"></div>
-          </div>
-          <p className="text-[10px] text-on-surface-variant mt-2 font-medium">
-            12 concluídas de 18 total
-          </p>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between"
-        >
-          <div>
-            <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center text-orange-600 mb-4">
-              <span className="text-xl font-bold font-manrope">!</span>
-            </div>
-            <p className="text-on-surface-variant text-xs font-bold uppercase tracking-widest">
-              Revisões Urgentes
-            </p>
-            <h3 className="text-3xl font-bold text-on-surface mt-1 font-manrope">
-              3
-            </h3>
-          </div>
-          <button className="mt-4 text-xs font-bold text-orange-600 flex items-center hover:translate-x-1 transition-transform">
-            VER TAREFAS <ICONS.ChevronRight size={14} className="ml-1" />
-          </button>
-        </motion.div>
-      </div>
+      {/* Promo Banner Carousel */}
+      <PromoBanner />
 
       {/* Main Content: Side-by-Side Lists */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -109,6 +43,19 @@ export const DashboardContent = () => {
               <span className="bg-primary/10 text-primary text-[10px] font-black px-2 py-1 rounded">
                 AO VIVO
               </span>
+            </div>
+
+            {/* Progress */}
+            <div className="bg-white rounded-xl p-4 mb-6">
+              <h3 className="text-3xl font-bold text-on-surface font-manrope">
+                18
+              </h3>
+              <div className="h-1 bg-slate-100 rounded-full overflow-hidden mt-4">
+                <div className="bg-primary h-full w-2/3"></div>
+              </div>
+              <p className="text-[10px] text-on-surface-variant mt-2 font-medium">
+                12 concluídas de 18 total
+              </p>
             </div>
             <div className="space-y-3">
               {[
@@ -297,40 +244,6 @@ export const DashboardContent = () => {
         </motion.section>
       </div>
 
-      {/* Clinical Performance Insights */}
-      <motion.div
-        variants={itemVariants}
-        className="bg-slate-100 rounded-2xl p-8 flex flex-col md:flex-row items-center justify-between border border-white"
-      >
-        <div className="max-w-md text-center md:text-left">
-          <h4 className="text-2xl font-black text-on-surface mb-2 tracking-tighter font-manrope">
-            Insights de Desempenho Clínico
-          </h4>
-          <p className="text-sm text-on-surface-variant leading-relaxed">
-            A retenção de pacientes da sua clínica aumentou 15% neste trimestre.
-            Explore o novo módulo de análises para ver dados demográficos
-            detalhados e tendências de resultados de saúde.
-          </p>
-          <button className="mt-6 px-6 py-3 bg-on-surface text-white rounded-full text-xs font-black uppercase tracking-widest active:scale-95 transition-transform">
-            Explorar Relatórios
-          </button>
-        </div>
-        <div className="mt-8 md:mt-0 flex -space-x-4">
-          <img
-            alt="Doctor"
-            className="w-16 h-16 rounded-full border-4 border-white object-cover"
-            src={IMAGES.Doctor1}
-          />
-          <img
-            alt="Doctor"
-            className="w-16 h-16 rounded-full border-4 border-white object-cover"
-            src={IMAGES.Doctor2}
-          />
-          <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center border-4 border-white text-white text-xs font-bold shadow-lg">
-            +5
-          </div>
-        </div>
-      </motion.div>
     </motion.div>
   );
 };

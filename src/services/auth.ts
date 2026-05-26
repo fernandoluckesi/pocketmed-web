@@ -15,6 +15,7 @@ export interface RegisterPayload {
   phone: string;
   birthDate: string;
   crm: string;
+  rqe?: string;
 }
 
 export interface AuthResponse {

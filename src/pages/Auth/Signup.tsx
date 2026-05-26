@@ -16,9 +16,9 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import { register } from "../../services/auth";
-import { ApiError } from "../../services/api";
+import { useAuth } from "../../contexts/AuthContext";
 import { Snackbar } from "../../components/Snackbar";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import iconLogo from "../../assets/images/icon.png";
 
 const UF_LIST = [
@@ -51,6 +51,63 @@ const UF_LIST = [
   "TO",
 ];
 
+const SPECIALTIES = [
+  "Nenhuma",
+  "Acupuntura",
+  "Alergia e Imunologia",
+  "Anestesiologia",
+  "Angiologia",
+  "Cancerologia",
+  "Cardiologia",
+  "Cirurgia Cardiovascular",
+  "Cirurgia da Mão",
+  "Cirurgia de Cabeça e Pescoço",
+  "Cirurgia do Aparelho Digestivo",
+  "Cirurgia Geral",
+  "Cirurgia Pediátrica",
+  "Cirurgia Plástica",
+  "Cirurgia Torácica",
+  "Cirurgia Vascular",
+  "Clínica Médica",
+  "Coloproctologia",
+  "Dermatologia",
+  "Endocrinologia e Metabologia",
+  "Endoscopia",
+  "Gastroenterologia",
+  "Genética Médica",
+  "Geriatria",
+  "Ginecologia e Obstetrícia",
+  "Hematologia e Hemoterapia",
+  "Homeopatia",
+  "Infectologia",
+  "Mastologia",
+  "Medicina de Emergência",
+  "Medicina de Família e Comunidade",
+  "Medicina do Trabalho",
+  "Medicina Esportiva",
+  "Medicina Física e Reabilitação",
+  "Medicina Intensiva",
+  "Medicina Legal e Perícia Médica",
+  "Medicina Nuclear",
+  "Medicina Preventiva e Social",
+  "Nefrologia",
+  "Neurocirurgia",
+  "Neurologia",
+  "Nutrologia",
+  "Oftalmologia",
+  "Ortopedia e Traumatologia",
+  "Otorrinolaringologia",
+  "Patologia",
+  "Patologia Clínica/Medicina Laboratorial",
+  "Pediatria",
+  "Pneumologia",
+  "Psiquiatria",
+  "Radiologia e Diagnóstico por Imagem",
+  "Radioterapia",
+  "Reumatologia",
+  "Urologia",
+];
+
 const doctorSchema = Yup.object({
   name: Yup.string().required("Nome completo é obrigatório"),
   crmState: Yup.string().required("Selecione o estado do CRM"),
@@ -71,6 +128,14 @@ const doctorSchema = Yup.object({
         return val.replace(/\D/g, "").length === 11;
       },
     ),
+  birthDate: Yup.string().required("Data de nascimento é obrigatória"),
+  gender: Yup.string().required("Gênero é obrigatório"),
+  specialty: Yup.string().required("Especialidade é obrigatória"),
+  rqe: Yup.string().when("specialty", {
+    is: (val: string) => val && val !== "Nenhuma",
+    then: (schema) => schema.required("RQE é obrigatório para especialistas"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
   email: Yup.string().email("E-mail inválido").required("E-mail é obrigatório"),
   password: Yup.string()
     .min(6, "Senha deve ter pelo menos 6 caracteres")
@@ -90,12 +155,13 @@ function formatPhone(value: string): string {
 
 export default function Signup() {
   const navigate = useNavigate();
+  const { registerDoctor } = useAuth();
   const [signupType, setSignupType] = useState<"select" | "doctor" | "clinic">(
     "select",
   );
   const [showPassword, setShowPassword] = useState(false);
   const [snackbar, setSnackbar] = useState({ visible: false, message: "" });
-  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [, setProfileImage] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -114,6 +180,10 @@ export default function Signup() {
       crm: "",
       cpf: "",
       phone: "",
+      birthDate: "",
+      gender: "",
+      specialty: "Nenhuma",
+      rqe: "",
       email: "",
       password: "",
       acceptTerms: false,
@@ -121,25 +191,22 @@ export default function Signup() {
     validationSchema: doctorSchema,
     onSubmit: async (values, { setSubmitting, setFieldError }) => {
       try {
-        await register(
-          {
-            name: values.name,
-            email: values.email,
-            password: values.password,
-            gender: "Masculino",
-            specialty: "Clínica Geral",
-            cpf: values.cpf.replace(/\D/g, ""),
-            phone: values.phone.replace(/\D/g, ""),
-            birthDate: "1990-01-01",
-            crm: `${values.crm}/${values.crmState}`,
-          },
-          profileImage || undefined,
-        );
-        navigate("/dashboard");
-      } catch (err) {
-        if (err instanceof ApiError && err.status === 409) {
-          const conflicts: string[] =
-            (err.data as { conflicts?: string[] }).conflicts || [];
+        await registerDoctor({
+          name: values.name,
+          email: values.email,
+          password: values.password,
+          gender: values.gender,
+          specialty: values.specialty === "Nenhuma" ? "Clínica Geral" : values.specialty,
+          cpf: values.cpf.replace(/\D/g, ""),
+          phone: values.phone.replace(/\D/g, ""),
+          birthDate: values.birthDate,
+          crm: `${values.crm}/${values.crmState}`,
+          rqe: values.rqe || undefined,
+        });
+      } catch (err: unknown) {
+        const axiosErr = err as { response?: { status?: number; data?: { message?: string; conflicts?: string[] } } };
+        if (axiosErr.response?.status === 409) {
+          const conflicts: string[] = axiosErr.response.data?.conflicts || [];
           if (conflicts.length > 0) {
             if (conflicts.includes("email")) {
               setFieldError("email", "Este e-mail já está cadastrado");
@@ -151,8 +218,7 @@ export default function Signup() {
               setFieldError("phone", "Este celular já está cadastrado");
             }
           } else {
-            // Fallback for old-style single message
-            const msg = (err.data.message || "").toLowerCase();
+            const msg = (axiosErr.response.data?.message || "").toLowerCase();
             if (msg.includes("email")) {
               setFieldError("email", "Este e-mail já está cadastrado");
             } else if (msg.includes("crm")) {
@@ -368,60 +434,38 @@ export default function Signup() {
                     />
                   </div>
                   {fieldError("name") && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {fieldError("name")}
-                    </p>
+                    <p className="text-xs text-red-500 mt-1">{fieldError("name")}</p>
                   )}
                 </div>
 
-                {/* CRM */}
+                {/* Gender */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
-                    CRM
+                    Gênero
                   </label>
-                  <div className="grid grid-cols-[120px_1fr] gap-3">
-                    <select
-                      className="bg-slate-50 border border-slate-200 focus:border-primary rounded-xl py-3.5 px-3 text-slate-900 text-sm outline-none transition-all focus:ring-2 focus:ring-primary/10 appearance-none cursor-pointer"
-                      {...formik.getFieldProps("crmState")}
-                    >
-                      {UF_LIST.map((uf) => (
-                        <option key={uf} value={uf}>
-                          {uf}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="relative group">
-                      <Badge className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
-                      <input
-                        className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("crm") ? "border-red-400 focus:border-red-400" : "border-slate-200 focus:border-primary"}`}
-                        placeholder="Número do CRM"
-                        type="text"
-                        inputMode="numeric"
-                        name="crm"
-                        value={formik.values.crm}
-                        onChange={(e) =>
-                          formik.setFieldValue(
-                            "crm",
-                            e.target.value.replace(/\D/g, ""),
-                          )
-                        }
-                        onBlur={formik.handleBlur}
-                      />
-                    </div>
-                  </div>
-                  {fieldError("crm") && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {fieldError("crm")}
-                    </p>
+                  <CustomSelect
+                    id="gender"
+                    name="gender"
+                    placeholder="Selecione"
+                    value={formik.values.gender}
+                    onChange={(val) => formik.setFieldValue("gender", val)}
+                    onBlur={() => formik.setFieldTouched("gender", true)}
+                    error={!!fieldError("gender")}
+                    options={[
+                      { value: "Masculino", label: "Masculino" },
+                      { value: "Feminino", label: "Feminino" },
+                      { value: "Outro", label: "Outro" },
+                      { value: "Prefiro não informar", label: "Prefiro não informar" },
+                    ]}
+                  />
+                  {fieldError("gender") && (
+                    <p className="text-xs text-red-500 mt-1">{fieldError("gender")}</p>
                   )}
                 </div>
 
                 {/* CPF */}
                 <div className="space-y-1.5">
-                  <label
-                    className="text-xs font-semibold text-slate-500 uppercase tracking-wider block"
-                    htmlFor="cpf"
-                  >
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block" htmlFor="cpf">
                     CPF
                   </label>
                   <div className="relative group">
@@ -436,34 +480,40 @@ export default function Signup() {
                       name="cpf"
                       value={formik.values.cpf}
                       onChange={(e) => {
-                        const digits = e.target.value
-                          .replace(/\D/g, "")
-                          .slice(0, 11);
+                        const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
                         let masked = digits;
-                        if (digits.length > 3)
-                          masked = digits.slice(0, 3) + "." + digits.slice(3);
-                        if (digits.length > 6)
-                          masked = masked.slice(0, 7) + "." + digits.slice(6);
-                        if (digits.length > 9)
-                          masked = masked.slice(0, 11) + "-" + digits.slice(9);
+                        if (digits.length > 3) masked = digits.slice(0, 3) + "." + digits.slice(3);
+                        if (digits.length > 6) masked = masked.slice(0, 7) + "." + digits.slice(6);
+                        if (digits.length > 9) masked = masked.slice(0, 11) + "-" + digits.slice(9);
                         formik.setFieldValue("cpf", masked);
                       }}
                       onBlur={formik.handleBlur}
                     />
                   </div>
                   {fieldError("cpf") && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {fieldError("cpf")}
-                    </p>
+                    <p className="text-xs text-red-500 mt-1">{fieldError("cpf")}</p>
+                  )}
+                </div>
+
+                {/* Birth Date */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block" htmlFor="birthDate">
+                    Data de Nascimento
+                  </label>
+                  <input
+                    className={`w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-slate-900 text-sm outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("birthDate") ? "border-red-400 focus:border-red-400" : "border-slate-200 focus:border-primary"}`}
+                    id="birthDate"
+                    type="date"
+                    {...formik.getFieldProps("birthDate")}
+                  />
+                  {fieldError("birthDate") && (
+                    <p className="text-xs text-red-500 mt-1">{fieldError("birthDate")}</p>
                   )}
                 </div>
 
                 {/* Phone */}
                 <div className="space-y-1.5">
-                  <label
-                    className="text-xs font-semibold text-slate-500 uppercase tracking-wider block"
-                    htmlFor="phone"
-                  >
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block" htmlFor="phone">
                     Celular (com DDD)
                   </label>
                   <div className="relative group">
@@ -477,21 +527,88 @@ export default function Signup() {
                       maxLength={15}
                       name="phone"
                       value={formik.values.phone}
-                      onChange={(e) =>
-                        formik.setFieldValue(
-                          "phone",
-                          formatPhone(e.target.value),
-                        )
-                      }
+                      onChange={(e) => formik.setFieldValue("phone", formatPhone(e.target.value))}
                       onBlur={formik.handleBlur}
                     />
                   </div>
                   {fieldError("phone") && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {fieldError("phone")}
-                    </p>
+                    <p className="text-xs text-red-500 mt-1">{fieldError("phone")}</p>
                   )}
                 </div>
+
+                {/* CRM */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+                    CRM
+                  </label>
+                  <div className="grid grid-cols-[120px_1fr] gap-3">
+                    <CustomSelect
+                      name="crmState"
+                      value={formik.values.crmState}
+                      onChange={(val) => formik.setFieldValue("crmState", val)}
+                      options={UF_LIST.map((uf) => ({ value: uf, label: uf }))}
+                    />
+                    <div className="relative group">
+                      <Badge className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+                      <input
+                        className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("crm") ? "border-red-400 focus:border-red-400" : "border-slate-200 focus:border-primary"}`}
+                        placeholder="Número do CRM"
+                        type="text"
+                        inputMode="numeric"
+                        name="crm"
+                        value={formik.values.crm}
+                        onChange={(e) => formik.setFieldValue("crm", e.target.value.replace(/\D/g, ""))}
+                        onBlur={formik.handleBlur}
+                      />
+                    </div>
+                  </div>
+                  {fieldError("crm") && (
+                    <p className="text-xs text-red-500 mt-1">{fieldError("crm")}</p>
+                  )}
+                </div>
+
+                {/* Specialty */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+                    Especialidade
+                  </label>
+                  <CustomSelect
+                    id="specialty"
+                    name="specialty"
+                    placeholder="Selecione a especialidade"
+                    value={formik.values.specialty}
+                    onChange={(val) => formik.setFieldValue("specialty", val)}
+                    onBlur={() => formik.setFieldTouched("specialty", true)}
+                    error={!!fieldError("specialty")}
+                    options={SPECIALTIES.map((s) => ({ value: s, label: s }))}
+                  />
+                  {fieldError("specialty") && (
+                    <p className="text-xs text-red-500 mt-1">{fieldError("specialty")}</p>
+                  )}
+                </div>
+
+                {/* RQE - only if specialty is not "Nenhuma" */}
+                {formik.values.specialty && formik.values.specialty !== "Nenhuma" && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block" htmlFor="rqe">
+                      RQE (Registro de Qualificação de Especialista)
+                    </label>
+                    <input
+                      className={`w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("rqe") ? "border-red-400 focus:border-red-400" : "border-slate-200 focus:border-primary"}`}
+                      id="rqe"
+                      placeholder="Número do RQE"
+                      type="text"
+                      inputMode="numeric"
+                      name="rqe"
+                      value={formik.values.rqe}
+                      onChange={(e) => formik.setFieldValue("rqe", e.target.value.replace(/\D/g, ""))}
+                      onBlur={formik.handleBlur}
+                    />
+                    {fieldError("rqe") && (
+                      <p className="text-xs text-red-500 mt-1">{fieldError("rqe")}</p>
+                    )}
+                  </div>
+                )}
 
                 {/* Email */}
                 <div className="space-y-1.5">

@@ -3,8 +3,7 @@ import { Eye, EyeOff, Lock, Mail, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import { login } from "../../services/auth";
-import { ApiError } from "../../services/api";
+import { useAuth } from "../../contexts/AuthContext";
 import { Snackbar } from "../../components/Snackbar";
 import iconLogo from "../../assets/images/icon.png";
 
@@ -15,6 +14,7 @@ const loginSchema = Yup.object({
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [snackbar, setSnackbar] = useState({ visible: false, message: "" });
 
@@ -27,10 +27,10 @@ export default function Login() {
     validationSchema: loginSchema,
     onSubmit: async (values, { setSubmitting, setFieldError }) => {
       try {
-        await login({ email: values.email, password: values.password });
-        navigate("/dashboard");
-      } catch (err) {
-        if (err instanceof ApiError && err.status === 401) {
+        await login(values.email, values.password);
+      } catch (err: unknown) {
+        const axiosErr = err as { response?: { status?: number } };
+        if (axiosErr.response?.status === 401) {
           setFieldError("password", "E-mail ou senha incorretos");
         } else {
           setSnackbar({

@@ -713,11 +713,6 @@ export default function Schedule() {
         <section>
           <div className="flex justify-between items-end mb-8">
             <div>
-              <nav className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2">
-                <span>Gestão</span>
-                <ChevronRight className="w-3 h-3" />
-                <span className="text-primary">Agenda Médica</span>
-              </nav>
               <h1 className="text-4xl font-display font-extrabold text-slate-900 tracking-tight">
                 Agenda Médica
               </h1>

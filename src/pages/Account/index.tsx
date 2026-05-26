@@ -5,6 +5,7 @@ import * as Yup from "yup";
 import { motion } from "motion/react";
 import { MainLayout } from "../../components/MainLayout";
 import { useAuth } from "../../contexts/AuthContext";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import { Link } from "react-router-dom";
 
 const profileSchema = Yup.object({
@@ -51,15 +52,23 @@ export default function Account() {
 
   const profileFormik = useFormik({
     initialValues: {
-      name: "",
+      name: user?.name || "",
       email: user?.email || "",
-      phone: "",
-      gender: "",
-      birthDate: "",
-      specialty: "",
-      crm: "",
-      cpf: "",
+      phone: user?.phone || "",
+      gender: user?.gender || "",
+      birthDate: user?.birthDate ? String(user.birthDate).split("T")[0] : "",
+      specialty: user?.specialty || "",
+      crm: user?.crm || "",
+      cpf: (() => {
+        const digits = (user?.cpf || "").replace(/\D/g, "");
+        if (digits.length === 11) {
+          return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+        }
+        return user?.cpf || "";
+      })(),
+      rqe: user?.rqe || "",
     },
+    enableReinitialize: true,
     validationSchema: profileSchema,
     onSubmit: async () => {
       setSaving(true);
@@ -142,9 +151,9 @@ export default function Account() {
                   onClick={() => fileInputRef.current?.click()}
                   className="w-24 h-24 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden hover:border-primary hover:bg-primary/5 transition-all group"
                 >
-                  {profilePreview ? (
+                  {profilePreview || user?.profileImage ? (
                     <img
-                      src={profilePreview}
+                      src={profilePreview || user?.profileImage || ""}
                       alt="Preview"
                       className="w-full h-full object-cover"
                     />
@@ -164,7 +173,7 @@ export default function Account() {
                 />
               </div>
               <div>
-                <p className="font-bold text-slate-900">{user?.email}</p>
+                <p className="font-bold text-slate-900">{user?.name || user?.email}</p>
                 <p className="text-sm text-slate-500">
                   Clique na imagem para alterar sua foto de perfil
                 </p>
@@ -215,17 +224,18 @@ export default function Account() {
                   <label className="text-xs font-bold text-on-surface-variant ml-1">
                     Gênero
                   </label>
-                  <select
+                  <CustomSelect
                     name="gender"
-                    onChange={profileFormik.handleChange}
                     value={profileFormik.values.gender}
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none appearance-none"
-                  >
-                    <option value="">Selecione</option>
-                    <option value="male">Masculino</option>
-                    <option value="female">Feminino</option>
-                    <option value="other">Outro</option>
-                  </select>
+                    onChange={(val) => profileFormik.setFieldValue("gender", val)}
+                    placeholder="Selecione"
+                    options={[
+                      { value: "Masculino", label: "Masculino" },
+                      { value: "Feminino", label: "Feminino" },
+                      { value: "Outro", label: "Outro" },
+                      { value: "Prefiro não informar", label: "Prefiro não informar" },
+                    ]}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-on-surface-variant ml-1">
@@ -245,22 +255,33 @@ export default function Account() {
                   </label>
                   <input
                     name="cpf"
-                    onChange={profileFormik.handleChange}
                     value={profileFormik.values.cpf}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                      let masked = digits;
+                      if (digits.length > 3) masked = digits.slice(0, 3) + "." + digits.slice(3);
+                      if (digits.length > 6) masked = masked.slice(0, 7) + "." + digits.slice(6);
+                      if (digits.length > 9) masked = masked.slice(0, 11) + "-" + digits.slice(9);
+                      profileFormik.setFieldValue("cpf", masked);
+                    }}
                     className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
                     placeholder="000.000.000-00"
+                    inputMode="numeric"
+                    maxLength={14}
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-on-surface-variant ml-1">
                     Especialidade
                   </label>
-                  <input
+                  <CustomSelect
                     name="specialty"
-                    onChange={profileFormik.handleChange}
                     value={profileFormik.values.specialty}
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
-                    placeholder="Cardiologia"
+                    onChange={(val) => profileFormik.setFieldValue("specialty", val)}
+                    placeholder="Selecione a especialidade"
+                    options={[
+                      "Nenhuma","Acupuntura","Alergia e Imunologia","Anestesiologia","Angiologia","Cancerologia","Cardiologia","Cirurgia Cardiovascular","Cirurgia da Mão","Cirurgia de Cabeça e Pescoço","Cirurgia do Aparelho Digestivo","Cirurgia Geral","Cirurgia Pediátrica","Cirurgia Plástica","Cirurgia Torácica","Cirurgia Vascular","Clínica Médica","Clínica Geral","Coloproctologia","Dermatologia","Endocrinologia e Metabologia","Endoscopia","Gastroenterologia","Genética Médica","Geriatria","Ginecologia e Obstetrícia","Hematologia e Hemoterapia","Homeopatia","Infectologia","Mastologia","Medicina de Emergência","Medicina de Família e Comunidade","Medicina do Trabalho","Medicina Esportiva","Medicina Física e Reabilitação","Medicina Intensiva","Medicina Legal e Perícia Médica","Medicina Nuclear","Medicina Preventiva e Social","Nefrologia","Neurocirurgia","Neurologia","Nutrologia","Oftalmologia","Ortopedia e Traumatologia","Otorrinolaringologia","Patologia","Patologia Clínica/Medicina Laboratorial","Pediatria","Pneumologia","Psiquiatria","Radiologia e Diagnóstico por Imagem","Radioterapia","Reumatologia","Urologia"
+                    ].map((s) => ({ value: s, label: s }))}
                   />
                 </div>
                 <div className="space-y-2">
@@ -273,6 +294,18 @@ export default function Account() {
                     value={profileFormik.values.crm}
                     className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
                     placeholder="123456/SP"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-on-surface-variant ml-1">
+                    RQE
+                  </label>
+                  <input
+                    name="rqe"
+                    onChange={profileFormik.handleChange}
+                    value={profileFormik.values.rqe}
+                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
+                    placeholder="Número do RQE (se aplicável)"
                   />
                 </div>
               </div>

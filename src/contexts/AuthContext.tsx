@@ -10,12 +10,33 @@ interface User {
   role?: string;
   name?: string;
   profileImage?: string;
+  phone?: string;
+  gender?: string;
+  birthDate?: string;
+  specialty?: string;
+  crm?: string;
+  cpf?: string;
+  rqe?: string;
+}
+
+interface RegisterDoctorPayload {
+  name: string;
+  email: string;
+  password: string;
+  gender: string;
+  specialty: string;
+  cpf: string;
+  phone: string;
+  birthDate: string;
+  crm: string;
+  rqe?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
+  registerDoctor: (payload: RegisterDoctorPayload) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -36,17 +57,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const payload = JSON.parse(atob(storedToken.split(".")[1]));
         const savedUser = storedUser ? JSON.parse(storedUser) : null;
-        return {
-          user: {
-            userId: payload.sub,
-            email: payload.email,
-            type: payload.type,
-            role: payload.role,
-            name: savedUser?.name || payload.name,
-            profileImage: savedUser?.profileImage,
-          } as User,
-          token: storedToken,
-        };
+
+        // Use the full saved user object (from API response), fallback to JWT payload
+        const user: User = savedUser
+          ? {
+              userId: savedUser.id || savedUser.userId || payload.sub,
+              email: savedUser.email || payload.email,
+              type: savedUser.type || payload.type,
+              role: savedUser.role || payload.role,
+              name: savedUser.name,
+              profileImage: savedUser.profileImage,
+              phone: savedUser.phone,
+              gender: savedUser.gender,
+              birthDate: savedUser.birthDate,
+              specialty: savedUser.specialty,
+              crm: savedUser.crm,
+              cpf: savedUser.cpf,
+              rqe: savedUser.rqe,
+            }
+          : {
+              userId: payload.sub,
+              email: payload.email,
+              type: payload.type,
+              role: payload.role,
+            };
+
+        return { user, token: storedToken };
       } catch {
         localStorage.removeItem("token");
         localStorage.removeItem("pocketmed_token");
@@ -63,14 +99,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function login(email: string, password: string) {
     const response = await api.post("/auth/login", { email, password });
-    const { access_token, user: userData } = response.data;
+    const { token: access_token, user: userData } = response.data;
 
     localStorage.setItem("token", access_token);
     localStorage.setItem("pocketmed_token", access_token);
     localStorage.setItem("pocketmed_user", JSON.stringify(userData));
     api.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
     setToken(access_token);
-    setUser(userData);
+    setUser({
+      userId: userData.id || userData.userId,
+      email: userData.email,
+      type: userData.type,
+      role: userData.role,
+      name: userData.name,
+      profileImage: userData.profileImage,
+      phone: userData.phone,
+      gender: userData.gender,
+      birthDate: userData.birthDate,
+      specialty: userData.specialty,
+      crm: userData.crm,
+      cpf: userData.cpf,
+      rqe: userData.rqe,
+    });
+    navigate("/dashboard");
+  }
+
+  async function registerDoctor(payload: RegisterDoctorPayload) {
+    const response = await api.post("/auth/register/doctor", payload);
+    const { token: access_token, user: userData } = response.data;
+
+    localStorage.setItem("token", access_token);
+    localStorage.setItem("pocketmed_token", access_token);
+    localStorage.setItem("pocketmed_user", JSON.stringify(userData));
+    api.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
+    setToken(access_token);
+    setUser({
+      userId: userData.id || userData.userId,
+      email: userData.email,
+      type: userData.type,
+      role: userData.role,
+      name: userData.name,
+      profileImage: userData.profileImage,
+      phone: userData.phone,
+      gender: userData.gender,
+      birthDate: userData.birthDate,
+      specialty: userData.specialty,
+      crm: userData.crm,
+      cpf: userData.cpf,
+      rqe: userData.rqe,
+    });
     navigate("/dashboard");
   }
 
@@ -88,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         token,
         login,
+        registerDoctor,
         logout,
         isAuthenticated: !!token,
         isLoading,

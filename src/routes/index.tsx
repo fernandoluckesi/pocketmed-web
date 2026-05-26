@@ -3,6 +3,7 @@ import Login from "../pages/Auth/Login";
 import Signup from "../pages/Auth/Signup";
 import Verification from "../pages/Verification";
 import Dashboard from "../pages/Dashboard";
+import Consultations from "../pages/Consultations";
 import Patients from "../pages/Patients";
 import PatientDetail from "../pages/Patients/PatientDetail";
 import Doctors from "../pages/Doctors";
@@ -43,6 +44,14 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute>
             <Patients />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/consultations"
+        element={
+          <ProtectedRoute>
+            <Consultations />
           </ProtectedRoute>
         }
       />

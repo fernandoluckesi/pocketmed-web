@@ -1,8 +1,22 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { ICONS } from "../constants";
-import { Search, Bell, Settings, ShieldAlert } from "lucide-react";
+import {
+  Search,
+  Bell,
+  ShieldAlert,
+  DollarSign,
+  ArrowLeft,
+  LayoutDashboard,
+  Receipt,
+  FileText,
+  Wallet,
+  Handshake,
+  Landmark,
+  BarChart3,
+  FileBarChart,
+} from "lucide-react";
 import { logout } from "../services/auth";
 import { useAuth } from "../contexts/AuthContext";
 import iconLogo from "../assets/images/icon.png";
@@ -20,7 +34,13 @@ const navItems = [
     path: "/patients",
     adminOnly: false,
   },
-  { icon: ICONS.Doctors, label: "Médicos", path: "/doctors", adminOnly: false },
+  {
+    icon: ICONS.Consultations,
+    label: "Consultas",
+    path: "/consultations",
+    adminOnly: false,
+  },
+  { icon: ICONS.Doctors, label: "Médicos", path: "/doctors", adminOnly: true },
   {
     icon: ICONS.Schedule,
     label: "Agenda",
@@ -33,6 +53,18 @@ const navItems = [
     path: "/clinical-management",
     adminOnly: true,
   },
+];
+
+const financialItems = [
+  { icon: LayoutDashboard, label: "Dashboard", path: "/financial" },
+  { icon: Receipt, label: "Receitas", path: "/financial/revenue" },
+  { icon: FileText, label: "Despesas", path: "/financial/expenses" },
+  { icon: Wallet, label: "Fluxo de Caixa", path: "/financial/cashflow" },
+  { icon: Handshake, label: "Convênios", path: "/financial/insurance" },
+  { icon: Landmark, label: "Repasse Médico", path: "/financial/transfers" },
+  { icon: BarChart3, label: "Centro de Custos", path: "/financial/costs" },
+  { icon: FileBarChart, label: "DRE", path: "/financial/dre" },
+  { icon: FileText, label: "Relatórios", path: "/financial/reports" },
 ];
 
 const personalItems = [
@@ -48,6 +80,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [showFinancialMenu, setShowFinancialMenu] = useState(false);
 
   const isAdmin = user?.role === "admin";
   const filteredNavItems = navItems.filter(
@@ -70,49 +103,107 @@ export function MainLayout({ children }: MainLayoutProps) {
         </div>
 
         <nav className="flex-grow space-y-1">
-          {filteredNavItems.map((item, idx) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <motion.div key={idx} whileHover={{ x: 4 }}>
-                <Link
-                  to={item.path}
-                  className={`flex items-center space-x-3 px-4 py-3 rounded-full transition-all duration-200 font-manrope text-sm font-semibold ${
-                    isActive
-                      ? "bg-white text-primary shadow-sm"
-                      : "text-slate-600 hover:text-primary hover:bg-slate-200"
-                  }`}
-                >
-                  <item.icon size={18} />
-                  <span>{item.label}</span>
-                </Link>
-              </motion.div>
-            );
-          })}
+          {showFinancialMenu ? (
+            <>
+              {/* Financial Submenu */}
+              <button
+                onClick={() => setShowFinancialMenu(false)}
+                className="flex items-center space-x-3 px-4 py-3 rounded-full text-slate-600 hover:text-primary hover:bg-slate-200 transition-all font-manrope text-sm font-semibold cursor-pointer w-full border-none bg-transparent mb-2"
+              >
+                <ArrowLeft size={18} />
+                <span>Voltar</span>
+              </button>
 
-          <div className="pt-6 pb-2 px-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/40">
-              Pessoal
-            </p>
-          </div>
+              <div className="px-4 pb-2">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/40">
+                  Financeiro
+                </p>
+              </div>
 
-          {personalItems.map((item, idx) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <motion.div key={idx} whileHover={{ x: 4 }}>
-                <Link
-                  to={item.path}
-                  className={`flex items-center space-x-3 px-4 py-3 rounded-full transition-all duration-200 font-manrope text-sm font-semibold ${
-                    isActive
-                      ? "bg-white text-primary shadow-sm"
-                      : "text-slate-600 hover:text-primary hover:bg-slate-200"
-                  }`}
-                >
-                  <item.icon size={18} />
-                  <span>{item.label}</span>
-                </Link>
-              </motion.div>
-            );
-          })}
+              {financialItems.map((item, idx) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <motion.div key={idx} whileHover={{ x: 4 }}>
+                    <Link
+                      to={item.path}
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-full transition-all duration-200 font-manrope text-sm font-semibold ${
+                        isActive
+                          ? "bg-white text-primary shadow-sm"
+                          : "text-slate-600 hover:text-primary hover:bg-slate-200"
+                      }`}
+                    >
+                      <item.icon size={18} />
+                      <span>{item.label}</span>
+                    </Link>
+                  </motion.div>
+                );
+              })}
+            </>
+          ) : (
+            <>
+              {/* Main Menu */}
+              {filteredNavItems.map((item, idx) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <motion.div key={idx} whileHover={{ x: 4 }}>
+                    <Link
+                      to={item.path}
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-full transition-all duration-200 font-manrope text-sm font-semibold ${
+                        isActive
+                          ? "bg-white text-primary shadow-sm"
+                          : "text-slate-600 hover:text-primary hover:bg-slate-200"
+                      }`}
+                    >
+                      <item.icon size={18} />
+                      <span>{item.label}</span>
+                    </Link>
+                  </motion.div>
+                );
+              })}
+
+              {/* Financeiro - admin only */}
+              {isAdmin && (
+                <motion.div whileHover={{ x: 4 }}>
+                  <button
+                    onClick={() => setShowFinancialMenu(true)}
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-full transition-all duration-200 font-manrope text-sm font-semibold w-full border-none cursor-pointer ${
+                      location.pathname.startsWith("/financial")
+                        ? "bg-white text-primary shadow-sm"
+                        : "text-slate-600 hover:text-primary hover:bg-slate-200 bg-transparent"
+                    }`}
+                  >
+                    <DollarSign size={18} />
+                    <span>Financeiro</span>
+                  </button>
+                </motion.div>
+              )}
+
+              <div className="pt-6 pb-2 px-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/40">
+                  Pessoal
+                </p>
+              </div>
+
+              {personalItems.map((item, idx) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <motion.div key={idx} whileHover={{ x: 4 }}>
+                    <Link
+                      to={item.path}
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-full transition-all duration-200 font-manrope text-sm font-semibold ${
+                        isActive
+                          ? "bg-white text-primary shadow-sm"
+                          : "text-slate-600 hover:text-primary hover:bg-slate-200"
+                      }`}
+                    >
+                      <item.icon size={18} />
+                      <span>{item.label}</span>
+                    </Link>
+                  </motion.div>
+                );
+              })}
+            </>
+          )}
         </nav>
 
         <div className="mt-auto border-t border-slate-200/50 pt-4">
@@ -171,14 +262,14 @@ export function MainLayout({ children }: MainLayoutProps) {
                 <Bell className="w-5 h-5" />
                 <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
               </button>
-              <button className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
-                <Settings className="w-5 h-5" />
-              </button>
             </div>
 
             <div className="h-8 w-px bg-slate-200 mx-1"></div>
 
-            <div className="flex items-center gap-3 cursor-pointer group">
+            <div
+              onClick={() => navigate("/account")}
+              className="flex items-center gap-3 cursor-pointer group"
+            >
               <div className="text-right hidden sm:block">
                 <p className="text-xs font-bold text-slate-900 group-hover:text-primary transition-colors">
                   {user?.name || user?.email || "Usuário"}

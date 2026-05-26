@@ -15,6 +15,7 @@ import {
   Filter,
   Plus,
   Clock,
+  ClipboardList,
 } from 'lucide-react'
 
 export const ICONS = {
@@ -22,6 +23,7 @@ export const ICONS = {
   Patients: Users,
   Doctors: Stethoscope,
   Schedule: Calendar,
+  Consultations: ClipboardList,
   Management: Activity,
   Account: UserCircle,
   Plans: CreditCard,
