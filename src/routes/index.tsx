@@ -13,6 +13,15 @@ import Schedule from "../pages/Schedule";
 import ClinicalManagement from "../pages/ClinicalManagement";
 import Account from "../pages/Account/index";
 import Plans from "../pages/Plans/index";
+import FinancialDashboard from "../pages/Financial/Dashboard";
+import Revenue from "../pages/Financial/Revenue";
+import Expenses from "../pages/Financial/Expenses";
+import CashFlow from "../pages/Financial/CashFlow";
+import Insurance from "../pages/Financial/Insurance";
+import Transfers from "../pages/Financial/Transfers";
+import Costs from "../pages/Financial/Costs";
+import DRE from "../pages/Financial/DRE";
+import Reports from "../pages/Financial/Reports";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 
 export default function AppRoutes() {
@@ -116,6 +125,80 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute>
             <Plans />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Financial routes */}
+      <Route
+        path="/financial"
+        element={
+          <ProtectedRoute>
+            <FinancialDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/financial/revenue"
+        element={
+          <ProtectedRoute>
+            <Revenue />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/financial/expenses"
+        element={
+          <ProtectedRoute>
+            <Expenses />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/financial/cashflow"
+        element={
+          <ProtectedRoute>
+            <CashFlow />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/financial/insurance"
+        element={
+          <ProtectedRoute>
+            <Insurance />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/financial/transfers"
+        element={
+          <ProtectedRoute>
+            <Transfers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/financial/costs"
+        element={
+          <ProtectedRoute>
+            <Costs />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/financial/dre"
+        element={
+          <ProtectedRoute>
+            <DRE />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/financial/reports"
+        element={
+          <ProtectedRoute>
+            <Reports />
           </ProtectedRoute>
         }
       />
