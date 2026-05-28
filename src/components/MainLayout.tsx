@@ -80,7 +80,9 @@ export function MainLayout({ children }: MainLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [showFinancialMenu, setShowFinancialMenu] = useState(false);
+  const [showFinancialMenu, setShowFinancialMenu] = useState(
+    location.pathname.startsWith("/financial"),
+  );
 
   const isAdmin = user?.role === "admin";
   const filteredNavItems = navItems.filter(
