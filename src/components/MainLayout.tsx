@@ -80,9 +80,11 @@ export function MainLayout({ children }: MainLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [showFinancialMenu, setShowFinancialMenu] = useState(
-    location.pathname.startsWith("/financial"),
-  );
+
+  // Financial submenu: show when on /financial/* OR when user manually opened it
+  const isOnFinancialPage = location.pathname.startsWith("/financial");
+  const [financialMenuForced, setFinancialMenuForced] = useState(false);
+  const displayFinancialMenu = isOnFinancialPage || financialMenuForced;
 
   const isAdmin = user?.role === "admin";
   const filteredNavItems = navItems.filter(
@@ -105,11 +107,14 @@ export function MainLayout({ children }: MainLayoutProps) {
         </div>
 
         <nav className="flex-grow space-y-1">
-          {showFinancialMenu ? (
+          {displayFinancialMenu ? (
             <>
               {/* Financial Submenu */}
               <button
-                onClick={() => setShowFinancialMenu(false)}
+                onClick={() => {
+                  setFinancialMenuForced(false);
+                  navigate("/dashboard");
+                }}
                 className="flex items-center space-x-3 px-4 py-3 rounded-full text-slate-600 hover:text-primary hover:bg-slate-200 transition-all font-manrope text-sm font-semibold cursor-pointer w-full border-none bg-transparent mb-2"
               >
                 <ArrowLeft size={18} />
@@ -167,7 +172,10 @@ export function MainLayout({ children }: MainLayoutProps) {
               {isAdmin && (
                 <motion.div whileHover={{ x: 4 }}>
                   <button
-                    onClick={() => setShowFinancialMenu(true)}
+                    onClick={() => {
+                      setFinancialMenuForced(true);
+                      navigate("/financial");
+                    }}
                     className={`flex items-center space-x-3 px-4 py-3 rounded-full transition-all duration-200 font-manrope text-sm font-semibold w-full border-none cursor-pointer ${
                       location.pathname.startsWith("/financial")
                         ? "bg-white text-primary shadow-sm"
