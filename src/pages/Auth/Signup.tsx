@@ -286,7 +286,7 @@ export default function Signup() {
         <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-[100px] pointer-events-none" />
       </div>
 
-      {/* Right Side: Form */}
+      {/* Right Side: For */}
       <main className="w-full lg:w-1/2 min-h-screen flex flex-col items-center p-6 sm:p-12 md:p-16 lg:p-24 bg-white relative z-10 overflow-y-auto">
         <div className="w-full max-w-md space-y-8 my-auto">
           {/* Header */}
