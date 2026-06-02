@@ -30,6 +30,8 @@ interface RegisterDoctorPayload {
   birthDate: string;
   crm: string;
   rqe?: string;
+  clinicName?: string;
+  cnpj?: string;
 }
 
 interface AuthContextType {

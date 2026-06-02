@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useAuth } from "../../contexts/AuthContext";
+import { ApiError } from "../../services/api";
 import { Snackbar } from "../../components/Snackbar";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 import iconLogo from "../../assets/images/icon.png";
@@ -153,6 +154,511 @@ function formatPhone(value: string): string {
   return masked;
 }
 
+// --- Clinic Signup Form ---
+
+const clinicSchema = Yup.object({
+  // Clinic data
+  clinicName: Yup.string().required("Nome da clínica é obrigatório"),
+  cnpj: Yup.string()
+    .required("CNPJ é obrigatório")
+    .test("cnpj-length", "CNPJ deve ter 14 dígitos", (val) => {
+      if (!val) return false;
+      return val.replace(/\D/g, "").length === 14;
+    }),
+  // Responsible doctor data
+  name: Yup.string().required("Nome do responsável é obrigatório"),
+  crmState: Yup.string().required("Selecione o estado do CRM"),
+  crm: Yup.string().required("CRM é obrigatório"),
+  cpf: Yup.string()
+    .required("CPF é obrigatório")
+    .test("cpf-length", "CPF deve ter 11 dígitos", (val) => {
+      if (!val) return false;
+      return val.replace(/\D/g, "").length === 11;
+    }),
+  phone: Yup.string()
+    .required("Celular é obrigatório")
+    .test(
+      "phone-length",
+      "Celular deve ter 11 dígitos (DDD + número)",
+      (val) => {
+        if (!val) return false;
+        return val.replace(/\D/g, "").length === 11;
+      },
+    ),
+  birthDate: Yup.string().required("Data de nascimento é obrigatória"),
+  gender: Yup.string().required("Gênero é obrigatório"),
+  specialty: Yup.string().required("Especialidade é obrigatória"),
+  email: Yup.string().email("E-mail inválido").required("E-mail é obrigatório"),
+  password: Yup.string()
+    .min(6, "Senha deve ter pelo menos 6 caracteres")
+    .required("Senha é obrigatória"),
+  acceptTerms: Yup.boolean().oneOf([true], "Você deve aceitar os termos"),
+});
+
+function formatCNPJ(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 14);
+  let masked = digits;
+  if (digits.length > 2) masked = digits.slice(0, 2) + "." + digits.slice(2);
+  if (digits.length > 5) masked = masked.slice(0, 6) + "." + digits.slice(5);
+  if (digits.length > 8) masked = masked.slice(0, 10) + "/" + digits.slice(8);
+  if (digits.length > 12) masked = masked.slice(0, 15) + "-" + digits.slice(12);
+  return masked;
+}
+
+function ClinicSignupForm({
+  onBack,
+  navigate,
+  setSnackbar,
+}: {
+  onBack: () => void;
+  navigate: (path: string) => void;
+  setSnackbar: (s: { visible: boolean; message: string }) => void;
+}) {
+  const { registerDoctor } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+
+  const formik = useFormik({
+    initialValues: {
+      clinicName: "",
+      cnpj: "",
+      name: "",
+      crmState: "SP",
+      crm: "",
+      cpf: "",
+      phone: "",
+      birthDate: "",
+      gender: "",
+      specialty: "Nenhuma",
+      email: "",
+      password: "",
+      acceptTerms: false,
+    },
+    validationSchema: clinicSchema,
+    onSubmit: async (values, { setSubmitting, setFieldError }) => {
+      try {
+        await registerDoctor({
+          name: values.name,
+          email: values.email,
+          password: values.password,
+          gender: values.gender,
+          specialty:
+            values.specialty === "Nenhuma" ? "Clínica Geral" : values.specialty,
+          cpf: values.cpf.replace(/\D/g, ""),
+          phone: values.phone.replace(/\D/g, ""),
+          birthDate: values.birthDate,
+          crm: `${values.crm}/${values.crmState}`,
+          clinicName: values.clinicName,
+          cnpj: values.cnpj.replace(/\D/g, ""),
+        });
+        navigate("/dashboard");
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 409) {
+          const conflicts: string[] =
+            (err.data as { conflicts?: string[] }).conflicts || [];
+          if (conflicts.includes("email"))
+            setFieldError("email", "Este e-mail já está cadastrado");
+          if (conflicts.includes("crm"))
+            setFieldError("crm", "Este CRM já está cadastrado");
+          if (conflicts.includes("phone"))
+            setFieldError("phone", "Este celular já está cadastrado");
+          if (conflicts.length === 0)
+            setSnackbar({
+              visible: true,
+              message: "Dados já cadastrados. Verifique os campos.",
+            });
+        } else {
+          setSnackbar({
+            visible: true,
+            message: "Erro inesperado. Tente novamente.",
+          });
+        }
+      } finally {
+        setSubmitting(false);
+      }
+    },
+  });
+
+  const fieldError = (field: keyof typeof formik.values) =>
+    formik.touched[field] && formik.errors[field] ? formik.errors[field] : null;
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={onBack}
+        className="text-sm text-slate-500 hover:text-primary font-medium border-none bg-transparent cursor-pointer"
+      >
+        ← Voltar para seleção
+      </button>
+
+      <form className="space-y-6" onSubmit={formik.handleSubmit} noValidate>
+        {/* === Seção: Dados da Clínica === */}
+        <div className="space-y-4">
+          <div className="border-b border-slate-200 pb-3">
+            <h3 className="text-base font-bold text-slate-900">
+              Dados da Clínica
+            </h3>
+            <p className="text-[10px] text-slate-400 mt-0.5">
+              Informações da instituição
+            </p>
+          </div>
+
+          {/* Clinic Name */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+              Nome da Clínica
+            </label>
+            <div className="relative group">
+              <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+              <input
+                className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("clinicName") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
+                placeholder="Clínica PocketMed"
+                type="text"
+                {...formik.getFieldProps("clinicName")}
+              />
+            </div>
+            {fieldError("clinicName") && (
+              <p className="text-xs text-red-500 mt-1">
+                {fieldError("clinicName")}
+              </p>
+            )}
+          </div>
+
+          {/* CNPJ */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+              CNPJ da Clínica
+            </label>
+            <div className="relative group">
+              <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+              <input
+                className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("cnpj") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
+                placeholder="00.000.000/0000-00"
+                type="text"
+                inputMode="numeric"
+                maxLength={18}
+                name="cnpj"
+                value={formik.values.cnpj}
+                onChange={(e) =>
+                  formik.setFieldValue("cnpj", formatCNPJ(e.target.value))
+                }
+                onBlur={formik.handleBlur}
+              />
+            </div>
+            {fieldError("cnpj") && (
+              <p className="text-xs text-red-500 mt-1">{fieldError("cnpj")}</p>
+            )}
+          </div>
+        </div>
+
+        {/* === Seção: Médico Responsável === */}
+        <div className="space-y-4">
+          <div className="border-b border-slate-200 pb-3">
+            <h3 className="text-base font-bold text-slate-900">
+              Médico Responsável pela Clínica
+            </h3>
+            <p className="text-[10px] text-slate-400 mt-0.5">
+              Dados do profissional administrador
+            </p>
+          </div>
+
+          {/* Name */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+              Nome do Médico responsável pela clínica
+            </label>
+            <div className="relative group">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+              <input
+                className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("name") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
+                placeholder="Dr. Roberto Silva"
+                type="text"
+                {...formik.getFieldProps("name")}
+              />
+            </div>
+            {fieldError("name") && (
+              <p className="text-xs text-red-500 mt-1">{fieldError("name")}</p>
+            )}
+          </div>
+
+          {/* Gender + BirthDate */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+                Gênero do responsável pela clínica
+              </label>
+              <select
+                className={`w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-slate-900 text-sm outline-none transition-all focus:ring-2 focus:ring-primary/10 appearance-none cursor-pointer ${fieldError("gender") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
+                {...formik.getFieldProps("gender")}
+              >
+                <option value="">Selecione</option>
+                <option value="male">Masculino</option>
+                <option value="female">Feminino</option>
+                <option value="other">Outro</option>
+              </select>
+              {fieldError("gender") && (
+                <p className="text-xs text-red-500 mt-1">
+                  {fieldError("gender")}
+                </p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+                Data de nascimento do responsável
+              </label>
+              <input
+                className={`w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-slate-900 text-sm outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("birthDate") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
+                type="date"
+                {...formik.getFieldProps("birthDate")}
+              />
+              {fieldError("birthDate") && (
+                <p className="text-xs text-red-500 mt-1">
+                  {fieldError("birthDate")}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* CRM */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+              CRM do responsável pela clínica
+            </label>
+            <div className="grid grid-cols-[120px_1fr] gap-3">
+              <select
+                className="bg-slate-50 border border-slate-200 focus:border-primary rounded-xl py-3.5 px-3 text-slate-900 text-sm outline-none transition-all focus:ring-2 focus:ring-primary/10 appearance-none cursor-pointer"
+                {...formik.getFieldProps("crmState")}
+              >
+                {UF_LIST.map((uf) => (
+                  <option key={uf} value={uf}>
+                    {uf}
+                  </option>
+                ))}
+              </select>
+              <div className="relative group">
+                <Badge className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+                <input
+                  className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("crm") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
+                  placeholder="Número do CRM"
+                  type="text"
+                  inputMode="numeric"
+                  name="crm"
+                  value={formik.values.crm}
+                  onChange={(e) =>
+                    formik.setFieldValue(
+                      "crm",
+                      e.target.value.replace(/\D/g, ""),
+                    )
+                  }
+                  onBlur={formik.handleBlur}
+                />
+              </div>
+            </div>
+            {fieldError("crm") && (
+              <p className="text-xs text-red-500 mt-1">{fieldError("crm")}</p>
+            )}
+          </div>
+
+          {/* CPF + Specialty */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+                CPF do responsável pela clínica
+              </label>
+              <div className="relative group">
+                <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+                <input
+                  className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("cpf") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
+                  placeholder="000.000.000-00"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={14}
+                  name="cpf"
+                  value={formik.values.cpf}
+                  onChange={(e) => {
+                    const digits = e.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 11);
+                    let masked = digits;
+                    if (digits.length > 3)
+                      masked = digits.slice(0, 3) + "." + digits.slice(3);
+                    if (digits.length > 6)
+                      masked = masked.slice(0, 7) + "." + digits.slice(6);
+                    if (digits.length > 9)
+                      masked = masked.slice(0, 11) + "-" + digits.slice(9);
+                    formik.setFieldValue("cpf", masked);
+                  }}
+                  onBlur={formik.handleBlur}
+                />
+              </div>
+              {fieldError("cpf") && (
+                <p className="text-xs text-red-500 mt-1">{fieldError("cpf")}</p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+                Especialidade do responsável
+              </label>
+              <select
+                className={`w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-slate-900 text-sm outline-none transition-all focus:ring-2 focus:ring-primary/10 appearance-none cursor-pointer ${fieldError("specialty") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
+                {...formik.getFieldProps("specialty")}
+              >
+                {SPECIALTIES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+              {fieldError("specialty") && (
+                <p className="text-xs text-red-500 mt-1">
+                  {fieldError("specialty")}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Phone */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+              Celular do responsável pela clínica (com DDD)
+            </label>
+            <div className="relative group">
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+              <input
+                className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("phone") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
+                placeholder="(11) 99428-6811"
+                type="tel"
+                inputMode="numeric"
+                maxLength={15}
+                name="phone"
+                value={formik.values.phone}
+                onChange={(e) =>
+                  formik.setFieldValue("phone", formatPhone(e.target.value))
+                }
+                onBlur={formik.handleBlur}
+              />
+            </div>
+            {fieldError("phone") && (
+              <p className="text-xs text-red-500 mt-1">{fieldError("phone")}</p>
+            )}
+          </div>
+
+          {/* Email */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+              E-mail do responsável pela clínica
+            </label>
+            <div className="relative group">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+              <input
+                className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("email") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
+                placeholder="admin@clinica.com"
+                type="email"
+                {...formik.getFieldProps("email")}
+              />
+            </div>
+            {fieldError("email") && (
+              <p className="text-xs text-red-500 mt-1">{fieldError("email")}</p>
+            )}
+          </div>
+
+          {/* Password */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+              Senha do responsável pela clínica
+            </label>
+            <div className="relative group">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+              <input
+                className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-12 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("password") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
+                placeholder="••••••••"
+                type={showPassword ? "text" : "password"}
+                {...formik.getFieldProps("password")}
+              />
+              <button
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-md border-none bg-transparent cursor-pointer"
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+            {fieldError("password") && (
+              <p className="text-xs text-red-500 mt-1">
+                {fieldError("password")}
+              </p>
+            )}
+          </div>
+
+          {/* Terms */}
+          <div className="flex items-start pt-2">
+            <div className="flex items-center h-5">
+              <input
+                className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary/30"
+                id="clinic-terms"
+                type="checkbox"
+                name="acceptTerms"
+                checked={formik.values.acceptTerms}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+              />
+            </div>
+            <label
+              className="ml-3 text-xs text-slate-500 leading-normal"
+              htmlFor="clinic-terms"
+            >
+              Eu concordo com os{" "}
+              <a
+                className="text-primary font-semibold hover:underline"
+                href="#"
+              >
+                Termos de Serviço
+              </a>{" "}
+              e a{" "}
+              <a
+                className="text-primary font-semibold hover:underline"
+                href="#"
+              >
+                Política de Privacidade
+              </a>{" "}
+              do PocketMed.
+            </label>
+          </div>
+          {fieldError("acceptTerms") && (
+            <p className="text-xs text-red-500">{fieldError("acceptTerms")}</p>
+          )}
+        </div>
+
+        {/* Submit */}
+        <button
+          className="w-full py-4 bg-gradient-to-r from-primary to-[#2b5aed] text-white font-semibold rounded-xl shadow-md shadow-primary/10 hover:shadow-primary/20 active:scale-[0.99] transition-all text-sm cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed"
+          type="submit"
+          disabled={formik.isSubmitting}
+        >
+          {formik.isSubmitting ? "Criando conta..." : "Cadastrar Clínica"}
+        </button>
+      </form>
+
+      <footer className="pt-6 border-t border-slate-100 text-center space-y-4">
+        <p className="text-sm text-slate-500">
+          Já possui uma conta?{" "}
+          <button
+            type="button"
+            className="text-primary font-bold hover:underline border-none bg-transparent cursor-pointer"
+            onClick={() => navigate("/login")}
+          >
+            Fazer Login
+          </button>
+        </p>
+      </footer>
+    </>
+  );
+}
+
 export default function Signup() {
   const navigate = useNavigate();
   const { registerDoctor } = useAuth();
@@ -196,7 +702,8 @@ export default function Signup() {
           email: values.email,
           password: values.password,
           gender: values.gender,
-          specialty: values.specialty === "Nenhuma" ? "Clínica Geral" : values.specialty,
+          specialty:
+            values.specialty === "Nenhuma" ? "Clínica Geral" : values.specialty,
           cpf: values.cpf.replace(/\D/g, ""),
           phone: values.phone.replace(/\D/g, ""),
           birthDate: values.birthDate,
@@ -204,7 +711,12 @@ export default function Signup() {
           rqe: values.rqe || undefined,
         });
       } catch (err: unknown) {
-        const axiosErr = err as { response?: { status?: number; data?: { message?: string; conflicts?: string[] } } };
+        const axiosErr = err as {
+          response?: {
+            status?: number;
+            data?: { message?: string; conflicts?: string[] };
+          };
+        };
         if (axiosErr.response?.status === 409) {
           const conflicts: string[] = axiosErr.response.data?.conflicts || [];
           if (conflicts.length > 0) {
@@ -434,7 +946,9 @@ export default function Signup() {
                     />
                   </div>
                   {fieldError("name") && (
-                    <p className="text-xs text-red-500 mt-1">{fieldError("name")}</p>
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldError("name")}
+                    </p>
                   )}
                 </div>
 
@@ -455,17 +969,25 @@ export default function Signup() {
                       { value: "Masculino", label: "Masculino" },
                       { value: "Feminino", label: "Feminino" },
                       { value: "Outro", label: "Outro" },
-                      { value: "Prefiro não informar", label: "Prefiro não informar" },
+                      {
+                        value: "Prefiro não informar",
+                        label: "Prefiro não informar",
+                      },
                     ]}
                   />
                   {fieldError("gender") && (
-                    <p className="text-xs text-red-500 mt-1">{fieldError("gender")}</p>
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldError("gender")}
+                    </p>
                   )}
                 </div>
 
                 {/* CPF */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block" htmlFor="cpf">
+                  <label
+                    className="text-xs font-semibold text-slate-500 uppercase tracking-wider block"
+                    htmlFor="cpf"
+                  >
                     CPF
                   </label>
                   <div className="relative group">
@@ -480,24 +1002,34 @@ export default function Signup() {
                       name="cpf"
                       value={formik.values.cpf}
                       onChange={(e) => {
-                        const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                        const digits = e.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, 11);
                         let masked = digits;
-                        if (digits.length > 3) masked = digits.slice(0, 3) + "." + digits.slice(3);
-                        if (digits.length > 6) masked = masked.slice(0, 7) + "." + digits.slice(6);
-                        if (digits.length > 9) masked = masked.slice(0, 11) + "-" + digits.slice(9);
+                        if (digits.length > 3)
+                          masked = digits.slice(0, 3) + "." + digits.slice(3);
+                        if (digits.length > 6)
+                          masked = masked.slice(0, 7) + "." + digits.slice(6);
+                        if (digits.length > 9)
+                          masked = masked.slice(0, 11) + "-" + digits.slice(9);
                         formik.setFieldValue("cpf", masked);
                       }}
                       onBlur={formik.handleBlur}
                     />
                   </div>
                   {fieldError("cpf") && (
-                    <p className="text-xs text-red-500 mt-1">{fieldError("cpf")}</p>
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldError("cpf")}
+                    </p>
                   )}
                 </div>
 
                 {/* Birth Date */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block" htmlFor="birthDate">
+                  <label
+                    className="text-xs font-semibold text-slate-500 uppercase tracking-wider block"
+                    htmlFor="birthDate"
+                  >
                     Data de Nascimento
                   </label>
                   <input
@@ -507,13 +1039,18 @@ export default function Signup() {
                     {...formik.getFieldProps("birthDate")}
                   />
                   {fieldError("birthDate") && (
-                    <p className="text-xs text-red-500 mt-1">{fieldError("birthDate")}</p>
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldError("birthDate")}
+                    </p>
                   )}
                 </div>
 
                 {/* Phone */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block" htmlFor="phone">
+                  <label
+                    className="text-xs font-semibold text-slate-500 uppercase tracking-wider block"
+                    htmlFor="phone"
+                  >
                     Celular (com DDD)
                   </label>
                   <div className="relative group">
@@ -527,12 +1064,19 @@ export default function Signup() {
                       maxLength={15}
                       name="phone"
                       value={formik.values.phone}
-                      onChange={(e) => formik.setFieldValue("phone", formatPhone(e.target.value))}
+                      onChange={(e) =>
+                        formik.setFieldValue(
+                          "phone",
+                          formatPhone(e.target.value),
+                        )
+                      }
                       onBlur={formik.handleBlur}
                     />
                   </div>
                   {fieldError("phone") && (
-                    <p className="text-xs text-red-500 mt-1">{fieldError("phone")}</p>
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldError("phone")}
+                    </p>
                   )}
                 </div>
 
@@ -557,13 +1101,20 @@ export default function Signup() {
                         inputMode="numeric"
                         name="crm"
                         value={formik.values.crm}
-                        onChange={(e) => formik.setFieldValue("crm", e.target.value.replace(/\D/g, ""))}
+                        onChange={(e) =>
+                          formik.setFieldValue(
+                            "crm",
+                            e.target.value.replace(/\D/g, ""),
+                          )
+                        }
                         onBlur={formik.handleBlur}
                       />
                     </div>
                   </div>
                   {fieldError("crm") && (
-                    <p className="text-xs text-red-500 mt-1">{fieldError("crm")}</p>
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldError("crm")}
+                    </p>
                   )}
                 </div>
 
@@ -583,32 +1134,45 @@ export default function Signup() {
                     options={SPECIALTIES.map((s) => ({ value: s, label: s }))}
                   />
                   {fieldError("specialty") && (
-                    <p className="text-xs text-red-500 mt-1">{fieldError("specialty")}</p>
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldError("specialty")}
+                    </p>
                   )}
                 </div>
 
                 {/* RQE - only if specialty is not "Nenhuma" */}
-                {formik.values.specialty && formik.values.specialty !== "Nenhuma" && (
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block" htmlFor="rqe">
-                      RQE (Registro de Qualificação de Especialista)
-                    </label>
-                    <input
-                      className={`w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("rqe") ? "border-red-400 focus:border-red-400" : "border-slate-200 focus:border-primary"}`}
-                      id="rqe"
-                      placeholder="Número do RQE"
-                      type="text"
-                      inputMode="numeric"
-                      name="rqe"
-                      value={formik.values.rqe}
-                      onChange={(e) => formik.setFieldValue("rqe", e.target.value.replace(/\D/g, ""))}
-                      onBlur={formik.handleBlur}
-                    />
-                    {fieldError("rqe") && (
-                      <p className="text-xs text-red-500 mt-1">{fieldError("rqe")}</p>
-                    )}
-                  </div>
-                )}
+                {formik.values.specialty &&
+                  formik.values.specialty !== "Nenhuma" && (
+                    <div className="space-y-1.5">
+                      <label
+                        className="text-xs font-semibold text-slate-500 uppercase tracking-wider block"
+                        htmlFor="rqe"
+                      >
+                        RQE (Registro de Qualificação de Especialista)
+                      </label>
+                      <input
+                        className={`w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("rqe") ? "border-red-400 focus:border-red-400" : "border-slate-200 focus:border-primary"}`}
+                        id="rqe"
+                        placeholder="Número do RQE"
+                        type="text"
+                        inputMode="numeric"
+                        name="rqe"
+                        value={formik.values.rqe}
+                        onChange={(e) =>
+                          formik.setFieldValue(
+                            "rqe",
+                            e.target.value.replace(/\D/g, ""),
+                          )
+                        }
+                        onBlur={formik.handleBlur}
+                      />
+                      {fieldError("rqe") && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {fieldError("rqe")}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                 {/* Email */}
                 <div className="space-y-1.5">
@@ -738,19 +1302,13 @@ export default function Signup() {
             </>
           )}
 
-          {/* Clinic Form - Placeholder */}
+          {/* Clinic Form */}
           {signupType === "clinic" && (
-            <div className="space-y-4 text-center">
-              <p className="text-slate-500">
-                Formulário de cadastro de clínica em breve.
-              </p>
-              <button
-                onClick={() => setSignupType("select")}
-                className="text-primary font-bold text-sm hover:underline border-none bg-transparent cursor-pointer"
-              >
-                ← Voltar
-              </button>
-            </div>
+            <ClinicSignupForm
+              onBack={() => setSignupType("select")}
+              navigate={navigate}
+              setSnackbar={setSnackbar}
+            />
           )}
         </div>
 
