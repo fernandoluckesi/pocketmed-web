@@ -97,83 +97,6 @@ const PATIENTS: Patient[] = [
   },
 ];
 
-// --- My Patients Mock Data (fallback) ---
-
-interface MyPatient {
-  id: string;
-  name: string;
-  patientId: string;
-  image: string;
-  age: number;
-  bloodType: string;
-  lastConsultation: string;
-  conditions: string[];
-  accessSince: string;
-}
-
-const MY_PATIENTS: MyPatient[] = [
-  {
-    id: "1",
-    name: "Helena S. Ferreira",
-    patientId: "#PK-9920",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCwD3agWDI7SEvl1bpLwdUioc7oKfWMda1hFdviDdkL__XzNKtH3o-6rtY3rBLOxixtQLTlfswQ3TiMHYIALBh9da4nqcC1KzWx3LnsTbsBJL0cKxJgyoZISEnSVBSQVWzIEat6E6bGqLD9P0yRbIqMaV0gvzeFtzjwxcVMeQMDdFSqqz05Kcybg76U_rc-ipke32alRy7MLsl4gfqg5x4SZ-jBdBy4N8ibE9_mF6fBXW_veVdzKPr9AoZtyjKC33fjCN7x1x6fImN1",
-    age: 38,
-    bloodType: "O+",
-    lastConsultation: "15 Out 2023",
-    conditions: ["Hipertensão", "Diabetes Tipo 2"],
-    accessSince: "Mar 2022",
-  },
-  {
-    id: "2",
-    name: "Roberto Alcântara",
-    patientId: "#PK-8841",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAVNPUgwiMvHkkEM59m_0fbcbfJg5AHKCJcZBeFRw8hBrWj1fCKFJO8j_LuVpNeqL7imv_eHaSYIPS0rLT1wuzQvEqSJNZLvaKvdU0beKJ7KERCTEBawSng4mmSYb1LWFNzyRaCBaS4X_wLdlFqN7FPbCldW0qvGJAEAZ7EoRQFtAULFWWKYKlstkz2vhdS78FOY1sIW0AGuWjOiwJYn_wHIc7PvbXAh0dHcw2iFdON31jEPAQPocgvi6KK6fIv__5ThaYaQeTdIViI",
-    age: 52,
-    bloodType: "A-",
-    lastConsultation: "02 Nov 2023",
-    conditions: ["Check-up Geral"],
-    accessSince: "Jan 2023",
-  },
-  {
-    id: "3",
-    name: "Lucas Mendes",
-    patientId: "#PK-7712",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDkpVgyNgZcFpQWg4GYULvjwYRGutWwrXkiQVgm0ufCSSibckAIfYp8H7LllJBnK_GCYaRjL5Rxo19n7Vqyou_IrXDTfCZId7TS7hE9mkXe7eBr73D4W1n_f2zivmzNGK50pHXnURpD7M-bWK8_1W7ilrXwyDjjEdkT9F7c5L87Uz2WqqAmaZoTXJTZLoHlM-joUgHwJXoYIJvanD3zT4jBh9x8GMJsGYsTBC7249xcsZKwpnOfVPJEaI-wKnfnO9LQv0C1nNijVy0A",
-    age: 29,
-    bloodType: "B+",
-    lastConsultation: "Ontem",
-    conditions: ["Recuperação de Joelho"],
-    accessSince: "Set 2023",
-  },
-  {
-    id: "4",
-    name: "Glória Maria Brandão",
-    patientId: "#PK-4501",
-    image:
-      "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=300",
-    age: 60,
-    bloodType: "AB+",
-    lastConsultation: "28 Out 2023",
-    conditions: ["Reumatologia", "Osteoporose"],
-    accessSince: "Jun 2021",
-  },
-  {
-    id: "5",
-    name: "Enzo Rodrigues Souza",
-    patientId: "#PK-1402",
-    image:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=300",
-    age: 13,
-    bloodType: "A-",
-    lastConsultation: "18 Set 2023",
-    conditions: ["Pediatria", "Alergia Alimentar"],
-    accessSince: "Abr 2023",
-  },
-];
-
 // --- Search Tab Components ---
 
 function SearchHero({
@@ -1491,7 +1414,7 @@ function MyPatientsContent({
     );
   }
 
-  // Fallback to mock data
+  // No patients found — show empty state
   return (
     <section className="space-y-8">
       <div className="flex justify-between items-end">
@@ -1500,77 +1423,15 @@ function MyPatientsContent({
             Acesso Liberado
           </p>
           <h4 className="text-3xl font-black font-display tracking-tight">
-            {MY_PATIENTS.length} Pacientes Ativos
+            Meus Pacientes
           </h4>
         </div>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {MY_PATIENTS.map((patient, idx) => (
-          <motion.div
-            key={patient.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.08 }}
-            whileHover={{ y: -6 }}
-            className="group"
-          >
-            <Link
-              to={`/patients/${patient.id}`}
-              className="block bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all no-underline text-inherit"
-            >
-              <div className="flex items-start gap-4 mb-5">
-                <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
-                  <img
-                    src={patient.image}
-                    alt={patient.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h5 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors font-display truncate">
-                    {patient.name}
-                  </h5>
-                  <p className="text-gray-500 text-sm font-medium">
-                    {patient.patientId} • {patient.age} anos •{" "}
-                    {patient.bloodType}
-                  </p>
-                </div>
-                <div className="shrink-0">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase">
-                    <CheckCircle size={12} />
-                    Ativo
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-2.5 mb-5">
-                <div className="flex items-center text-sm text-gray-600 font-medium">
-                  <Activity className="w-4 h-4 mr-2.5 text-gray-400 shrink-0" />
-                  <span>Última consulta: {patient.lastConsultation}</span>
-                </div>
-                <div className="flex items-center text-sm text-gray-600 font-medium">
-                  <Pill className="w-4 h-4 mr-2.5 text-gray-400 shrink-0" />
-                  <span className="truncate">
-                    {patient.conditions.join(", ")}
-                  </span>
-                </div>
-                <div className="flex items-center text-sm text-gray-600 font-medium">
-                  <ShieldCheck className="w-4 h-4 mr-2.5 text-green-500 shrink-0" />
-                  <span>Acesso desde {patient.accessSince}</span>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
-                <span className="text-xs font-semibold text-gray-400">
-                  Ver prontuário completo
-                </span>
-                <ArrowRight className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-            </Link>
-          </motion.div>
-        ))}
-      </div>
+      <EmptyState
+        icon={UserX}
+        title="Nenhum paciente vinculado"
+        description="Você ainda não possui pacientes com acesso liberado. Pesquise pacientes na aba 'Pesquisar Pacientes' e solicite acesso."
+      />
     </section>
   );
 }
