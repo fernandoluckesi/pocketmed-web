@@ -305,7 +305,7 @@ function ClinicSignupForm({
 
           {/* Clinic Name */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+            <label className="text-xs font-semibold text-slate-500 block">
               Nome da Clínica
             </label>
             <div className="relative group">
@@ -326,7 +326,7 @@ function ClinicSignupForm({
 
           {/* CNPJ */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+            <label className="text-xs font-semibold text-slate-500 block">
               CNPJ da Clínica
             </label>
             <div className="relative group">
@@ -364,7 +364,7 @@ function ClinicSignupForm({
 
           {/* Name */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+            <label className="text-xs font-semibold text-slate-500 block">
               Nome do Médico responsável pela clínica
             </label>
             <div className="relative group">
@@ -384,7 +384,7 @@ function ClinicSignupForm({
           {/* Gender + BirthDate */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+              <label className="text-xs font-semibold text-slate-500 block">
                 Gênero do responsável pela clínica
               </label>
               <select
@@ -403,7 +403,7 @@ function ClinicSignupForm({
               )}
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+              <label className="text-xs font-semibold text-slate-500 block">
                 Data de nascimento do responsável
               </label>
               <input
@@ -421,7 +421,7 @@ function ClinicSignupForm({
 
           {/* CRM */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+            <label className="text-xs font-semibold text-slate-500 block">
               CRM do responsável pela clínica
             </label>
             <div className="grid grid-cols-[120px_1fr] gap-3">
@@ -462,7 +462,7 @@ function ClinicSignupForm({
           {/* CPF + Specialty */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+              <label className="text-xs font-semibold text-slate-500 block">
                 CPF do responsável pela clínica
               </label>
               <div className="relative group">
@@ -496,7 +496,7 @@ function ClinicSignupForm({
               )}
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+              <label className="text-xs font-semibold text-slate-500 block">
                 Especialidade do responsável
               </label>
               <select
@@ -519,7 +519,7 @@ function ClinicSignupForm({
 
           {/* Phone */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+            <label className="text-xs font-semibold text-slate-500 block">
               Celular do responsável pela clínica (com DDD)
             </label>
             <div className="relative group">
@@ -545,7 +545,7 @@ function ClinicSignupForm({
 
           {/* Email */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+            <label className="text-xs font-semibold text-slate-500 block">
               E-mail do responsável pela clínica
             </label>
             <div className="relative group">
@@ -564,7 +564,7 @@ function ClinicSignupForm({
 
           {/* Password */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+            <label className="text-xs font-semibold text-slate-500 block">
               Senha do responsável pela clínica
             </label>
             <div className="relative group">
@@ -930,7 +930,7 @@ export default function Signup() {
                 {/* Name */}
                 <div className="space-y-1.5">
                   <label
-                    className="text-xs font-semibold text-slate-500 uppercase tracking-wider block"
+                    className="text-xs font-semibold text-slate-500 block"
                     htmlFor="name"
                   >
                     Nome Completo
@@ -954,7 +954,7 @@ export default function Signup() {
 
                 {/* Gender */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+                  <label className="text-xs font-semibold text-slate-500 block">
                     Gênero
                   </label>
                   <CustomSelect
@@ -985,7 +985,7 @@ export default function Signup() {
                 {/* CPF */}
                 <div className="space-y-1.5">
                   <label
-                    className="text-xs font-semibold text-slate-500 uppercase tracking-wider block"
+                    className="text-xs font-semibold text-slate-500 block"
                     htmlFor="cpf"
                   >
                     CPF
@@ -1027,7 +1027,7 @@ export default function Signup() {
                 {/* Birth Date */}
                 <div className="space-y-1.5">
                   <label
-                    className="text-xs font-semibold text-slate-500 uppercase tracking-wider block"
+                    className="text-xs font-semibold text-slate-500 block"
                     htmlFor="birthDate"
                   >
                     Data de Nascimento
@@ -1048,7 +1048,7 @@ export default function Signup() {
                 {/* Phone */}
                 <div className="space-y-1.5">
                   <label
-                    className="text-xs font-semibold text-slate-500 uppercase tracking-wider block"
+                    className="text-xs font-semibold text-slate-500 block"
                     htmlFor="phone"
                   >
                     Celular (com DDD)
@@ -1082,7 +1082,7 @@ export default function Signup() {
 
                 {/* CRM */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+                  <label className="text-xs font-semibold text-slate-500 block">
                     CRM
                   </label>
                   <div className="grid grid-cols-[120px_1fr] gap-3">
@@ -1120,7 +1120,7 @@ export default function Signup() {
 
                 {/* Specialty */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+                  <label className="text-xs font-semibold text-slate-500 block">
                     Especialidade
                   </label>
                   <CustomSelect
@@ -1145,7 +1145,7 @@ export default function Signup() {
                   formik.values.specialty !== "Nenhuma" && (
                     <div className="space-y-1.5">
                       <label
-                        className="text-xs font-semibold text-slate-500 uppercase tracking-wider block"
+                        className="text-xs font-semibold text-slate-500 block"
                         htmlFor="rqe"
                       >
                         RQE (Registro de Qualificação de Especialista)
@@ -1177,7 +1177,7 @@ export default function Signup() {
                 {/* Email */}
                 <div className="space-y-1.5">
                   <label
-                    className="text-xs font-semibold text-slate-500 uppercase tracking-wider block"
+                    className="text-xs font-semibold text-slate-500 block"
                     htmlFor="email"
                   >
                     E-mail Profissional
@@ -1202,7 +1202,7 @@ export default function Signup() {
                 {/* Password */}
                 <div className="space-y-1.5">
                   <label
-                    className="text-xs font-semibold text-slate-500 uppercase tracking-wider block"
+                    className="text-xs font-semibold text-slate-500 block"
                     htmlFor="password"
                   >
                     Senha
