@@ -17,6 +17,7 @@ import {
   Loader2,
   Mail,
   Phone,
+  Info,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { MainLayout } from "../../components/MainLayout";
@@ -199,8 +200,14 @@ function PatientHeroFromAPI({ patient }: { patient: PatientFromAPI }) {
             {patient.name}
           </h1>
           {patient.isShadow && (
-            <span className="px-3 py-1 bg-amber-100 rounded-full text-xs font-bold text-amber-700">
-              Shadow
+            <span className="relative inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 rounded-full text-xs font-bold text-blue-700">
+              Local
+              <span className="relative group/tip cursor-help">
+                <Info size={12} className="text-blue-500" />
+                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-slate-900 text-white text-[10px] font-normal normal-case rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 text-center leading-relaxed shadow-lg">
+                  Este paciente está cadastrado somente para visualização deste médico. Para compartilhar com outros profissionais, o paciente deve baixar o aplicativo PocketMed no celular.
+                </span>
+              </span>
             </span>
           )}
         </div>

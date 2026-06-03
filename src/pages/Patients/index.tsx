@@ -1365,39 +1365,19 @@ function MyPatientsContent({
                     </p>
                   </div>
                   <div className="shrink-0">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${patient.isShadow ? "bg-blue-50 text-blue-700" : "bg-green-100 text-green-700"}`}>
                       <CheckCircle size={12} />
-                      {patient.isShadow ? "Shadow" : "Ativo"}
+                      {patient.isShadow ? "Local" : "Ativo"}
+                      {patient.isShadow && (
+                        <span className="relative group/tip cursor-help">
+                          <Info size={12} className="text-blue-500" />
+                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-slate-900 text-white text-[10px] font-normal normal-case rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 text-center leading-relaxed shadow-lg">
+                            Este paciente está cadastrado somente para visualização deste médico. Para compartilhar com outros profissionais, o paciente deve baixar o aplicativo PocketMed no celular.
+                          </span>
+                        </span>
+                      )}
                     </span>
                   </div>
-                </div>
-
-                <div className="space-y-2.5 mb-5">
-                  {patient.phone && (
-                    <div className="flex items-center text-sm text-gray-600 font-medium">
-                      <Activity className="w-4 h-4 mr-2.5 text-gray-400 shrink-0" />
-                      <span>{patient.phone}</span>
-                    </div>
-                  )}
-                  {patient.gender && (
-                    <div className="flex items-center text-sm text-gray-600 font-medium">
-                      <Pill className="w-4 h-4 mr-2.5 text-gray-400 shrink-0" />
-                      <span className="truncate capitalize">
-                        {patient.gender}
-                      </span>
-                    </div>
-                  )}
-                  {patient.birthDate && (
-                    <div className="flex items-center text-sm text-gray-600 font-medium">
-                      <ShieldCheck className="w-4 h-4 mr-2.5 text-green-500 shrink-0" />
-                      <span>
-                        Nascimento:{" "}
-                        {new Date(patient.birthDate).toLocaleDateString(
-                          "pt-BR",
-                        )}
-                      </span>
-                    </div>
-                  )}
                 </div>
 
                 <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
