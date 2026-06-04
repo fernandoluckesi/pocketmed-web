@@ -24,6 +24,16 @@ import { MainLayout } from "../../components/MainLayout";
 import { usePatientDetail } from "../../hooks/usePatients";
 import type { PatientFromAPI } from "../../hooks/usePatients";
 import { Skeleton } from "../../components/Skeleton";
+import { Modal } from "../../components/ui/Modal";
+import {
+  TextInput,
+  DateInput,
+  Textarea,
+  FileInput,
+  FormActions,
+} from "../../components/ui/FormField";
+import { SearchableSelect } from "../../components/ui/SearchableSelect";
+import { EXAM_CATALOG } from "../../data/exam-catalog";
 
 // --- Types ---
 
@@ -761,6 +771,80 @@ function DocumentsTab({ documents }: { documents: MedicalDocument[] }) {
   );
 }
 
+// --- Exam Request Form ---
+
+function ExamRequestForm({ onClose }: { onClose: () => void }) {
+  const [examNames, setExamNames] = useState<string[]>([""]);
+  const [file, setFile] = useState<File | null>(null);
+
+  const examOptions = [...EXAM_CATALOG].sort((a, b) => a.localeCompare(b, "pt-BR")).map((name) => ({
+    value: name,
+    label: name,
+  }));
+
+  function handleExamChange(index: number, value: string) {
+    const updated = [...examNames];
+    updated[index] = value;
+    setExamNames(updated);
+  }
+
+  function addExam() {
+    setExamNames([...examNames, ""]);
+  }
+
+  return (
+    <form
+      className="p-8 pt-0 space-y-5"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const validExams = examNames.filter((n) => n.trim());
+        console.log("Exam request:", { exams: validExams, file });
+        onClose();
+      }}
+    >
+      {examNames.map((name, index) => (
+        <SearchableSelect
+          key={index}
+          label={index === 0 ? "Nome do Exame" : `Exame ${index + 1}`}
+          name={`exam-name-${index}`}
+          value={name}
+          onChange={(val) => handleExamChange(index, val)}
+          options={examOptions}
+          placeholder="Pesquise ou digite o nome do exame"
+          allowFreeText
+        />
+      ))}
+
+      <button
+        type="button"
+        onClick={addExam}
+        className="flex items-center gap-1 text-primary text-xs font-semibold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
+      >
+        <Plus className="w-3.5 h-3.5" />
+        Adicionar outro exame
+      </button>
+
+      <div className="flex items-center gap-4 py-2">
+        <div className="flex-1 h-px bg-slate-200" />
+        <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Ou</span>
+        <div className="flex-1 h-px bg-slate-200" />
+      </div>
+
+      <FileInput
+        label="Upload da guia em PDF"
+        name="exam-file"
+        onChange={setFile}
+        accept=".pdf"
+      />
+
+      <FormActions
+        onCancel={onClose}
+        submitLabel="Solicitar Exame"
+      />
+    </form>
+  );
+}
+
 // --- Main Page ---
 
 export default function PatientDetail() {
@@ -770,6 +854,9 @@ export default function PatientDetail() {
   const [activeTab, setActiveTab] = useState<
     "consultas" | "medicamentos" | "exames"
   >("consultas");
+  const [showConsultaModal, setShowConsultaModal] = useState(false);
+  const [showMedicamentoModal, setShowMedicamentoModal] = useState(false);
+  const [showDocumentoModal, setShowDocumentoModal] = useState(false);
 
   // Loading state
   if (loading) {
@@ -853,6 +940,10 @@ export default function PatientDetail() {
                 <h3 className="font-bold text-xl font-display tracking-tight">
                   Histórico de Atendimentos
                 </h3>
+                <button onClick={() => setShowConsultaModal(true)} className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none">
+                  <Plus className="w-3.5 h-3.5" />
+                  Nova Consulta
+                </button>
               </div>
               <AppointmentsSection appointments={patient.appointments} />
             </div>
@@ -863,6 +954,10 @@ export default function PatientDetail() {
                 <h3 className="font-bold text-xl font-display tracking-tight">
                   Prescrições Ativas
                 </h3>
+                <button onClick={() => setShowMedicamentoModal(true)} className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none">
+                  <Plus className="w-3.5 h-3.5" />
+                  Adicionar Medicamento
+                </button>
               </div>
               <MedicationsSection medications={patient.medications} />
             </div>
@@ -873,10 +968,130 @@ export default function PatientDetail() {
                 <h3 className="font-bold text-xl font-display tracking-tight">
                   Exames Recentes
                 </h3>
+                <button onClick={() => setShowDocumentoModal(true)} className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none">
+                  <Plus className="w-3.5 h-3.5" />
+                  Solicitar Exame
+                </button>
               </div>
               <ExamsSection exams={patient.exams} />
             </div>
           )}
+
+          {/* Modals */}
+          <Modal
+            isOpen={showConsultaModal}
+            onClose={() => setShowConsultaModal(false)}
+            label="Novo Registro"
+            title="Nova Consulta"
+            maxWidth="max-w-2xl"
+          >
+            <form className="p-8 pt-0 space-y-5" onSubmit={(e) => { e.preventDefault(); setShowConsultaModal(false); }}>
+              <DateInput
+                label="Data"
+                name="consulta-data"
+                value=""
+                onChange={() => {}}
+              />
+              <Textarea
+                label="Sintomas / Motivo"
+                name="consulta-sintomas"
+                value=""
+                onChange={() => {}}
+                placeholder="Descreva os sintomas apresentados"
+                rows={3}
+              />
+              <Textarea
+                label="Diagnóstico"
+                name="consulta-diagnostico"
+                value=""
+                onChange={() => {}}
+                placeholder="Diagnóstico principal"
+                rows={3}
+              />
+              <Textarea
+                label="Prescrição"
+                name="consulta-prescricao"
+                value=""
+                onChange={() => {}}
+                placeholder="Medicamentos e orientações"
+                rows={3}
+              />
+              <FormActions
+                onCancel={() => setShowConsultaModal(false)}
+                submitLabel="Salvar Consulta"
+              />
+            </form>
+          </Modal>
+
+          <Modal
+            isOpen={showMedicamentoModal}
+            onClose={() => setShowMedicamentoModal(false)}
+            label="Nova Prescrição"
+            title="Prescrever Medicamento"
+            maxWidth="max-w-2xl"
+          >
+            <form className="p-8 pt-0 space-y-5" onSubmit={(e) => { e.preventDefault(); setShowMedicamentoModal(false); }}>
+              <TextInput
+                label="Nome do Medicamento"
+                name="med-nome"
+                value=""
+                onChange={() => {}}
+                placeholder="Ex: Losartana Potássica"
+              />
+              <div className="grid grid-cols-2 gap-6">
+                <TextInput
+                  label="Dosagem"
+                  name="med-dosagem"
+                  value=""
+                  onChange={() => {}}
+                  placeholder="Ex: 50mg"
+                />
+                <TextInput
+                  label="Frequência"
+                  name="med-frequencia"
+                  value=""
+                  onChange={() => {}}
+                  placeholder="Ex: 1x ao dia"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <DateInput
+                  label="Data Início"
+                  name="med-inicio"
+                  value=""
+                  onChange={() => {}}
+                />
+                <DateInput
+                  label="Data Fim (opcional)"
+                  name="med-fim"
+                  value=""
+                  onChange={() => {}}
+                />
+              </div>
+              <Textarea
+                label="Observações"
+                name="med-observacoes"
+                value=""
+                onChange={() => {}}
+                placeholder="Instruções adicionais"
+                rows={2}
+              />
+              <FormActions
+                onCancel={() => setShowMedicamentoModal(false)}
+                submitLabel="Prescrever"
+              />
+            </form>
+          </Modal>
+
+          <Modal
+            isOpen={showDocumentoModal}
+            onClose={() => setShowDocumentoModal(false)}
+            label="Novo Agendamento"
+            title="Solicitar Exame"
+            maxWidth="max-w-2xl"
+          >
+            <ExamRequestForm onClose={() => setShowDocumentoModal(false)} />
+          </Modal>
         </div>
       </MainLayout>
     );
