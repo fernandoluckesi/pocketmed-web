@@ -18,22 +18,27 @@ import {
   Mail,
   Phone,
   Info,
+  Download,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { MainLayout } from "../../components/MainLayout";
 import { usePatientDetail } from "../../hooks/usePatients";
-import type { PatientFromAPI } from "../../hooks/usePatients";
+import type { PatientFromAPI, Appointment } from "../../hooks/usePatients";
 import { Skeleton } from "../../components/Skeleton";
 import { Modal } from "../../components/ui/Modal";
 import {
   TextInput,
   DateInput,
   Textarea,
+  SelectInput,
   FileInput,
   FormActions,
 } from "../../components/ui/FormField";
 import { SearchableSelect } from "../../components/ui/SearchableSelect";
 import { EXAM_CATALOG } from "../../data/exam-catalog";
+import { useAuth } from "../../contexts/AuthContext";
+import { generateExamPdf, generatePrescriptionPdf } from "../../utils/generate-pdf";
+import { api } from "../../services/api";
 
 // --- Types ---
 
@@ -173,7 +178,7 @@ const mockDocuments: MedicalDocument[] = [
 
 // --- Components ---
 
-function PatientHeroFromAPI({ patient }: { patient: PatientFromAPI }) {
+function PatientHeroFromAPI({ patient, onEdit }: { patient: PatientFromAPI; onEdit?: () => void }) {
   const age = patient.birthDate
     ? Math.floor(
         (Date.now() - new Date(patient.birthDate).getTime()) /
@@ -184,24 +189,20 @@ function PatientHeroFromAPI({ patient }: { patient: PatientFromAPI }) {
   return (
     <section className="flex flex-col md:flex-row gap-8 items-start mb-10">
       <div className="relative group">
-        <div className="absolute -inset-1 bg-gradient-to-tr from-primary to-blue-300 rounded-[2rem] blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
         {patient.profileImage ? (
           <img
             alt={patient.name}
-            className="relative w-40 h-40 rounded-[1.75rem] object-cover shadow-2xl border-4 border-white"
+            className="relative w-40 h-40 rounded-[1.75rem] object-cover border-4 border-white"
             src={patient.profileImage}
             referrerPolicy="no-referrer"
           />
         ) : (
-          <div className="relative w-40 h-40 rounded-[1.75rem] shadow-2xl border-4 border-white bg-primary/10 flex items-center justify-center">
+          <div className="relative w-40 h-40 rounded-[1.75rem] border-4 border-white bg-primary/10 flex items-center justify-center">
             <span className="text-5xl font-bold text-primary">
               {patient.name.charAt(0).toUpperCase()}
             </span>
           </div>
         )}
-        <div className="absolute bottom-2 right-2 bg-blue-100 text-primary p-2 rounded-xl shadow-lg border border-white">
-          <Check className="w-4 h-4 stroke-[3]" />
-        </div>
       </div>
 
       <div className="flex-grow pt-2">
@@ -286,14 +287,13 @@ function PatientHeroFromAPI({ patient }: { patient: PatientFromAPI }) {
         </div>
       </div>
 
-      <div className="flex gap-2 self-start pt-2">
-        <button className="p-3 rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 transition-colors cursor-pointer border-none">
-          <Edit className="w-4 h-4" />
-        </button>
-        <button className="p-3 rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 transition-colors cursor-pointer border-none">
-          <Share2 className="w-4 h-4" />
-        </button>
-      </div>
+      {onEdit && (
+        <div className="flex gap-2 self-start pt-2">
+          <button onClick={onEdit} className="p-3 rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 transition-colors cursor-pointer border-none">
+            <Edit className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </section>
   );
 }
@@ -395,8 +395,10 @@ function PatientHero({ patient }: { patient: Patient }) {
 
 function AppointmentsSection({
   appointments,
+  onSelect,
 }: {
   appointments: PatientFromAPI["appointments"];
+  onSelect: (apt: Appointment) => void;
 }) {
   if (!appointments || appointments.length === 0) {
     return (
@@ -420,8 +422,9 @@ function AppointmentsSection({
         return (
           <div
             key={apt.id}
-            className={`group bg-white hover:bg-slate-50 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6 transition-all duration-300 border border-slate-100 shadow-sm ${
-              apt.status === "scheduled" ? "border-l-4 border-l-primary" : ""
+            onClick={() => onSelect(apt)}
+            className={`group bg-white hover:bg-slate-50 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6 transition-all duration-300 border border-slate-100 shadow-sm cursor-pointer ${
+              apt.status === "scheduled" || apt.status === "approved" ? "border-l-4 border-l-primary" : ""
             }`}
           >
             <div className="flex flex-col items-center justify-center bg-white w-20 h-20 rounded-2xl shadow-sm border border-slate-100 flex-shrink-0">
@@ -459,16 +462,22 @@ function AppointmentsSection({
                 className={`px-3 py-1 rounded-full text-xs font-bold ${
                   apt.status === "completed"
                     ? "bg-green-100 text-green-700"
-                    : apt.status === "cancelled"
+                    : apt.status === "cancelled" || apt.status === "rejected"
                       ? "bg-red-100 text-red-700"
-                      : "bg-blue-100 text-primary"
+                      : apt.status === "pending_approval"
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-blue-100 text-primary"
                 }`}
               >
                 {apt.status === "completed"
                   ? "Concluído"
                   : apt.status === "cancelled"
                     ? "Cancelado"
-                    : "Agendado"}
+                    : apt.status === "rejected"
+                      ? "Recusado"
+                      : apt.status === "pending_approval"
+                        ? "Aguardando aprovação"
+                        : "Agendado"}
               </span>
             </div>
           </div>
@@ -588,7 +597,7 @@ function ConsultationsTab({
     <div>
       <div className="flex justify-between items-center mb-6">
         <h3 className="font-bold text-xl font-display tracking-tight">
-          Histórico de Atendimentos
+          Histórico de Consultas
         </h3>
         <button className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none">
           <Plus className="w-3.5 h-3.5" />
@@ -773,7 +782,8 @@ function DocumentsTab({ documents }: { documents: MedicalDocument[] }) {
 
 // --- Exam Request Form ---
 
-function ExamRequestForm({ onClose }: { onClose: () => void }) {
+function ExamRequestForm({ onClose, patientName }: { onClose: () => void; patientName: string }) {
+  const { user } = useAuth();
   const [examNames, setExamNames] = useState<string[]>([""]);
   const [file, setFile] = useState<File | null>(null);
 
@@ -790,6 +800,22 @@ function ExamRequestForm({ onClose }: { onClose: () => void }) {
 
   function addExam() {
     setExamNames([...examNames, ""]);
+  }
+
+  async function handleGeneratePdf() {
+    const validExams = examNames.filter((n) => n.trim());
+    if (validExams.length === 0) return;
+
+    await generateExamPdf({
+      doctor: {
+        name: user?.name || "Médico",
+        crm: user?.crm || "",
+        specialty: user?.specialty,
+        rqe: user?.rqe || undefined,
+      },
+      patient: { name: patientName },
+      exams: validExams,
+    });
   }
 
   return (
@@ -815,13 +841,24 @@ function ExamRequestForm({ onClose }: { onClose: () => void }) {
         />
       ))}
 
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          onClick={addExam}
+          className="flex items-center gap-1 text-primary text-xs font-semibold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Adicionar outro exame
+        </button>
+      </div>
+
       <button
         type="button"
-        onClick={addExam}
-        className="flex items-center gap-1 text-primary text-xs font-semibold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
+        onClick={handleGeneratePdf}
+        className="flex items-center gap-2 text-primary text-sm font-bold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
       >
-        <Plus className="w-3.5 h-3.5" />
-        Adicionar outro exame
+        <Download className="w-4 h-4" />
+        Gerar PDF do Pedido de Exame
       </button>
 
       <div className="flex items-center gap-4 py-2">
@@ -845,18 +882,597 @@ function ExamRequestForm({ onClose }: { onClose: () => void }) {
   );
 }
 
+// --- Prescription Form ---
+
+interface MedFormItem {
+  name: string;
+  dosage: string;
+  frequency: string;
+  instructions: string;
+}
+
+function PrescriptionForm({ onClose, patientName }: { onClose: () => void; patientName: string }) {
+  const { user } = useAuth();
+  const [medications, setMedications] = useState<MedFormItem[]>([
+    { name: "", dosage: "", frequency: "", instructions: "" },
+  ]);
+
+  function updateMed(index: number, field: keyof MedFormItem, value: string) {
+    const updated = [...medications];
+    updated[index] = { ...updated[index], [field]: value };
+    setMedications(updated);
+  }
+
+  function addMed() {
+    setMedications([...medications, { name: "", dosage: "", frequency: "", instructions: "" }]);
+  }
+
+  async function handleGeneratePdf() {
+    const validMeds = medications.filter((m) => m.name.trim());
+    if (validMeds.length === 0) return;
+
+    await generatePrescriptionPdf({
+      doctor: {
+        name: user?.name || "Médico",
+        crm: user?.crm || "",
+        specialty: user?.specialty,
+        rqe: user?.rqe || undefined,
+      },
+      patient: { name: patientName },
+      medications: validMeds.map((m) => ({
+        name: m.name,
+        presentation: m.dosage || undefined,
+        instructions: m.instructions || m.frequency || undefined,
+      })),
+    });
+  }
+
+  return (
+    <form
+      className="p-8 pt-0 space-y-5"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+    >
+      {medications.map((med, index) => (
+        <div key={index} className="space-y-4">
+          {index > 0 && <div className="h-px bg-slate-100" />}
+          <TextInput
+            label={index === 0 ? "Nome do Medicamento" : `Medicamento ${index + 1}`}
+            name={`med-nome-${index}`}
+            value={med.name}
+            onChange={(val) => updateMed(index, "name", val)}
+            placeholder="Ex: Losartana Potássica"
+          />
+          <div className="grid grid-cols-2 gap-6">
+            <TextInput
+              label="Dosagem / Apresentação"
+              name={`med-dosagem-${index}`}
+              value={med.dosage}
+              onChange={(val) => updateMed(index, "dosage", val)}
+              placeholder="Ex: 50mg, Comprimido"
+            />
+            <TextInput
+              label="Frequência"
+              name={`med-frequencia-${index}`}
+              value={med.frequency}
+              onChange={(val) => updateMed(index, "frequency", val)}
+              placeholder="Ex: 1x ao dia"
+            />
+          </div>
+          <Textarea
+            label="Posologia / Instruções"
+            name={`med-instrucoes-${index}`}
+            value={med.instructions}
+            onChange={(val) => updateMed(index, "instructions", val)}
+            placeholder="Ex: Tomar 1 comprimido ao dia após o café"
+            rows={2}
+          />
+        </div>
+      ))}
+
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          onClick={addMed}
+          className="flex items-center gap-1 text-primary text-xs font-semibold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Adicionar outro medicamento
+        </button>
+      </div>
+
+      <button
+        type="button"
+        onClick={handleGeneratePdf}
+        className="flex items-center gap-2 text-primary text-sm font-bold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
+      >
+        <Download className="w-4 h-4" />
+        Gerar PDF da Receita
+      </button>
+
+      <FormActions
+        onCancel={onClose}
+        submitLabel="Prescrever"
+      />
+    </form>
+  );
+}
+
+// --- Consulta Form ---
+
+function ConsultaForm({ onClose, patientId, onSaved }: { onClose: () => void; patientId: string; onSaved: () => void }) {
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [sintomas, setSintomas] = useState("");
+  const [finalizada, setFinalizada] = useState(false);
+  const [diagnostico, setDiagnostico] = useState("");
+  const [orientacoes, setOrientacoes] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!date) return;
+
+    setSaving(true);
+    try {
+      const dateTime = time ? `${date}T${time}:00` : `${date}T00:00:00`;
+      await api(`/patients/${patientId}/consultations`, {
+        method: "POST",
+        body: {
+          date: dateTime,
+          symptoms: sintomas || undefined,
+          diagnosis: finalizada ? diagnostico || undefined : undefined,
+          prescription: finalizada ? orientacoes || undefined : undefined,
+          completed: finalizada,
+        },
+      });
+      onSaved();
+      onClose();
+    } catch (err) {
+      console.error("Erro ao salvar consulta:", err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
+      <div className="grid grid-cols-2 gap-6">
+        <DateInput
+          label="Data"
+          name="consulta-data"
+          value={date}
+          onChange={setDate}
+        />
+        <div className="space-y-1.5">
+          <label htmlFor="consulta-hora" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+            Hora
+          </label>
+          <input
+            id="consulta-hora"
+            name="consulta-hora"
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 px-4 text-slate-900 text-sm outline-none transition-all focus:ring-2 focus:ring-primary/10 focus:border-primary"
+          />
+        </div>
+      </div>
+      <Textarea
+        label="Sintomas / Motivo"
+        name="consulta-sintomas"
+        value={sintomas}
+        onChange={setSintomas}
+        placeholder="Descreva os sintomas apresentados"
+        rows={3}
+      />
+
+      <label className="flex items-center gap-3 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={finalizada}
+          onChange={(e) => setFinalizada(e.target.checked)}
+          className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/30 cursor-pointer accent-primary"
+        />
+        <span className="text-sm font-medium text-slate-700">Consulta finalizada</span>
+      </label>
+
+      {finalizada && (
+        <>
+          <Textarea
+            label="Diagnóstico"
+            name="consulta-diagnostico"
+            value={diagnostico}
+            onChange={setDiagnostico}
+            placeholder="Diagnóstico principal"
+            rows={3}
+          />
+          <Textarea
+            label="Orientações"
+            name="consulta-orientacoes"
+            value={orientacoes}
+            onChange={setOrientacoes}
+            placeholder="Orientações e recomendações ao paciente"
+            rows={3}
+          />
+        </>
+      )}
+
+      <FormActions
+        onCancel={onClose}
+        submitLabel="Salvar Consulta"
+        loading={saving}
+        loadingLabel="Salvando..."
+      />
+    </form>
+  );
+}
+
+// --- Edit Consulta Form ---
+
+function EditConsultaForm({
+  consultation,
+  patientId,
+  onClose,
+  onSaved,
+}: {
+  consultation: Appointment;
+  patientId: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const dateObj = new Date(consultation.date);
+  const [date, setDate] = useState(dateObj.toISOString().split("T")[0]);
+  const [time, setTime] = useState(
+    dateObj.toTimeString().slice(0, 5)
+  );
+  const [sintomas, setSintomas] = useState(consultation.type || "");
+  const [finalizada, setFinalizada] = useState(consultation.status === "completed");
+  const [diagnostico, setDiagnostico] = useState(consultation.notes || "");
+  const [orientacoes, setOrientacoes] = useState(consultation.instructions || "");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const dateTime = time ? `${date}T${time}:00` : `${date}T00:00:00`;
+      await api(`/patients/${patientId}/consultations/${consultation.id}`, {
+        method: "PUT",
+        body: {
+          date: dateTime,
+          symptoms: sintomas || undefined,
+          diagnosis: finalizada ? diagnostico || undefined : undefined,
+          prescription: finalizada ? orientacoes || undefined : undefined,
+          completed: finalizada,
+        },
+      });
+      onSaved();
+      onClose();
+    } catch (err) {
+      console.error("Erro ao atualizar consulta:", err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
+      <div className="grid grid-cols-2 gap-6">
+        <DateInput
+          label="Data"
+          name="edit-consulta-data"
+          value={date}
+          onChange={setDate}
+        />
+        <div className="space-y-1.5">
+          <label htmlFor="edit-consulta-hora" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+            Hora
+          </label>
+          <input
+            id="edit-consulta-hora"
+            name="edit-consulta-hora"
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 px-4 text-slate-900 text-sm outline-none transition-all focus:ring-2 focus:ring-primary/10 focus:border-primary"
+          />
+        </div>
+      </div>
+      <Textarea
+        label="Sintomas / Motivo"
+        name="edit-consulta-sintomas"
+        value={sintomas}
+        onChange={setSintomas}
+        placeholder="Descreva os sintomas apresentados"
+        rows={3}
+      />
+
+      <label className="flex items-center gap-3 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={finalizada}
+          onChange={(e) => setFinalizada(e.target.checked)}
+          className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/30 cursor-pointer accent-primary"
+        />
+        <span className="text-sm font-medium text-slate-700">Consulta finalizada</span>
+      </label>
+
+      {finalizada && (
+        <>
+          <Textarea
+            label="Diagnóstico"
+            name="edit-consulta-diagnostico"
+            value={diagnostico}
+            onChange={setDiagnostico}
+            placeholder="Diagnóstico principal"
+            rows={3}
+          />
+          <Textarea
+            label="Orientações"
+            name="edit-consulta-orientacoes"
+            value={orientacoes}
+            onChange={setOrientacoes}
+            placeholder="Orientações e recomendações ao paciente"
+            rows={3}
+          />
+        </>
+      )}
+
+      <FormActions
+        onCancel={onClose}
+        submitLabel="Salvar Alterações"
+        loading={saving}
+        loadingLabel="Salvando..."
+      />
+    </form>
+  );
+}
+
+// --- View Consulta Detail ---
+
+function ConsultaDetailView({
+  consultation,
+  patientId,
+  onClose,
+  onSaved,
+}: {
+  consultation: Appointment;
+  patientId: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const { user } = useAuth();
+  const [editing, setEditing] = useState(false);
+
+  const isOwner = user?.userId === consultation.doctorId;
+  const dateObj = new Date(consultation.date);
+  const formattedDate = dateObj.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+  const formattedTime = dateObj.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  if (editing) {
+    return (
+      <EditConsultaForm
+        consultation={consultation}
+        patientId={patientId}
+        onClose={() => setEditing(false)}
+        onSaved={onSaved}
+      />
+    );
+  }
+
+  return (
+    <div className="p-8 pt-0 space-y-6">
+      {/* Doctor lock chip */}
+      {consultation.lockedByDoctor && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-100">
+          <Stethoscope className="w-3.5 h-3.5 text-primary" />
+          <span className="text-xs font-medium text-blue-700">Registro médico — preenchido pelo profissional de saúde</span>
+        </div>
+      )}
+
+      {/* Info fields */}
+      <div className="space-y-5">
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Data</p>
+            <p className="text-sm font-medium text-slate-800">{formattedDate}</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Hora</p>
+            <p className="text-sm font-medium text-slate-800">{formattedTime}</p>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Status</p>
+          <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
+            consultation.status === "completed"
+              ? "bg-green-100 text-green-700"
+              : consultation.status === "cancelled" || consultation.status === "rejected"
+                ? "bg-red-100 text-red-700"
+                : consultation.status === "pending_approval"
+                  ? "bg-amber-100 text-amber-700"
+                  : "bg-blue-100 text-primary"
+          }`}>
+            {consultation.status === "completed" ? "Concluído" : consultation.status === "cancelled" ? "Cancelado" : consultation.status === "rejected" ? "Recusado" : consultation.status === "pending_approval" ? "Aguardando aprovação" : "Agendado"}
+          </span>
+        </div>
+
+        {consultation.type && (
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Sintomas / Motivo</p>
+            <p className="text-sm text-slate-700 leading-relaxed">{consultation.type}</p>
+          </div>
+        )}
+
+        {consultation.notes && (
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Diagnóstico</p>
+            <p className="text-sm text-slate-700 leading-relaxed">{consultation.notes}</p>
+          </div>
+        )}
+
+        {consultation.instructions && (
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Orientações</p>
+            <p className="text-sm text-slate-700 leading-relaxed">{consultation.instructions}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Edit button */}
+      {isOwner && (
+        <div className="flex justify-end pt-[24px]">
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="flex items-center gap-1.5 text-primary text-sm font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
+          >
+            <Edit className="w-3.5 h-3.5" />
+            Editar consulta
+          </button>
+        </div>
+      )}
+
+      {/* Close button */}
+      <div className="pt-4 border-t border-slate-100">
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full py-3 bg-slate-100 rounded-full font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer border-none"
+        >
+          Fechar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// --- Edit Patient Form ---
+
+function EditPatientForm({
+  patient,
+  onClose,
+  onSaved,
+}: {
+  patient: PatientFromAPI;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [name, setName] = useState(patient.name || "");
+  const [email, setEmail] = useState(patient.email || "");
+  const [phone, setPhone] = useState(patient.phone || "");
+  const [gender, setGender] = useState(patient.gender || "");
+  const [birthDate, setBirthDate] = useState(
+    patient.birthDate ? patient.birthDate.split("T")[0] : ""
+  );
+  const [saving, setSaving] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+
+    setSaving(true);
+    try {
+      await api(`/patients/${patient.id}`, {
+        method: "PUT",
+        body: {
+          name: name.trim(),
+          email: email.trim() || undefined,
+          phone: phone.trim() || undefined,
+          gender: gender || undefined,
+          birthDate: birthDate || undefined,
+        },
+      });
+      onSaved();
+      onClose();
+    } catch (err) {
+      console.error("Erro ao atualizar paciente:", err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
+      <TextInput
+        label="Nome Completo"
+        name="edit-patient-name"
+        value={name}
+        onChange={setName}
+        placeholder="Nome do paciente"
+      />
+      <TextInput
+        label="Email"
+        name="edit-patient-email"
+        value={email}
+        onChange={setEmail}
+        placeholder="email@exemplo.com"
+        type="email"
+      />
+      <div className="grid grid-cols-2 gap-6">
+        <TextInput
+          label="Telefone"
+          name="edit-patient-phone"
+          value={phone}
+          onChange={setPhone}
+          placeholder="11999999999"
+          type="tel"
+        />
+        <SelectInput
+          label="Gênero"
+          name="edit-patient-gender"
+          value={gender}
+          onChange={setGender}
+          placeholder="Selecione"
+          options={[
+            { value: "female", label: "Feminino" },
+            { value: "male", label: "Masculino" },
+            { value: "other", label: "Outro" },
+          ]}
+        />
+      </div>
+      <DateInput
+        label="Data de Nascimento"
+        name="edit-patient-birthdate"
+        value={birthDate}
+        onChange={setBirthDate}
+      />
+      <FormActions
+        onCancel={onClose}
+        submitLabel="Salvar"
+        loading={saving}
+        loadingLabel="Salvando..."
+      />
+    </form>
+  );
+}
+
 // --- Main Page ---
 
 export default function PatientDetail() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { patient, loading, error } = usePatientDetail(id);
+  const { patient, loading, error, refetch } = usePatientDetail(id);
   const [activeTab, setActiveTab] = useState<
     "consultas" | "medicamentos" | "exames"
   >("consultas");
   const [showConsultaModal, setShowConsultaModal] = useState(false);
   const [showMedicamentoModal, setShowMedicamentoModal] = useState(false);
   const [showDocumentoModal, setShowDocumentoModal] = useState(false);
+  const [editingConsulta, setEditingConsulta] = useState<Appointment | null>(null);
+  const [showEditPatientModal, setShowEditPatientModal] = useState(false);
+  const { user } = useAuth();
 
   // Loading state
   if (loading) {
@@ -897,7 +1513,10 @@ export default function PatientDetail() {
           </button>
 
           {/* Patient Hero */}
-          <PatientHeroFromAPI patient={patient} />
+          <PatientHeroFromAPI
+            patient={patient}
+            onEdit={patient.isShadow && patient.createdByDoctorId === user?.userId ? () => setShowEditPatientModal(true) : undefined}
+          />
 
           {/* Tabs Navigation */}
           <div className="flex space-x-1 p-1 bg-white rounded-2xl w-fit shadow-sm border border-gray-100 mb-8">
@@ -938,14 +1557,14 @@ export default function PatientDetail() {
             <div>
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-bold text-xl font-display tracking-tight">
-                  Histórico de Atendimentos
+                  Histórico de Consultas
                 </h3>
                 <button onClick={() => setShowConsultaModal(true)} className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none">
                   <Plus className="w-3.5 h-3.5" />
                   Nova Consulta
                 </button>
               </div>
-              <AppointmentsSection appointments={patient.appointments} />
+              <AppointmentsSection appointments={patient.appointments} onSelect={setEditingConsulta} />
             </div>
           )}
           {activeTab === "medicamentos" && (
@@ -985,42 +1604,7 @@ export default function PatientDetail() {
             title="Nova Consulta"
             maxWidth="max-w-2xl"
           >
-            <form className="p-8 pt-0 space-y-5" onSubmit={(e) => { e.preventDefault(); setShowConsultaModal(false); }}>
-              <DateInput
-                label="Data"
-                name="consulta-data"
-                value=""
-                onChange={() => {}}
-              />
-              <Textarea
-                label="Sintomas / Motivo"
-                name="consulta-sintomas"
-                value=""
-                onChange={() => {}}
-                placeholder="Descreva os sintomas apresentados"
-                rows={3}
-              />
-              <Textarea
-                label="Diagnóstico"
-                name="consulta-diagnostico"
-                value=""
-                onChange={() => {}}
-                placeholder="Diagnóstico principal"
-                rows={3}
-              />
-              <Textarea
-                label="Prescrição"
-                name="consulta-prescricao"
-                value=""
-                onChange={() => {}}
-                placeholder="Medicamentos e orientações"
-                rows={3}
-              />
-              <FormActions
-                onCancel={() => setShowConsultaModal(false)}
-                submitLabel="Salvar Consulta"
-              />
-            </form>
+            <ConsultaForm onClose={() => setShowConsultaModal(false)} patientId={patient.id} onSaved={refetch} />
           </Modal>
 
           <Modal
@@ -1030,57 +1614,7 @@ export default function PatientDetail() {
             title="Prescrever Medicamento"
             maxWidth="max-w-2xl"
           >
-            <form className="p-8 pt-0 space-y-5" onSubmit={(e) => { e.preventDefault(); setShowMedicamentoModal(false); }}>
-              <TextInput
-                label="Nome do Medicamento"
-                name="med-nome"
-                value=""
-                onChange={() => {}}
-                placeholder="Ex: Losartana Potássica"
-              />
-              <div className="grid grid-cols-2 gap-6">
-                <TextInput
-                  label="Dosagem"
-                  name="med-dosagem"
-                  value=""
-                  onChange={() => {}}
-                  placeholder="Ex: 50mg"
-                />
-                <TextInput
-                  label="Frequência"
-                  name="med-frequencia"
-                  value=""
-                  onChange={() => {}}
-                  placeholder="Ex: 1x ao dia"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-6">
-                <DateInput
-                  label="Data Início"
-                  name="med-inicio"
-                  value=""
-                  onChange={() => {}}
-                />
-                <DateInput
-                  label="Data Fim (opcional)"
-                  name="med-fim"
-                  value=""
-                  onChange={() => {}}
-                />
-              </div>
-              <Textarea
-                label="Observações"
-                name="med-observacoes"
-                value=""
-                onChange={() => {}}
-                placeholder="Instruções adicionais"
-                rows={2}
-              />
-              <FormActions
-                onCancel={() => setShowMedicamentoModal(false)}
-                submitLabel="Prescrever"
-              />
-            </form>
+            <PrescriptionForm onClose={() => setShowMedicamentoModal(false)} patientName={patient.name} />
           </Modal>
 
           <Modal
@@ -1090,7 +1624,40 @@ export default function PatientDetail() {
             title="Solicitar Exame"
             maxWidth="max-w-2xl"
           >
-            <ExamRequestForm onClose={() => setShowDocumentoModal(false)} />
+            <ExamRequestForm onClose={() => setShowDocumentoModal(false)} patientName={patient.name} />
+          </Modal>
+
+          {/* Edit Consultation Modal */}
+          <Modal
+            isOpen={!!editingConsulta}
+            onClose={() => setEditingConsulta(null)}
+            label="Consulta"
+            title="Detalhes da Consulta"
+            maxWidth="max-w-2xl"
+          >
+            {editingConsulta && (
+              <ConsultaDetailView
+                consultation={editingConsulta}
+                patientId={patient.id}
+                onClose={() => setEditingConsulta(null)}
+                onSaved={() => { refetch(); setEditingConsulta(null); }}
+              />
+            )}
+          </Modal>
+
+          {/* Edit Patient Modal */}
+          <Modal
+            isOpen={showEditPatientModal}
+            onClose={() => setShowEditPatientModal(false)}
+            label="Editar"
+            title="Editar Paciente"
+            maxWidth="max-w-2xl"
+          >
+            <EditPatientForm
+              patient={patient}
+              onClose={() => setShowEditPatientModal(false)}
+              onSaved={refetch}
+            />
           </Modal>
         </div>
       </MainLayout>

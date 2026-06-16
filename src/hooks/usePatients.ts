@@ -29,6 +29,7 @@ export interface PatientFromAPI {
   profileImage: string | null;
   type: string;
   isShadow: boolean;
+  createdByDoctorId?: string;
   appointments?: Appointment[];
   medications?: Medication[];
   exams?: Exam[];
@@ -40,9 +41,12 @@ export interface Appointment {
   status: string;
   type: string;
   doctorName?: string;
+  doctorId?: string;
   specialty?: string;
   location?: string;
   notes?: string;
+  instructions?: string;
+  lockedByDoctor?: boolean;
 }
 
 export interface Medication {
@@ -152,6 +156,11 @@ export function usePatientDetail(id: string | undefined) {
   const [patient, setPatient] = useState<PatientFromAPI | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refetch = useCallback(() => {
+    setRefreshKey((k) => k + 1);
+  }, []);
 
   useEffect(() => {
     if (!id) {
@@ -165,9 +174,47 @@ export function usePatientDetail(id: string | undefined) {
       setLoading(true);
       setError(null);
       try {
-        const data = await api(`/patients/${id}`);
+        // Fetch basic patient data and medical record in parallel
+        const [patientData, medicalRecord] = await Promise.all([
+          api(`/patients/${id}`),
+          api(`/patients/${id}/medical-record`).catch(() => null),
+        ]);
+
         if (!cancelled) {
-          setPatient(data);
+          const merged: PatientFromAPI = {
+            ...patientData,
+            appointments: medicalRecord?.appointments?.map((apt: any) => ({
+              id: apt.id,
+              date: apt.dateTime || apt.date,
+              status: apt.status || (apt.isCompleted ? "completed" : "scheduled"),
+              type: apt.reason || apt.type || "Consulta",
+              doctorName: apt.doctorName || undefined,
+              doctorId: apt.doctorId || undefined,
+              specialty: apt.doctorSpecialty || apt.specialty || undefined,
+              location: apt.location || undefined,
+              notes: apt.doctorFeedback || apt.notes || undefined,
+              instructions: apt.doctorInstructions || undefined,
+              lockedByDoctor: apt.lockedByDoctor || false,
+            })) || [],
+            medications: medicalRecord?.medications?.map((med: any) => ({
+              id: med.id,
+              name: med.name,
+              dosage: med.dosage || "",
+              frequency: med.frequency || "",
+              startDate: med.startDate,
+              endDate: med.endDate,
+              active: med.isActive ?? med.active ?? true,
+            })) || [],
+            exams: medicalRecord?.exams?.map((exam: any) => ({
+              id: exam.id,
+              title: exam.title || exam.name || "Exame",
+              date: exam.date || exam.createdAt,
+              type: exam.type || "Exame",
+              source: exam.source || undefined,
+              status: exam.status || undefined,
+            })) || [],
+          };
+          setPatient(merged);
         }
       } catch (err) {
         if (!cancelled) {
@@ -187,9 +234,9 @@ export function usePatientDetail(id: string | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, refreshKey]);
 
-  return { patient, loading, error };
+  return { patient, loading, error, refetch };
 }
 
 // --- usePatientStats ---

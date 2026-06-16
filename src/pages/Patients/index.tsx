@@ -118,9 +118,8 @@ function SearchHero({
           <h3 className="text-4xl lg:text-5xl font-black font-display tracking-tighter">
             Encontre Novos Pacientes
           </h3>
-          <p className="text-white/80 text-lg font-medium max-w-xl mx-auto leading-relaxed">
-            Pesquise na base global do PocketMed por localização, especialidade
-            ou necessidades clínicas específicas.
+          <p className="text-white/80 text-lg font-medium">
+            Pesquise na base global do PocketMed por nome ou CPF do paciente.
           </p>
         </div>
         <div className="glass p-2 rounded-2xl flex flex-col md:flex-row gap-2 shadow-2xl">
@@ -134,32 +133,10 @@ function SearchHero({
               className="w-full bg-transparent border-none focus:ring-0 pl-12 py-4 text-white placeholder:text-white/60 text-lg"
             />
           </div>
-          <div className="h-10 w-px bg-white/20 self-center hidden md:block" />
-          <div className="flex-1 relative flex items-center">
-            <MapPin className="absolute left-4 w-5 h-5 text-white/60" />
-            <select className="w-full bg-transparent border-none focus:ring-0 pl-12 py-4 text-white appearance-none cursor-pointer text-lg">
-              <option className="text-gray-900">Todas as Cidades</option>
-              <option className="text-gray-900">São Paulo, SP</option>
-              <option className="text-gray-900">Rio de Janeiro, RJ</option>
-            </select>
-          </div>
           <button className="bg-white text-primary px-10 py-4 rounded-xl font-bold hover:bg-white/90 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-black/10">
             <Search className="w-5 h-5" />
             Pesquisar
           </button>
-        </div>
-        <div className="flex flex-wrap justify-center gap-3">
-          <span className="text-sm font-semibold text-white/60 self-center mr-2">
-            Filtros rápidos:
-          </span>
-          {["Cardiologia", "Pediatria", "Pré-operatório"].map((tag) => (
-            <button
-              key={tag}
-              className="px-4 py-1.5 rounded-full border border-white/20 text-xs font-bold hover:bg-white/10 transition-colors"
-            >
-              {tag}
-            </button>
-          ))}
         </div>
       </div>
     </motion.section>
@@ -299,63 +276,50 @@ function APIPatientCard({
       whileHover={{ y: -8 }}
       className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-soft hover:shadow-xl transition-all flex flex-col justify-between group"
     >
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex items-center gap-4 min-w-0">
-          <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
-            {patient.profileImage ? (
-              <img
-                src={patient.profileImage}
-                alt={patient.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold text-lg">
-                {patient.name.charAt(0).toUpperCase()}
-              </div>
-            )}
-          </div>
-          <div className="min-w-0">
-            <h5 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors font-display truncate">
-              {patient.name}
-            </h5>
-            <p className="text-gray-500 text-sm font-medium truncate">
-              {patient.email || ""}
-            </p>
-          </div>
+      <div className="flex items-start gap-4 mb-5">
+        <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
+          {patient.profileImage ? (
+            <img
+              src={patient.profileImage}
+              alt={patient.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold text-lg">
+              {patient.name.charAt(0).toUpperCase()}
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h5 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors font-display truncate">
+            {patient.name}
+          </h5>
+          <p className="text-gray-500 text-sm font-medium truncate">
+            {patient.email || ""}
+          </p>
         </div>
       </div>
-      <div className="space-y-3 mb-8">
-        {patient.phone && (
-          <div className="flex items-center text-sm text-gray-600 font-medium">
-            <Activity className="w-4 h-4 mr-2.5 text-gray-400 shrink-0" />
-            <span className="truncate">{patient.phone}</span>
+
+      <div className="pt-4 border-t border-gray-100">
+        {accessStatus === "approved" ? (
+          <div className="w-full py-4 bg-green-50 rounded-2xl font-bold flex items-center justify-center gap-2 text-green-700 cursor-default">
+            <CheckCircle className="w-5 h-5" />
+            Acesso Concedido
           </div>
-        )}
-        {patient.gender && (
-          <div className="flex items-center text-sm text-gray-600 font-medium">
-            <Pill className="w-4 h-4 mr-2.5 text-gray-400 shrink-0" />
-            <span className="truncate capitalize">{patient.gender}</span>
+        ) : accessStatus === "pending" ? (
+          <div className="w-full py-4 bg-amber-50 rounded-2xl font-bold flex items-center justify-center gap-2 text-amber-700 cursor-default">
+            <Clock className="w-5 h-5" />
+            Aguardando Resposta
           </div>
+        ) : (
+          <button
+            onClick={() => onRequestAccess(patient)}
+            className="w-full py-4 bg-gray-50 hover:bg-primary hover:text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2 active:scale-95 text-gray-700"
+          >
+            Solicitar Acesso <ArrowRight className="w-5 h-5" />
+          </button>
         )}
       </div>
-      {accessStatus === "approved" ? (
-        <div className="w-full py-4 bg-green-50 rounded-2xl font-bold flex items-center justify-center gap-2 text-green-700 cursor-default">
-          <CheckCircle className="w-5 h-5" />
-          Acesso Concedido
-        </div>
-      ) : accessStatus === "pending" ? (
-        <div className="w-full py-4 bg-amber-50 rounded-2xl font-bold flex items-center justify-center gap-2 text-amber-700 cursor-default">
-          <Clock className="w-5 h-5" />
-          Aguardando Resposta
-        </div>
-      ) : (
-        <button
-          onClick={() => onRequestAccess(patient)}
-          className="w-full py-4 bg-gray-50 hover:bg-primary hover:text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2 active:scale-95 text-gray-700"
-        >
-          Solicitar Acesso <ArrowRight className="w-5 h-5" />
-        </button>
-      )}
     </motion.div>
   );
 }
@@ -412,21 +376,6 @@ function APIPatientListRow({
             {patient.email || ""}
           </p>
         </div>
-      </div>
-
-      <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-12 flex-[2] w-full">
-        {patient.phone && (
-          <div className="flex items-center text-sm text-slate-500 font-medium">
-            <Activity className="w-4 h-4 mr-2 text-primary shrink-0" />
-            <span className="truncate">{patient.phone}</span>
-          </div>
-        )}
-        {patient.gender && (
-          <div className="flex items-center text-sm text-slate-500 font-medium">
-            <MapPin className="w-4 h-4 mr-2 text-primary shrink-0" />
-            <span className="truncate capitalize">{patient.gender}</span>
-          </div>
-        )}
       </div>
 
       <div className="shrink-0 w-full md:w-auto">
@@ -1043,7 +992,7 @@ function SearchTabContent({
   return (
     <>
       <SearchHero searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-      <section className="space-y-8">
+      <section className="space-y-8 mt-10">
         <div className="flex justify-between items-end">
           <div>
             <p className="text-primary font-bold text-xs uppercase tracking-[0.2em] mb-1">
@@ -1201,11 +1150,15 @@ function SearchTabContent({
   );
 }
 
-function SolicitacoesTabContent() {
+function SolicitacoesTabContent({ active }: { active: boolean }) {
   const { requests, loading, refetch } = useAccessRequests();
   const { cancelRequest, loading: cancelLoading } = useCancelAccessRequest();
   const [cancelTarget, setCancelTarget] = useState<AccessRequest | null>(null);
   const toast = useToast();
+
+  useEffect(() => {
+    if (active) refetch();
+  }, [active]);
 
   const handleCancelConfirm = async () => {
     if (!cancelTarget) return;
@@ -1261,6 +1214,7 @@ function MyPatientsContent({
   refetchRef?: React.MutableRefObject<(() => void) | null>;
 }) {
   const { patients, loading, error, refetch } = useMyPatients();
+  const [searchFilter, setSearchFilter] = useState("");
 
   // Expose refetch to parent via ref
   useEffect(() => {
@@ -1315,6 +1269,13 @@ function MyPatientsContent({
 
   // Render from API data
   if (hasAPIData) {
+    const filteredPatients = searchFilter.trim()
+      ? patients.filter((p) =>
+          p.name.toLowerCase().includes(searchFilter.toLowerCase()) ||
+          (p.email && p.email.toLowerCase().includes(searchFilter.toLowerCase()))
+        )
+      : patients;
+
     return (
       <section className="space-y-8">
         <div className="flex justify-between items-end">
@@ -1328,8 +1289,19 @@ function MyPatientsContent({
           </div>
         </div>
 
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Buscar por nome ou email..."
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 focus:border-primary"
+          />
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {patients.map((patient, idx) => (
+          {filteredPatients.map((patient, idx) => (
             <motion.div
               key={patient.id}
               initial={{ opacity: 0, y: 20 }}
@@ -1480,7 +1452,7 @@ export default function Patients() {
             <SearchTabContent view={view} setView={setView} />
           </div>
           <div className={activeTab === "Solicitações" ? "" : "hidden"}>
-            <SolicitacoesTabContent />
+            <SolicitacoesTabContent active={activeTab === "Solicitações"} />
           </div>
           <div className={activeTab === "Meus Pacientes" ? "" : "hidden"}>
             <MyPatientsContent refetchRef={refetchPatientsRef} />
