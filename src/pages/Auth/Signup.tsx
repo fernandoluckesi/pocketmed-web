@@ -667,7 +667,7 @@ export default function Signup() {
   );
   const [showPassword, setShowPassword] = useState(false);
   const [snackbar, setSnackbar] = useState({ visible: false, message: "" });
-  const [, setProfileImage] = useState<File | null>(null);
+  const [profileImage, setProfileImage] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -709,6 +709,7 @@ export default function Signup() {
           birthDate: values.birthDate,
           crm: `${values.crm}/${values.crmState}`,
           rqe: values.rqe || undefined,
+          profileImage: profileImage || undefined,
         });
       } catch (err: unknown) {
         const axiosErr = err as {

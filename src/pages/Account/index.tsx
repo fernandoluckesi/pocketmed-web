@@ -7,6 +7,7 @@ import { MainLayout } from "../../components/MainLayout";
 import { useAuth } from "../../contexts/AuthContext";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 import { Link } from "react-router-dom";
+import api from "../../config/api";
 
 const profileSchema = Yup.object({
   name: Yup.string()
@@ -39,6 +40,7 @@ export default function Account() {
     "profile" | "security" | "subscription"
   >("profile");
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -47,6 +49,7 @@ export default function Account() {
     const file = e.target.files?.[0];
     if (file) {
       setProfilePreview(URL.createObjectURL(file));
+      setSelectedFile(file);
     }
   }
 
@@ -70,14 +73,45 @@ export default function Account() {
     },
     enableReinitialize: true,
     validationSchema: profileSchema,
-    onSubmit: async () => {
+    onSubmit: async (values) => {
       setSaving(true);
       setSuccessMsg("");
-      // Simula salvamento
-      await new Promise((r) => setTimeout(r, 1000));
-      setSaving(false);
-      setSuccessMsg("Perfil atualizado com sucesso!");
-      setTimeout(() => setSuccessMsg(""), 3000);
+      try {
+        const formData = new FormData();
+        if (values.name) formData.append("name", values.name);
+        if (values.phone) formData.append("phone", values.phone.replace(/\D/g, ""));
+        if (values.gender) formData.append("gender", values.gender);
+        if (values.birthDate) formData.append("birthDate", values.birthDate);
+        if (values.specialty) formData.append("specialty", values.specialty);
+        if (values.crm) formData.append("crm", values.crm);
+        if (values.rqe) formData.append("rqe", values.rqe);
+        if (selectedFile) formData.append("profileImage", selectedFile);
+
+        const response = await api.patch("/auth/profile", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        // Update local storage with new profile image
+        if (response.data.profileImage) {
+          const storedUser = localStorage.getItem("pocketmed_user");
+          if (storedUser) {
+            const parsed = JSON.parse(storedUser);
+            parsed.profileImage = response.data.profileImage;
+            parsed.name = values.name || parsed.name;
+            localStorage.setItem("pocketmed_user", JSON.stringify(parsed));
+          }
+        }
+
+        setSuccessMsg("Perfil atualizado com sucesso!");
+        setSelectedFile(null);
+        // Reload to reflect changes in header
+        setTimeout(() => window.location.reload(), 1000);
+      } catch (err) {
+        setSuccessMsg("Erro ao salvar perfil. Tente novamente.");
+      } finally {
+        setSaving(false);
+        setTimeout(() => setSuccessMsg(""), 3000);
+      }
     },
   });
 

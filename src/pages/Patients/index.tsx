@@ -39,6 +39,7 @@ import { ConfirmModal } from "../../components/ConfirmModal";
 import { Skeleton } from "../../components/Skeleton";
 import { EmptyState } from "../../components/EmptyState";
 import { useToast } from "../../contexts/ToastContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 // --- Types ---
 
@@ -654,6 +655,16 @@ function StatsSection({ requests }: { requests: AccessRequest[] }) {
 
 // --- Add Patient Modal ---
 
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  let masked = "";
+  if (digits.length > 0) masked += `(${digits.slice(0, 2)}`;
+  if (digits.length >= 2) masked += `) `;
+  if (digits.length > 2) masked += digits.slice(2, 7);
+  if (digits.length > 7) masked += `-${digits.slice(7, 11)}`;
+  return masked;
+}
+
 const addPatientSchema = Yup.object().shape({
   name: Yup.string()
     .min(3, "Nome deve ter pelo menos 3 caracteres")
@@ -675,6 +686,7 @@ function AddPatientModal({
 }) {
   const { createPatient, loading, error, success, reset } =
     useCreateShadowPatient();
+  const { user } = useAuth();
   const toast = useToast();
 
   const formik = useFormik({
@@ -688,7 +700,11 @@ function AddPatientModal({
     validationSchema: addPatientSchema,
     onSubmit: async (values) => {
       try {
-        await createPatient(values);
+        await createPatient({
+          ...values,
+          phone: values.phone.replace(/\D/g, ""),
+          doctorCreatorId: user?.userId || "",
+        });
       } catch {
         toast.error("Erro ao processar. Tente novamente.");
       }
@@ -834,8 +850,10 @@ function AddPatientModal({
                       : "border-transparent"
                   }`}
                   type="tel"
-                  placeholder="11988776655"
-                  {...formik.getFieldProps("phone")}
+                  placeholder="(11) 98877-6655"
+                  value={formik.values.phone}
+                  onChange={(e) => formik.setFieldValue("phone", formatPhone(e.target.value))}
+                  onBlur={formik.handleBlur("phone")}
                 />
                 {formik.touched.phone && formik.errors.phone && (
                   <p className="text-xs text-red-500 ml-1">

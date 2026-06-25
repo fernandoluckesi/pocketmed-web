@@ -1246,8 +1246,11 @@ function ConsultaDetailView({
 }) {
   const { user } = useAuth();
   const [editing, setEditing] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
 
   const isOwner = user?.userId === consultation.doctorId;
+  const isRejected = consultation.status === "rejected";
   const dateObj = new Date(consultation.date);
   const formattedDate = dateObj.toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -1258,6 +1261,27 @@ function ConsultaDetailView({
     hour: "2-digit",
     minute: "2-digit",
   });
+
+  async function handleResend() {
+    setResending(true);
+    try {
+      await api(`/patients/${patientId}/consultations/${consultation.id}/resend`, {
+        method: "POST",
+      });
+      setCooldown(120);
+      const interval = setInterval(() => {
+        setCooldown((prev) => {
+          if (prev <= 1) { clearInterval(interval); return 0; }
+          return prev - 1;
+        });
+      }, 1000);
+      onSaved();
+    } catch (err) {
+      console.error("Erro ao reenviar consulta:", err);
+    } finally {
+      setResending(false);
+    }
+  }
 
   if (editing) {
     return (
@@ -1342,6 +1366,18 @@ function ConsultaDetailView({
             Editar consulta
           </button>
         </div>
+      )}
+
+      {/* Resend button for rejected consultations */}
+      {isOwner && isRejected && (
+        <button
+          type="button"
+          onClick={handleResend}
+          disabled={resending || cooldown > 0}
+          className="w-full py-3 bg-primary text-white rounded-full font-bold hover:opacity-90 transition-all cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {resending ? "Reenviando..." : cooldown > 0 ? `Aguarde ${Math.floor(cooldown / 60)}:${(cooldown % 60).toString().padStart(2, "0")}` : "Reenviar Consulta"}
+        </button>
       )}
 
       {/* Close button */}

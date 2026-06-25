@@ -385,6 +385,7 @@ export interface CreateShadowPatientData {
   phone: string;
   gender: string;
   birthDate: string;
+  doctorCreatorId: string;
 }
 
 // --- useCreateShadowPatient ---

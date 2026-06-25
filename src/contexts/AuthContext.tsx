@@ -32,6 +32,7 @@ interface RegisterDoctorPayload {
   rqe?: string;
   clinicName?: string;
   cnpj?: string;
+  profileImage?: File;
 }
 
 interface AuthContextType {
@@ -127,7 +128,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function registerDoctor(payload: RegisterDoctorPayload) {
-    const response = await api.post("/auth/register/doctor", payload);
+    const { profileImage, ...data } = payload;
+
+    let response;
+    if (profileImage) {
+      const formData = new FormData();
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, String(value));
+        }
+      });
+      formData.append("profileImage", profileImage);
+      response = await api.post("/auth/register/doctor", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    } else {
+      response = await api.post("/auth/register/doctor", data);
+    }
+
     const { token: access_token, user: userData } = response.data;
 
     localStorage.setItem("token", access_token);
