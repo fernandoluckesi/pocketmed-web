@@ -137,6 +137,7 @@ export const patientsApi = {
     startDate: string;
     endDate?: string;
     notes?: string;
+    appointmentId?: string;
   }): Promise<Medication> => api(`/patients/${patientId}/medications`, { method: "POST", body: data }),
 
   // Update patient data

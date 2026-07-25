@@ -1005,11 +1005,11 @@ function SearchTabContent({
   // Determine what to display: API results if search is active, otherwise mock data
   const hasSearchQuery = searchQuery.trim().length >= 2;
   const displayResults = hasSearchQuery ? results : [];
-  const showMockResults = !hasSearchQuery;
 
   return (
     <>
       <SearchHero searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+      {hasSearchQuery && (
       <section className="space-y-8 mt-10">
         <div className="flex justify-between items-end">
           <div>
@@ -1017,11 +1017,9 @@ function SearchTabContent({
               Resultados da Busca
             </p>
             <h4 className="text-3xl font-black font-display tracking-tight">
-              {hasSearchQuery
-                ? searchLoading
-                  ? "Buscando..."
-                  : `${displayResults.length} Pacientes Encontrados`
-                : "12 Pacientes Encontrados"}
+              {searchLoading
+                ? "Buscando..."
+                : `${displayResults.length} Pacientes Encontrados`}
             </h4>
           </div>
           <div className="flex gap-2 bg-white p-1 rounded-xl shadow-sm border border-gray-100">
@@ -1098,62 +1096,10 @@ function SearchTabContent({
           />
         )}
 
-        {/* Mock results (default when no search) */}
-        {showMockResults && (
-          <motion.div
-            layout
-            className={
-              view === "grid"
-                ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
-                : "space-y-4"
-            }
-          >
-            <AnimatePresence>
-              {PATIENTS.map((patient, idx) =>
-                view === "grid" ? (
-                  <motion.div
-                    key={patient.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.1 }}
-                  >
-                    <PatientCard patient={patient} />
-                  </motion.div>
-                ) : (
-                  <PatientListRow
-                    key={patient.id}
-                    patient={patient}
-                    index={idx}
-                  />
-                ),
-              )}
-            </AnimatePresence>
-          </motion.div>
-        )}
+        {/* No mock results — only show when user searches */}
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="bg-white rounded-[2.5rem] p-10 flex flex-col md:flex-row items-center gap-8 shadow-soft border border-gray-100"
-        >
-          <div className="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center text-primary shrink-0">
-            <Info className="w-10 h-10 fill-primary/10" />
-          </div>
-          <div className="space-y-2 text-center md:text-left">
-            <h6 className="text-2xl font-bold font-display">
-              Não encontrou quem procurava?
-            </h6>
-            <p className="text-gray-500 font-medium max-w-2xl text-lg">
-              Refine seus termos de busca ou utilize o número do CPF para uma
-              pesquisa direta e precisa no banco de dados nacional do PocketMed.
-            </p>
-          </div>
-          <button className="md:ml-auto bg-[#334380] text-white px-8 py-4 rounded-2xl font-bold hover:brightness-110 transition-all whitespace-nowrap shadow-lg shadow-blue-900/10 active:scale-95">
-            Suporte ao Médico
-          </button>
-        </motion.div>
       </section>
+      )}
 
       {/* Request Access Modal */}
       {modalPatient && (

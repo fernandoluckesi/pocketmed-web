@@ -66,6 +66,10 @@ export interface Exam {
   type: string;
   source?: string;
   status?: string;
+  description?: string;
+  batchId?: string;
+  completedAt?: string;
+  resultFiles?: string[];
 }
 
 export interface PatientStats {
@@ -208,10 +212,14 @@ export function usePatientDetail(id: string | undefined) {
             exams: medicalRecord?.exams?.map((exam: any) => ({
               id: exam.id,
               title: exam.title || exam.name || "Exame",
-              date: exam.date || exam.createdAt,
+              date: exam.date || exam.scheduledDate || exam.createdAt,
               type: exam.type || "Exame",
-              source: exam.source || undefined,
+              source: exam.source || exam.laboratory || undefined,
               status: exam.status || undefined,
+              description: exam.description || undefined,
+              batchId: exam.batchId || undefined,
+              completedAt: exam.completedAt || undefined,
+              resultFiles: exam.resultFiles || undefined,
             })) || [],
           };
           setPatient(merged);

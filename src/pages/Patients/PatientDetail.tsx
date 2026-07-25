@@ -19,6 +19,7 @@ import {
   Phone,
   Info,
   Download,
+  X,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { MainLayout } from "../../components/MainLayout";
@@ -35,6 +36,7 @@ import {
   FormActions,
 } from "../../components/ui/FormField";
 import { SearchableSelect } from "../../components/ui/SearchableSelect";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import { EXAM_CATALOG } from "../../data/exam-catalog";
 import { useAuth } from "../../contexts/AuthContext";
 import { generateExamPdf, generatePrescriptionPdf } from "../../utils/generate-pdf";
@@ -543,7 +545,10 @@ function MedicationsSection({
   );
 }
 
-function ExamsSection({ exams }: { exams: PatientFromAPI["exams"] }) {
+function ExamsSection({ exams, patientId, onRefresh }: { exams: PatientFromAPI["exams"]; patientId: string; onRefresh: () => void }) {
+  const [openBatch, setOpenBatch] = useState<string | null>(null);
+  const [resultModal, setResultModal] = useState<{ examId: string; examName: string } | null>(null);
+
   if (!exams || exams.length === 0) {
     return (
       <div className="text-center py-8 text-slate-400">
@@ -553,37 +558,182 @@ function ExamsSection({ exams }: { exams: PatientFromAPI["exams"] }) {
     );
   }
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {exams.map((exam) => (
-        <div
-          key={exam.id}
-          className="group bg-slate-50 hover:bg-slate-100/50 rounded-2xl p-4 transition-all border border-slate-100"
-        >
-          <div className="aspect-video bg-slate-200 rounded-xl mb-4 flex items-center justify-center relative overflow-hidden">
-            <FileText className="w-10 h-10 text-slate-500 group-hover:scale-110 transition-transform duration-300" />
-            <div className="absolute top-2 right-2 bg-white/90 px-2 py-0.5 rounded text-[10px] font-bold text-slate-600 uppercase">
-              {exam.type}
-            </div>
-          </div>
-          <h4
-            className="font-bold text-sm text-slate-800 truncate"
-            title={exam.title}
-          >
-            {exam.title}
-          </h4>
-          <p className="text-xs text-slate-500 mt-1">
-            {new Date(exam.date).toLocaleDateString("pt-BR")}
-            {exam.source && ` • ${exam.source}`}
-          </p>
+  // Group exams by batchId
+  const groups: { key: string; description: string; date: string; exams: typeof exams }[] = [];
+  const batchMap = new Map<string, typeof exams>();
+  const soloExams: typeof exams = [];
 
-          <div className="mt-4 flex gap-2">
-            <button className="flex-grow text-[10px] font-bold py-2 bg-white hover:bg-primary hover:text-white rounded-lg transition-colors border border-slate-200 cursor-pointer">
-              VISUALIZAR
-            </button>
-          </div>
+  for (const exam of exams) {
+    if (exam.batchId) {
+      if (!batchMap.has(exam.batchId)) batchMap.set(exam.batchId, []);
+      batchMap.get(exam.batchId)!.push(exam);
+    } else {
+      soloExams.push(exam);
+    }
+  }
+
+  batchMap.forEach((batchExams, batchId) => {
+    groups.push({
+      key: batchId,
+      description: batchExams[0].description || "Exames solicitados",
+      date: batchExams[0].date,
+      exams: batchExams,
+    });
+  });
+
+  for (const exam of soloExams) {
+    groups.push({
+      key: exam.id,
+      description: exam.description || exam.title,
+      date: exam.date,
+      exams: [exam],
+    });
+  }
+
+  const allCompleted = (batchExams: typeof exams) => batchExams.every((e) => e.status === "completed");
+
+  return (
+    <>
+      <div className="space-y-3">
+        {groups.map((group) => {
+          const isOpen = openBatch === group.key;
+          const completed = allCompleted(group.exams);
+
+          return (
+            <div key={group.key} className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+              {/* Accordion Header */}
+              <button
+                type="button"
+                onClick={() => setOpenBatch(isOpen ? null : group.key)}
+                className="w-full p-5 flex items-center justify-between text-left cursor-pointer border-none bg-transparent hover:bg-slate-50 transition-colors"
+              >
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm text-slate-800 truncate">{group.description}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {new Date(group.date).toLocaleDateString("pt-BR")} • {group.exams.length} exame{group.exams.length > 1 ? "s" : ""}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${completed ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+                    {completed ? "Realizado" : "Pendente"}
+                  </span>
+                  <svg className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </button>
+
+              {/* Accordion Body */}
+              {isOpen && (
+                <div className="px-5 pb-5 border-t border-slate-100 pt-4 space-y-3">
+                  {group.exams.map((exam) => (
+                    <div key={exam.id} className="flex items-center justify-between py-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-slate-700">{exam.title}</p>
+                        <p className="text-[11px] text-slate-400">
+                          {exam.status === "completed" && exam.completedAt
+                            ? `Realizado em ${new Date(exam.completedAt).toLocaleDateString("pt-BR")}`
+                            : "Pendente"}
+                        </p>
+                      </div>
+                      {exam.status !== "completed" && (
+                        <button
+                          type="button"
+                          onClick={() => setResultModal({ examId: exam.id, examName: exam.title })}
+                          className="text-xs font-semibold text-primary hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
+                        >
+                          Inserir resultado
+                        </button>
+                      )}
+                      {exam.status === "completed" && exam.resultFiles && exam.resultFiles.length > 0 && (
+                        <span className="text-[10px] text-green-600 font-medium">{exam.resultFiles.length} arquivo{exam.resultFiles.length > 1 ? "s" : ""}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Result Modal */}
+      {resultModal && (
+        <ExamResultModal
+          examId={resultModal.examId}
+          examName={resultModal.examName}
+          onClose={() => setResultModal(null)}
+          onSaved={() => { setResultModal(null); onRefresh(); }}
+        />
+      )}
+    </>
+  );
+}
+
+// --- Exam Result Modal ---
+
+function ExamResultModal({ examId, examName, onClose, onSaved }: { examId: string; examName: string; onClose: () => void; onSaved: () => void }) {
+  const [completedAt, setCompletedAt] = useState("");
+  const [files, setFiles] = useState<FileList | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const formData = new FormData();
+      if (completedAt) formData.append("completedAt", completedAt);
+      if (files) {
+        for (let i = 0; i < files.length; i++) {
+          formData.append("files", files[i]);
+        }
+      }
+      await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3000"}/exams/${examId}/result`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${localStorage.getItem("pocketmed_token")}` },
+        body: formData,
+      });
+      onSaved();
+    } catch (err) {
+      console.error("Erro ao enviar resultado:", err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="p-6 border-b border-slate-100">
+          <h3 className="font-bold text-lg">Inserir Resultado</h3>
+          <p className="text-sm text-slate-500 mt-1">{examName}</p>
         </div>
-      ))}
+        <form className="p-6 space-y-4" onSubmit={handleSubmit}>
+          <DateInput
+            label="Data de Realização"
+            name="exam-completed-at"
+            value={completedAt}
+            onChange={setCompletedAt}
+          />
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+              Arquivos do Resultado
+            </label>
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.jpg,.jpeg,.png"
+              onChange={(e) => setFiles(e.target.files)}
+              className="w-full px-4 py-3 border border-dashed border-slate-300 rounded-xl bg-slate-50 text-sm cursor-pointer file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary/10 file:text-primary"
+            />
+          </div>
+          <FormActions
+            onCancel={onClose}
+            submitLabel="Salvar Resultado"
+            loading={saving}
+          />
+        </form>
+      </div>
     </div>
   );
 }
@@ -782,10 +932,12 @@ function DocumentsTab({ documents }: { documents: MedicalDocument[] }) {
 
 // --- Exam Request Form ---
 
-function ExamRequestForm({ onClose, patientName }: { onClose: () => void; patientName: string }) {
+function ExamRequestForm({ onClose, patientName, patientId, onSaved }: { onClose: () => void; patientName: string; patientId: string; onSaved: () => void }) {
   const { user } = useAuth();
   const [examNames, setExamNames] = useState<string[]>([""]);
+  const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const examOptions = [...EXAM_CATALOG].sort((a, b) => a.localeCompare(b, "pt-BR")).map((name) => ({
     value: name,
@@ -818,16 +970,38 @@ function ExamRequestForm({ onClose, patientName }: { onClose: () => void; patien
     });
   }
 
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const validExams = examNames.filter((n) => n.trim());
+    if (validExams.length === 0) return;
+
+    setSaving(true);
+    try {
+      const batchId = crypto.randomUUID();
+      for (const examName of validExams) {
+        await api("/exams", {
+          method: "POST",
+          body: {
+            name: examName,
+            type: "other",
+            description: description || undefined,
+            patientId,
+            batchId,
+            lockedByDoctor: true,
+          },
+        });
+      }
+      onSaved();
+      onClose();
+    } catch (err) {
+      console.error("Erro ao criar exames:", err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
-    <form
-      className="p-8 pt-0 space-y-5"
-      onSubmit={(e) => {
-        e.preventDefault();
-        const validExams = examNames.filter((n) => n.trim());
-        console.log("Exam request:", { exams: validExams, file });
-        onClose();
-      }}
-    >
+    <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
       {examNames.map((name, index) => (
         <SearchableSelect
           key={index}
@@ -851,6 +1025,15 @@ function ExamRequestForm({ onClose, patientName }: { onClose: () => void; patien
           Adicionar outro exame
         </button>
       </div>
+
+      <Textarea
+        label="Descrição"
+        name="exam-description"
+        value={description}
+        onChange={setDescription}
+        placeholder="Descrição ou observações sobre os exames solicitados"
+        rows={2}
+      />
 
       <button
         type="button"
@@ -877,6 +1060,7 @@ function ExamRequestForm({ onClose, patientName }: { onClose: () => void; patien
       <FormActions
         onCancel={onClose}
         submitLabel="Solicitar Exame"
+        loading={saving}
       />
     </form>
   );
@@ -888,23 +1072,70 @@ interface MedFormItem {
   name: string;
   dosage: string;
   frequency: string;
+  times: string[];
+  startDate: string;
+  endDate: string;
   instructions: string;
+}
+
+const FREQUENCY_OPTIONS = [
+  { value: "daily", label: "Diário" },
+  { value: "twice_daily", label: "2x ao dia" },
+  { value: "three_times_daily", label: "3x ao dia" },
+  { value: "four_times_daily", label: "4x ao dia" },
+  { value: "custom", label: "Personalizado" },
+];
+
+function getTimeSlotsCount(frequency: string): number {
+  switch (frequency) {
+    case "daily": return 1;
+    case "twice_daily": return 2;
+    case "three_times_daily": return 3;
+    case "four_times_daily": return 4;
+    default: return 1;
+  }
+}
+
+function generateDistributedTimes(count: number): string[] {
+  if (count <= 1) return ["08:00"];
+  if (count === 2) return ["08:00", "20:00"];
+  if (count === 3) return ["08:00", "14:00", "20:00"];
+  if (count === 4) return ["08:00", "12:00", "16:00", "20:00"];
+  // fallback
+  const start = 8;
+  const interval = Math.floor(14 / (count - 1));
+  return Array.from({ length: count }, (_, i) => {
+    const hour = start + i * interval;
+    return `${hour.toString().padStart(2, "0")}:00`;
+  });
 }
 
 function PrescriptionForm({ onClose, patientName }: { onClose: () => void; patientName: string }) {
   const { user } = useAuth();
   const [medications, setMedications] = useState<MedFormItem[]>([
-    { name: "", dosage: "", frequency: "", instructions: "" },
+    { name: "", dosage: "", frequency: "daily", times: ["08:00"], startDate: "", endDate: "", instructions: "" },
   ]);
 
-  function updateMed(index: number, field: keyof MedFormItem, value: string) {
+  function updateMed(index: number, field: keyof MedFormItem, value: string | string[]) {
     const updated = [...medications];
     updated[index] = { ...updated[index], [field]: value };
+    if (field === "frequency" && typeof value === "string") {
+      const count = getTimeSlotsCount(value);
+      updated[index].times = generateDistributedTimes(count);
+    }
+    setMedications(updated);
+  }
+
+  function updateMedTime(medIndex: number, timeIndex: number, value: string) {
+    const updated = [...medications];
+    const times = [...updated[medIndex].times];
+    times[timeIndex] = value;
+    updated[medIndex] = { ...updated[medIndex], times };
     setMedications(updated);
   }
 
   function addMed() {
-    setMedications([...medications, { name: "", dosage: "", frequency: "", instructions: "" }]);
+    setMedications([...medications, { name: "", dosage: "", frequency: "daily", times: ["08:00"], startDate: "", endDate: "", instructions: "" }]);
   }
 
   async function handleGeneratePdf() {
@@ -945,20 +1176,48 @@ function PrescriptionForm({ onClose, patientName }: { onClose: () => void; patie
             onChange={(val) => updateMed(index, "name", val)}
             placeholder="Ex: Losartana Potássica"
           />
+          <TextInput
+            label="Dosagem / Apresentação"
+            name={`med-dosagem-${index}`}
+            value={med.dosage}
+            onChange={(val) => updateMed(index, "dosage", val)}
+            placeholder="Ex: 50mg, Comprimido"
+          />
+          <SelectInput
+            label="Frequência"
+            name={`med-frequencia-${index}`}
+            value={med.frequency}
+            onChange={(val) => updateMed(index, "frequency", val)}
+            options={FREQUENCY_OPTIONS}
+          />
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+              Horários
+            </label>
+            <div className="flex flex-wrap gap-3">
+              {med.times.map((t, tIdx) => (
+                <input
+                  key={tIdx}
+                  type="time"
+                  value={t}
+                  onChange={(e) => updateMedTime(index, tIdx, e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-900 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                />
+              ))}
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-6">
-            <TextInput
-              label="Dosagem / Apresentação"
-              name={`med-dosagem-${index}`}
-              value={med.dosage}
-              onChange={(val) => updateMed(index, "dosage", val)}
-              placeholder="Ex: 50mg, Comprimido"
+            <DateInput
+              label="Data de Início"
+              name={`med-start-${index}`}
+              value={med.startDate}
+              onChange={(val) => updateMed(index, "startDate", val)}
             />
-            <TextInput
-              label="Frequência"
-              name={`med-frequencia-${index}`}
-              value={med.frequency}
-              onChange={(val) => updateMed(index, "frequency", val)}
-              placeholder="Ex: 1x ao dia"
+            <DateInput
+              label="Data de Fim"
+              name={`med-end-${index}`}
+              value={med.endDate}
+              onChange={(val) => updateMed(index, "endDate", val)}
             />
           </div>
           <Textarea
@@ -1010,15 +1269,53 @@ function ConsultaForm({ onClose, patientId, onSaved }: { onClose: () => void; pa
   const [diagnostico, setDiagnostico] = useState("");
   const [orientacoes, setOrientacoes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [addMedication, setAddMedication] = useState(false);
+  const [addExam, setAddExam] = useState(false);
+  const [medications, setMedications] = useState<MedFormItem[]>([
+    { name: "", dosage: "", frequency: "daily", times: ["08:00"], startDate: "", endDate: "", instructions: "" },
+  ]);
+  const [examNames, setExamNames] = useState<string[]>([""]);
+  const [submissionErrors, setSubmissionErrors] = useState<string[]>([]);
+
+  const examOptions = [...EXAM_CATALOG].sort((a, b) => a.localeCompare(b, "pt-BR")).map((name) => ({
+    value: name,
+    label: name,
+  }));
+
+  function handleMedicationChange(index: number, field: string, value: string | string[]) {
+    const updated = [...medications];
+    updated[index] = { ...updated[index], [field]: value };
+    if (field === "frequency" && typeof value === "string") {
+      const count = getTimeSlotsCount(value);
+      updated[index].times = generateDistributedTimes(count);
+    }
+    setMedications(updated);
+  }
+
+  function handleMedTimeChange(medIndex: number, timeIndex: number, value: string) {
+    const updated = [...medications];
+    const times = [...updated[medIndex].times];
+    times[timeIndex] = value;
+    updated[medIndex] = { ...updated[medIndex], times };
+    setMedications(updated);
+  }
+
+  function handleExamChange(index: number, value: string) {
+    const updated = [...examNames];
+    updated[index] = value;
+    setExamNames(updated);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!date) return;
 
     setSaving(true);
+    setSubmissionErrors([]);
+
     try {
       const dateTime = time ? `${date}T${time}:00` : `${date}T00:00:00`;
-      await api(`/patients/${patientId}/consultations`, {
+      const consultation = await api(`/patients/${patientId}/consultations`, {
         method: "POST",
         body: {
           date: dateTime,
@@ -1028,8 +1325,58 @@ function ConsultaForm({ onClose, patientId, onSaved }: { onClose: () => void; pa
           completed: finalizada,
         },
       });
-      onSaved();
-      onClose();
+
+      const appointmentId = consultation.id;
+      const errors: string[] = [];
+
+      // Create linked medications
+      if (addMedication) {
+        for (const med of medications) {
+          if (!med.name.trim()) continue;
+          try {
+            await api(`/patients/${patientId}/medications`, {
+              method: "POST",
+              body: {
+                name: med.name,
+                dosage: med.dosage,
+                frequency: med.frequency,
+                startDate: date,
+                notes: med.instructions || undefined,
+                appointmentId,
+              },
+            });
+          } catch {
+            errors.push(`Medicamento "${med.name}"`);
+          }
+        }
+      }
+
+      // Create linked exams
+      if (addExam) {
+        for (const examName of examNames) {
+          if (!examName.trim()) continue;
+          try {
+            await api(`/exams`, {
+              method: "POST",
+              body: {
+                name: examName,
+                type: "other",
+                patientId,
+                appointmentId,
+              },
+            });
+          } catch {
+            errors.push(`Exame "${examName}"`);
+          }
+        }
+      }
+
+      if (errors.length > 0) {
+        setSubmissionErrors(errors);
+      } else {
+        onSaved();
+        onClose();
+      }
     } catch (err) {
       console.error("Erro ao salvar consulta:", err);
     } finally {
@@ -1038,7 +1385,27 @@ function ConsultaForm({ onClose, patientId, onSaved }: { onClose: () => void; pa
   }
 
   return (
-    <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
+    <form  className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
+      {submissionErrors.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 relative">
+          <button
+            type="button"
+            onClick={() => setSubmissionErrors([])}
+            className="absolute top-3 right-3 text-amber-600 hover:text-amber-800 cursor-pointer border-none bg-transparent p-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <p className="text-sm font-medium text-amber-800 mb-2">
+            Consulta salva com sucesso, mas os seguintes itens falharam:
+          </p>
+          <ul className="list-disc list-inside text-sm text-amber-700 space-y-1">
+            {submissionErrors.map((err, i) => (
+              <li key={i}>{err}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-6">
         <DateInput
           label="Data"
@@ -1097,6 +1464,138 @@ function ConsultaForm({ onClose, patientId, onSaved }: { onClose: () => void; pa
             placeholder="Orientações e recomendações ao paciente"
             rows={3}
           />
+
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={addMedication}
+              onChange={(e) => {
+                setAddMedication(e.target.checked);
+                if (!e.target.checked) {
+                  setMedications([{ name: "", dosage: "", frequency: "daily", times: ["08:00"], startDate: "", endDate: "", instructions: "" }]);
+                }
+              }}
+              className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/30 cursor-pointer accent-primary"
+            />
+            <span className="text-sm font-medium text-slate-700">Adicionar medicamento</span>
+          </label>
+
+          {addMedication && (
+            <div className="space-y-4 pl-4 border-l-2 border-primary/20">
+              {medications.map((med, index) => (
+                <div key={index} className="space-y-3">
+                  {index > 0 && <div className="h-px bg-slate-200" />}
+                  <TextInput
+                    label="Nome do Medicamento"
+                    name={`med-name-${index}`}
+                    value={med.name}
+                    onChange={(val) => handleMedicationChange(index, "name", val)}
+                    placeholder="Ex: Losartana 50mg"
+                  />
+                  <TextInput
+                    label="Dosagem"
+                    name={`med-dosage-${index}`}
+                    value={med.dosage}
+                    onChange={(val) => handleMedicationChange(index, "dosage", val)}
+                    placeholder="Ex: 50mg"
+                  />
+                  <SelectInput
+                    label="Frequência"
+                    name={`med-frequency-${index}`}
+                    value={med.frequency}
+                    onChange={(val) => handleMedicationChange(index, "frequency", val)}
+                    options={FREQUENCY_OPTIONS}
+                  />
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                      Horários
+                    </label>
+                    <div className="flex flex-wrap gap-3">
+                      {med.times.map((t, tIdx) => (
+                        <input
+                          key={tIdx}
+                          type="time"
+                          value={t}
+                          onChange={(e) => handleMedTimeChange(index, tIdx, e.target.value)}
+                          className="bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-900 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <DateInput
+                      label="Data de Início"
+                      name={`med-start-${index}`}
+                      value={med.startDate}
+                      onChange={(val) => handleMedicationChange(index, "startDate", val)}
+                    />
+                    <DateInput
+                      label="Data de Fim"
+                      name={`med-end-${index}`}
+                      value={med.endDate}
+                      onChange={(val) => handleMedicationChange(index, "endDate", val)}
+                    />
+                  </div>
+                  <Textarea
+                    label="Instruções"
+                    name={`med-instructions-${index}`}
+                    value={med.instructions}
+                    onChange={(val) => handleMedicationChange(index, "instructions", val)}
+                    placeholder="Instruções de uso"
+                    rows={2}
+                  />
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setMedications([...medications, { name: "", dosage: "", frequency: "daily", times: ["08:00"], startDate: "", endDate: "", instructions: "" }])}
+                className="flex items-center gap-1 text-primary text-xs font-semibold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Adicionar outro medicamento
+              </button>
+            </div>
+          )}
+
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={addExam}
+              onChange={(e) => {
+                setAddExam(e.target.checked);
+                if (!e.target.checked) {
+                  setExamNames([""]);
+                }
+              }}
+              className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/30 cursor-pointer accent-primary"
+            />
+            <span className="text-sm font-medium text-slate-700">Adicionar exame</span>
+          </label>
+
+          {addExam && (
+            <div className="space-y-4 pl-4 border-l-2 border-primary/20">
+              {examNames.map((name, index) => (
+                <SearchableSelect
+                  key={index}
+                  label={index === 0 ? "Nome do Exame" : `Exame ${index + 1}`}
+                  name={`consulta-exam-${index}`}
+                  value={name}
+                  onChange={(val) => handleExamChange(index, val)}
+                  options={examOptions}
+                  placeholder="Pesquise ou digite o nome do exame"
+                  allowFreeText
+                />
+              ))}
+              <button
+                type="button"
+                onClick={() => setExamNames([...examNames, ""])}
+                className="flex items-center gap-1 text-primary text-xs font-semibold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Adicionar outro exame
+              </button>
+            </div>
+          )}
         </>
       )}
 
@@ -1159,7 +1658,7 @@ function EditConsultaForm({
   }
 
   return (
-    <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
+    <form  className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
       <div className="grid grid-cols-2 gap-6">
         <DateInput
           label="Data"
@@ -1440,7 +1939,7 @@ function EditPatientForm({
   }
 
   return (
-    <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
+    <form  className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
       <TextInput
         label="Nome Completo"
         name="edit-patient-name"
@@ -1494,6 +1993,516 @@ function EditPatientForm({
   );
 }
 
+// --- Diseases Section ---
+
+interface Disease {
+  id: string;
+  name: string;
+  description: string | null;
+  observations: string | null;
+  status: string;
+  diagnosisDate: string | null;
+  treatmentStartDate: string | null;
+  treatmentEndDate: string | null;
+}
+
+const DISEASE_STATUS_OPTIONS = [
+  { value: "in_treatment", label: "Em tratamento" },
+  { value: "treatment_ended", label: "Tratamento encerrado" },
+  { value: "treatment_suspended", label: "Tratamento suspenso" },
+  { value: "cured", label: "Curado" },
+];
+
+function getDiseaseStatusLabel(status: string): string {
+  return DISEASE_STATUS_OPTIONS.find((o) => o.value === status)?.label || status;
+}
+
+function getDiseaseStatusStyle(status: string): string {
+  switch (status) {
+    case "cured": return "bg-green-100 text-green-700";
+    case "in_treatment": return "bg-blue-100 text-primary";
+    case "treatment_ended": return "bg-slate-100 text-slate-600";
+    case "treatment_suspended": return "bg-amber-100 text-amber-700";
+    default: return "bg-slate-100 text-slate-600";
+  }
+}
+
+function DiseasesSection({ patientId, onRefresh }: { patientId: string; onRefresh: () => void }) {
+  const { user } = useAuth();
+  const [diseases, setDiseases] = useState<Disease[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [viewingDisease, setViewingDisease] = useState<Disease | null>(null);
+
+  async function loadDiseases() {
+    try {
+      const data = await api(`/patients/${patientId}/diseases`);
+      setDiseases(Array.isArray(data) ? data : []);
+    } catch {
+      setDiseases([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useState(() => { loadDiseases(); });
+
+  if (loading) {
+    return <div className="text-center py-8 text-slate-400">Carregando...</div>;
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="font-bold text-xl font-display tracking-tight">
+          Condições e Doenças
+        </h3>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Adicionar Doença
+        </button>
+      </div>
+
+      {diseases.length === 0 ? (
+        <div className="text-center py-8 text-slate-400">
+          <AlertTriangle className="w-10 h-10 mx-auto mb-3 opacity-50" />
+          <p className="font-medium">Nenhuma condição registrada</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {diseases.map((disease) => (
+            <div
+              key={disease.id}
+              onClick={() => setViewingDisease(disease)}
+              className="group bg-white hover:bg-slate-50 rounded-2xl p-6 flex items-center gap-6 transition-all border border-slate-100 shadow-sm cursor-pointer"
+            >
+              <div className="flex-grow min-w-0">
+                <h4 className="font-bold text-lg text-slate-900">{disease.name}</h4>
+                {disease.description && (
+                  <p className="text-xs text-slate-500 mt-1 truncate">{disease.description}</p>
+                )}
+              </div>
+              <span className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 ${getDiseaseStatusStyle(disease.status)}`}>
+                {getDiseaseStatusLabel(disease.status)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Create Modal */}
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        label="Novo Registro"
+        title="Adicionar Doença"
+        maxWidth="max-w-2xl"
+      >
+        <DiseaseForm
+          patientId={patientId}
+          onClose={() => setShowCreateModal(false)}
+          onSaved={() => { loadDiseases(); setShowCreateModal(false); }}
+        />
+      </Modal>
+
+      {/* View/Edit Modal */}
+      <Modal
+        isOpen={!!viewingDisease}
+        onClose={() => setViewingDisease(null)}
+        label="Condição"
+        title="Detalhes da Doença"
+        maxWidth="max-w-2xl"
+      >
+        {viewingDisease && (
+          <DiseaseDetailView
+            disease={viewingDisease}
+            patientId={patientId}
+            onClose={() => setViewingDisease(null)}
+            onSaved={() => { loadDiseases(); setViewingDisease(null); }}
+          />
+        )}
+      </Modal>
+    </div>
+  );
+}
+
+function DiseaseForm({ patientId, onClose, onSaved, initial }: {
+  patientId: string;
+  onClose: () => void;
+  onSaved: () => void;
+  initial?: Disease;
+}) {
+  const [name, setName] = useState(initial?.name || "");
+  const [description, setDescription] = useState(initial?.description || "");
+  const [observations, setObservations] = useState(initial?.observations || "");
+  const [status, setStatus] = useState(initial?.status || "in_treatment");
+  const [diagnosisDate, setDiagnosisDate] = useState(initial?.diagnosisDate?.split("T")[0] || "");
+  const [treatmentStartDate, setTreatmentStartDate] = useState(initial?.treatmentStartDate?.split("T")[0] || "");
+  const [treatmentEndDate, setTreatmentEndDate] = useState(initial?.treatmentEndDate?.split("T")[0] || "");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setSaving(true);
+    try {
+      const body = {
+        name: name.trim(),
+        description: description.trim() || undefined,
+        observations: observations.trim() || undefined,
+        status,
+        diagnosisDate: diagnosisDate || undefined,
+        treatmentStartDate: treatmentStartDate || undefined,
+        treatmentEndDate: treatmentEndDate || undefined,
+      };
+
+      if (initial) {
+        await api(`/patients/${patientId}/diseases/${initial.id}`, { method: "PUT", body });
+      } else {
+        await api(`/patients/${patientId}/diseases`, { method: "POST", body });
+      }
+      onSaved();
+    } catch (err) {
+      console.error("Erro ao salvar doença:", err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
+      <TextInput label="Nome da Doença" name="disease-name" value={name} onChange={setName} placeholder="Ex: Diabetes Tipo 2" />
+      <Textarea label="Descrição" name="disease-description" value={description} onChange={setDescription} placeholder="Descrição da condição" rows={2} />
+      <Textarea label="Observação" name="disease-observations" value={observations} onChange={setObservations} placeholder="Observações adicionais sobre o tratamento" rows={3} />
+      <div className="space-y-1.5">
+        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Status</label>
+        <CustomSelect
+          name="disease-status"
+          value={status}
+          onChange={setStatus}
+          options={DISEASE_STATUS_OPTIONS}
+          placeholder="Selecione o status"
+        />
+      </div>
+      <DateInput label="Data do Diagnóstico" name="disease-diagnosis-date" value={diagnosisDate} onChange={setDiagnosisDate} />
+      <div className="grid grid-cols-2 gap-6">
+        <DateInput label="Início do Tratamento" name="disease-start" value={treatmentStartDate} onChange={setTreatmentStartDate} />
+        <DateInput label="Fim do Tratamento" name="disease-end" value={treatmentEndDate} onChange={setTreatmentEndDate} />
+      </div>
+      <FormActions onCancel={onClose} submitLabel={initial ? "Salvar Alterações" : "Adicionar"} loading={saving} />
+    </form>
+  );
+}
+
+function DiseaseDetailView({ disease, patientId, onClose, onSaved }: {
+  disease: Disease;
+  patientId: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const { user } = useAuth();
+  const [editing, setEditing] = useState(false);
+
+  if (editing) {
+    return <DiseaseForm patientId={patientId} onClose={() => setEditing(false)} onSaved={onSaved} initial={disease} />;
+  }
+
+  return (
+    <div className="p-8 pt-0 space-y-6">
+      <div className="space-y-5">
+        <div>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Status</p>
+          <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${getDiseaseStatusStyle(disease.status)}`}>
+            {getDiseaseStatusLabel(disease.status)}
+          </span>
+        </div>
+
+        {disease.description && (
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Descrição</p>
+            <p className="text-sm text-slate-700">{disease.description}</p>
+          </div>
+        )}
+
+        {disease.observations && (
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Observação</p>
+            <p className="text-sm text-slate-700 leading-relaxed">{disease.observations}</p>
+          </div>
+        )}
+
+        {disease.diagnosisDate && (
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Data do Diagnóstico</p>
+            <p className="text-sm text-slate-700">{new Date(disease.diagnosisDate).toLocaleDateString("pt-BR")}</p>
+          </div>
+        )}
+
+        {disease.treatmentStartDate && (
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Início do Tratamento</p>
+            <p className="text-sm text-slate-700">{new Date(disease.treatmentStartDate).toLocaleDateString("pt-BR")}</p>
+          </div>
+        )}
+
+        {disease.treatmentEndDate && (
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Fim do Tratamento</p>
+            <p className="text-sm text-slate-700">{new Date(disease.treatmentEndDate).toLocaleDateString("pt-BR")}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="flex justify-end pt-[24px]">
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="flex items-center gap-1.5 text-primary text-sm font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
+        >
+          <Edit className="w-3.5 h-3.5" />
+          Editar doença
+        </button>
+      </div>
+
+      <div className="pt-4 border-t border-slate-100">
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full py-3 bg-slate-100 rounded-full font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer border-none"
+        >
+          Fechar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// --- Allergies Section ---
+
+interface Allergy {
+  id: string;
+  name: string;
+  severity: string;
+  reaction: string | null;
+  notes: string | null;
+}
+
+const SEVERITY_OPTIONS = [
+  { value: "mild", label: "Leve" },
+  { value: "moderate", label: "Moderada" },
+  { value: "severe", label: "Grave" },
+];
+
+function getSeverityStyle(severity: string): string {
+  switch (severity) {
+    case "severe": return "bg-red-100 text-red-700";
+    case "moderate": return "bg-amber-100 text-amber-700";
+    default: return "bg-green-100 text-green-700";
+  }
+}
+
+function getSeverityLabel(severity: string): string {
+  return SEVERITY_OPTIONS.find((o) => o.value === severity)?.label || severity;
+}
+
+function AllergiesSection({ patientId }: { patientId: string }) {
+  const [allergies, setAllergies] = useState<Allergy[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  async function loadAllergies() {
+    try {
+      const data = await api(`/patients/${patientId}/allergies`);
+      setAllergies(Array.isArray(data) ? data : []);
+    } catch { setAllergies([]); }
+    finally { setLoading(false); }
+  }
+
+  useState(() => { loadAllergies(); });
+
+  if (loading) return <div className="text-center py-8 text-slate-400">Carregando...</div>;
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="font-bold text-xl font-display tracking-tight">Alergias</h3>
+        <button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none">
+          <Plus className="w-3.5 h-3.5" />
+          Adicionar Alergia
+        </button>
+      </div>
+
+      {allergies.length === 0 ? (
+        <div className="text-center py-8 text-slate-400">
+          <AlertTriangle className="w-10 h-10 mx-auto mb-3 opacity-50" />
+          <p className="font-medium">Nenhuma alergia registrada</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {allergies.map((allergy) => (
+            <div key={allergy.id} className="bg-white rounded-2xl p-6 flex items-center gap-6 border border-slate-100 shadow-sm">
+              <div className="flex-grow min-w-0">
+                <h4 className="font-bold text-lg text-slate-900">{allergy.name}</h4>
+                {allergy.reaction && <p className="text-xs text-slate-500 mt-1">{allergy.reaction}</p>}
+              </div>
+              <span className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 ${getSeverityStyle(allergy.severity)}`}>
+                {getSeverityLabel(allergy.severity)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} label="Novo Registro" title="Adicionar Alergia" maxWidth="max-w-2xl">
+        <AllergyForm patientId={patientId} onClose={() => setShowCreateModal(false)} onSaved={() => { loadAllergies(); setShowCreateModal(false); }} />
+      </Modal>
+    </div>
+  );
+}
+
+function AllergyForm({ patientId, onClose, onSaved }: { patientId: string; onClose: () => void; onSaved: () => void }) {
+  const [name, setName] = useState("");
+  const [severity, setSeverity] = useState("moderate");
+  const [reaction, setReaction] = useState("");
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setSaving(true);
+    try {
+      await api(`/patients/${patientId}/allergies`, { method: "POST", body: { name: name.trim(), severity, reaction: reaction.trim() || undefined, notes: notes.trim() || undefined } });
+      onSaved();
+    } catch (err) { console.error(err); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
+      <TextInput label="Nome da Alergia" name="allergy-name" value={name} onChange={setName} placeholder="Ex: Penicilina, Ácaros" />
+      <div className="space-y-1.5">
+        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Severidade</label>
+        <CustomSelect name="allergy-severity" value={severity} onChange={setSeverity} options={SEVERITY_OPTIONS} placeholder="Selecione" />
+      </div>
+      <TextInput label="Reação" name="allergy-reaction" value={reaction} onChange={setReaction} placeholder="Ex: Urticária, inchaço facial" />
+      <Textarea label="Observações" name="allergy-notes" value={notes} onChange={setNotes} placeholder="Notas adicionais" rows={2} />
+      <FormActions onCancel={onClose} submitLabel="Adicionar" loading={saving} />
+    </form>
+  );
+}
+
+// --- Vaccines Section ---
+
+interface Vaccine {
+  id: string;
+  name: string;
+  dose: string | null;
+  applicationDate: string | null;
+  nextDoseDate: string | null;
+  laboratory: string | null;
+  notes: string | null;
+}
+
+function VaccinesSection({ patientId }: { patientId: string }) {
+  const [vaccines, setVaccines] = useState<Vaccine[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  async function loadVaccines() {
+    try {
+      const data = await api(`/patients/${patientId}/vaccines`);
+      setVaccines(Array.isArray(data) ? data : []);
+    } catch { setVaccines([]); }
+    finally { setLoading(false); }
+  }
+
+  useState(() => { loadVaccines(); });
+
+  if (loading) return <div className="text-center py-8 text-slate-400">Carregando...</div>;
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="font-bold text-xl font-display tracking-tight">Vacinas</h3>
+        <button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none">
+          <Plus className="w-3.5 h-3.5" />
+          Adicionar Vacina
+        </button>
+      </div>
+
+      {vaccines.length === 0 ? (
+        <div className="text-center py-8 text-slate-400">
+          <Activity className="w-10 h-10 mx-auto mb-3 opacity-50" />
+          <p className="font-medium">Nenhuma vacina registrada</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {vaccines.map((vaccine) => (
+            <div key={vaccine.id} className="bg-white rounded-2xl p-6 flex items-center gap-6 border border-slate-100 shadow-sm">
+              <div className="flex-grow min-w-0">
+                <h4 className="font-bold text-lg text-slate-900">{vaccine.name}</h4>
+                <p className="text-xs text-slate-500 mt-1">
+                  {vaccine.dose && `Dose: ${vaccine.dose}`}
+                  {vaccine.applicationDate && ` • ${new Date(vaccine.applicationDate).toLocaleDateString("pt-BR")}`}
+                  {vaccine.laboratory && ` • ${vaccine.laboratory}`}
+                </p>
+              </div>
+              {vaccine.nextDoseDate && (
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-primary shrink-0">
+                  Próx: {new Date(vaccine.nextDoseDate).toLocaleDateString("pt-BR")}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} label="Novo Registro" title="Adicionar Vacina" maxWidth="max-w-2xl">
+        <VaccineForm patientId={patientId} onClose={() => setShowCreateModal(false)} onSaved={() => { loadVaccines(); setShowCreateModal(false); }} />
+      </Modal>
+    </div>
+  );
+}
+
+function VaccineForm({ patientId, onClose, onSaved }: { patientId: string; onClose: () => void; onSaved: () => void }) {
+  const [name, setName] = useState("");
+  const [dose, setDose] = useState("");
+  const [applicationDate, setApplicationDate] = useState("");
+  const [nextDoseDate, setNextDoseDate] = useState("");
+  const [laboratory, setLaboratory] = useState("");
+  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setSaving(true);
+    try {
+      await api(`/patients/${patientId}/vaccines`, { method: "POST", body: { name: name.trim(), dose: dose.trim() || undefined, applicationDate: applicationDate || undefined, nextDoseDate: nextDoseDate || undefined, laboratory: laboratory.trim() || undefined, notes: notes.trim() || undefined } });
+      onSaved();
+    } catch (err) { console.error(err); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
+      <TextInput label="Nome da Vacina" name="vaccine-name" value={name} onChange={setName} placeholder="Ex: COVID-19 Pfizer, Gripe" />
+      <TextInput label="Dose" name="vaccine-dose" value={dose} onChange={setDose} placeholder="Ex: 1ª dose, 2ª dose, reforço" />
+      <div className="grid grid-cols-2 gap-6">
+        <DateInput label="Data de Aplicação" name="vaccine-app-date" value={applicationDate} onChange={setApplicationDate} />
+        <DateInput label="Próxima Dose" name="vaccine-next-date" value={nextDoseDate} onChange={setNextDoseDate} />
+      </div>
+      <TextInput label="Laboratório" name="vaccine-lab" value={laboratory} onChange={setLaboratory} placeholder="Ex: Pfizer, AstraZeneca" />
+      <Textarea label="Observações" name="vaccine-notes" value={notes} onChange={setNotes} placeholder="Notas adicionais" rows={2} />
+      <FormActions onCancel={onClose} submitLabel="Adicionar" loading={saving} />
+    </form>
+  );
+}
+
 // --- Main Page ---
 
 export default function PatientDetail() {
@@ -1501,7 +2510,7 @@ export default function PatientDetail() {
   const { id } = useParams<{ id: string }>();
   const { patient, loading, error, refetch } = usePatientDetail(id);
   const [activeTab, setActiveTab] = useState<
-    "consultas" | "medicamentos" | "exames"
+    "consultas" | "medicamentos" | "exames" | "doencas" | "alergias" | "vacinas"
   >("consultas");
   const [showConsultaModal, setShowConsultaModal] = useState(false);
   const [showMedicamentoModal, setShowMedicamentoModal] = useState(false);
@@ -1586,6 +2595,36 @@ export default function PatientDetail() {
             >
               Exames & Receitas
             </button>
+            <button
+              className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
+                activeTab === "doencas"
+                  ? "bg-primary/5 text-primary"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+              onClick={() => setActiveTab("doencas")}
+            >
+              Doenças
+            </button>
+            <button
+              className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
+                activeTab === "alergias"
+                  ? "bg-primary/5 text-primary"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+              onClick={() => setActiveTab("alergias")}
+            >
+              Alergias
+            </button>
+            <button
+              className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
+                activeTab === "vacinas"
+                  ? "bg-primary/5 text-primary"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+              onClick={() => setActiveTab("vacinas")}
+            >
+              Vacinas
+            </button>
           </div>
 
           {/* Tab Content from API */}
@@ -1595,7 +2634,7 @@ export default function PatientDetail() {
                 <h3 className="font-bold text-xl font-display tracking-tight">
                   Histórico de Consultas
                 </h3>
-                <button onClick={() => setShowConsultaModal(true)} className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none">
+                <button data-testid="btn-nova-consulta" onClick={() => setShowConsultaModal(true)} className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none">
                   <Plus className="w-3.5 h-3.5" />
                   Nova Consulta
                 </button>
@@ -1628,8 +2667,20 @@ export default function PatientDetail() {
                   Solicitar Exame
                 </button>
               </div>
-              <ExamsSection exams={patient.exams} />
+              <ExamsSection exams={patient.exams} patientId={patient.id} onRefresh={refetch} />
             </div>
+          )}
+
+          {activeTab === "doencas" && (
+            <DiseasesSection patientId={patient.id} onRefresh={refetch} />
+          )}
+
+          {activeTab === "alergias" && (
+            <AllergiesSection patientId={patient.id} />
+          )}
+
+          {activeTab === "vacinas" && (
+            <VaccinesSection patientId={patient.id} />
           )}
 
           {/* Modals */}
@@ -1660,7 +2711,7 @@ export default function PatientDetail() {
             title="Solicitar Exame"
             maxWidth="max-w-2xl"
           >
-            <ExamRequestForm onClose={() => setShowDocumentoModal(false)} patientName={patient.name} />
+            <ExamRequestForm onClose={() => setShowDocumentoModal(false)} patientName={patient.name} patientId={patient.id} onSaved={refetch} />
           </Modal>
 
           {/* Edit Consultation Modal */}
