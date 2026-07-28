@@ -3,9 +3,6 @@ import {
   Users,
   Search,
   Plus,
-  MapPin,
-  Activity,
-  Pill,
   ArrowRight,
   Info,
   LayoutGrid,
@@ -43,60 +40,8 @@ import { useAuth } from "../../contexts/AuthContext";
 
 // --- Types ---
 
-interface Patient {
-  id: string;
-  name: string;
-  patientId: string;
-  image: string;
-  status: "Prioritário" | "Rotina" | "Pós-Op";
-  location: string;
-  distance: string;
-  lastConsultation: string;
-  conditions: string[];
-}
 
 type TabType = "Meus Pacientes" | "Pesquisar Pacientes" | "Solicitações";
-
-// --- Mock Data ---
-
-const PATIENTS: Patient[] = [
-  {
-    id: "1",
-    name: "Helena S. Ferreira",
-    patientId: "#PK-9920",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDlH5qCW5lmO9HabW1jj6kPe5PIpkHasWbvyJaiXq8QeKYRpa-7dZTFXcscdPXjd6ZDdFG39H2T4R2mz6F3fsbSw0FvTn5zoUyQUheKmXBdvrR0ZtGUW7rTWer4ZCqAeo5sYnt9r7COBDTDTNRYU5Lynng_HZlB7a3zw5R-vuKbY4OJ08wIZLXxQC9f4Mx4K-xTx8eRvA4NZZPEQke4yis341LMDnzckJNDorQEs7qo9jwUTVGcCHcsLqkkdryYZc3HlN93SAFXJxGP",
-    status: "Prioritário",
-    location: "São Paulo, SP",
-    distance: "2.4km",
-    lastConsultation: "15 Out 2023",
-    conditions: ["Hipertensão", "Diabetes Tipo 2"],
-  },
-  {
-    id: "2",
-    name: "Roberto Alcântara",
-    patientId: "#PK-8841",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAVNPUgwiMvHkkEM59m_0fbcbfJg5AHKCJcZBeFRw8hBrWj1fCKFJO8j_LuVpNeqL7imv_eHaSYIPS0rLT1wuzQvEqSJNZLvaKvdU0beKJ7KERCTEBawSng4mmSYb1LWFNzyRaCBaS4X_wLdlFqN7FPbCldW0qvGJAEAZ7EoRQFtAULFWWKYKlstkz2vhdS78FOY1sIW0AGuWjOiwJYn_wHIc7PvbXAh0dHcw2iFdON31jEPAQPocgvi6KK6fIv__5ThaYaQeTdIViI",
-    status: "Rotina",
-    location: "Campinas, SP",
-    distance: "98km",
-    lastConsultation: "Sem registros recentes",
-    conditions: ["Check-up Geral"],
-  },
-  {
-    id: "3",
-    name: "Lucas Mendes",
-    patientId: "#PK-7712",
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDkpVgyNgZcFpQWg4GYULvjwYRGutWwrXkiQVgm0ufCSSibckAIfYp8H7LllJBnK_GCYaRjL5Rxo19n7Vqyou_IrXDTfCZId7TS7hE9mkXe7eBr73D4W1n_f2zivmzNGK50pHXnURpD7M-bWK8_1W7ilrXwyDjjEdkT9F7c5L87Uz2WqqAmaZoTXJTZLoHlM-joUgHwJXoYIJvanD3zT4jBh9x8GMJsGYsTBC7249xcsZKwpnOfVPJEaI-wKnfnO9LQv0C1nNijVy0A",
-    status: "Pós-Op",
-    location: "São Paulo, SP",
-    distance: "0.8km",
-    lastConsultation: "Ontem",
-    conditions: ["Recuperação de Joelho"],
-  },
-];
 
 // --- Search Tab Components ---
 
@@ -143,110 +88,6 @@ function SearchHero({
     </motion.section>
   );
 }
-
-const PatientCard = ({ patient }: { patient: Patient }) => (
-  <motion.div
-    whileHover={{ y: -8 }}
-    className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-soft hover:shadow-xl transition-all flex flex-col justify-between group"
-  >
-    <div className="flex items-start justify-between mb-6">
-      <div className="flex items-center gap-4 min-w-0">
-        <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
-          <img
-            src={patient.image}
-            alt={patient.name}
-            className="w-full h-full object-cover"
-          />
-        </div>
-        <div className="min-w-0">
-          <h5 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors font-display truncate">
-            {patient.name}
-          </h5>
-          <p className="text-gray-500 text-sm font-medium truncate">
-            {patient.id + " \u2022 " + patient.patientId}
-          </p>
-        </div>
-      </div>
-    </div>
-    <div className="space-y-3 mb-8">
-      <div className="flex items-center text-sm text-gray-600 font-medium">
-        <MapPin className="w-4 h-4 mr-2.5 text-gray-400 shrink-0" />
-        <span className="truncate">
-          {patient.location} ({patient.distance})
-        </span>
-      </div>
-      <div className="flex items-center text-sm text-gray-600 font-medium">
-        <Activity className="w-4 h-4 mr-2.5 text-gray-400 shrink-0" />
-        <span className="truncate">
-          Última consulta: {patient.lastConsultation}
-        </span>
-      </div>
-      <div className="flex items-center text-sm text-gray-600 font-medium">
-        <Pill className="w-4 h-4 mr-2.5 text-gray-400 shrink-0" />
-        <span className="truncate">{patient.conditions.join(", ")}</span>
-      </div>
-    </div>
-    <button className="w-full py-4 bg-gray-50 hover:bg-primary hover:text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2 active:scale-95 text-gray-700">
-      Solicitar Acesso <ArrowRight className="w-5 h-5" />
-    </button>
-  </motion.div>
-);
-
-const PatientListRow = ({
-  patient,
-  index,
-}: {
-  patient: Patient;
-  index: number;
-}) => (
-  <motion.div
-    initial={{ opacity: 0, x: -10 }}
-    animate={{ opacity: 1, x: 0 }}
-    transition={{ delay: index * 0.1 }}
-    whileHover={{ y: -2 }}
-    className="bg-white p-5 rounded-2xl border border-slate-100 hover:border-primary/20 hover:shadow-xl hover:shadow-slate-200/50 transition-all flex flex-col md:flex-row items-center justify-between gap-6 group"
-  >
-    <div className="flex items-center gap-5 flex-1 min-w-0">
-      <div className="w-14 h-14 rounded-full overflow-hidden shrink-0 border-2 border-slate-100 group-hover:border-primary/20 transition-colors">
-        <img
-          src={patient.image}
-          alt={patient.name}
-          className="w-full h-full object-cover"
-        />
-      </div>
-      <div className="min-w-0">
-        <h5 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors truncate font-display">
-          {patient.name}
-        </h5>
-        <p className="text-slate-400 text-sm font-semibold">
-          {patient.patientId}
-        </p>
-      </div>
-    </div>
-
-    <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-12 flex-[2] w-full">
-      <div className="flex items-center text-sm text-slate-500 font-medium">
-        <MapPin className="w-4 h-4 mr-2 text-primary shrink-0" />
-        <span className="truncate">
-          {patient.location} ({patient.distance})
-        </span>
-      </div>
-      <div className="flex items-center text-sm text-slate-500 font-medium">
-        <Activity className="w-4 h-4 mr-2 text-primary shrink-0" />
-        <span className="truncate">
-          Última consulta: {patient.lastConsultation}
-        </span>
-      </div>
-    </div>
-
-    <div className="shrink-0 w-full md:w-auto">
-      <button className="w-full md:w-auto px-6 py-3 bg-blue-50 text-primary hover:bg-primary hover:text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 active:scale-95 group/btn">
-        Solicitar Acesso
-        <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-      </button>
-    </div>
-  </motion.div>
-);
 
 // --- API Search Result Card ---
 

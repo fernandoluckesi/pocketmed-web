@@ -545,7 +545,7 @@ function MedicationsSection({
   );
 }
 
-function ExamsSection({ exams, patientId, onRefresh }: { exams: PatientFromAPI["exams"]; patientId: string; onRefresh: () => void }) {
+function ExamsSection({ exams, patientId: _pid, onRefresh }: { exams: PatientFromAPI["exams"]; patientId: string; onRefresh: () => void }) {
   const [openBatch, setOpenBatch] = useState<string | null>(null);
   const [resultModal, setResultModal] = useState<{ examId: string; examName: string } | null>(null);
 
@@ -936,7 +936,7 @@ function ExamRequestForm({ onClose, patientName, patientId, onSaved }: { onClose
   const { user } = useAuth();
   const [examNames, setExamNames] = useState<string[]>([""]);
   const [description, setDescription] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [_file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
   const examOptions = [...EXAM_CATALOG].sort((a, b) => a.localeCompare(b, "pt-BR")).map((name) => ({
@@ -2027,8 +2027,7 @@ function getDiseaseStatusStyle(status: string): string {
   }
 }
 
-function DiseasesSection({ patientId, onRefresh }: { patientId: string; onRefresh: () => void }) {
-  const { user } = useAuth();
+function DiseasesSection({ patientId }: { patientId: string; onRefresh?: () => void }) {
   const [diseases, setDiseases] = useState<Disease[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -2203,7 +2202,6 @@ function DiseaseDetailView({ disease, patientId, onClose, onSaved }: {
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const { user } = useAuth();
   const [editing, setEditing] = useState(false);
 
   if (editing) {
