@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Plus,
   ChevronRight,
@@ -11,151 +11,209 @@ import { motion } from "motion/react";
 import { NewAppointmentModal } from "../../components/NewAppointmentModal";
 import { AppointmentDetailModal } from "../../components/AppointmentDetailModal";
 import { MainLayout } from "../../components/MainLayout";
+import { api } from "../../services/api";
+
+// --- API Data Hook ---
+
+interface APIAppointment {
+  id: string;
+  dateTime: string;
+  reason: string;
+  status: string;
+  isCompleted: boolean;
+  patient?: { name: string; profileImage?: string };
+  doctorName?: string;
+}
+
+function useScheduleAppointments() {
+  const [appointments, setAppointments] = useState<APIAppointment[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    try {
+      const data = await api("/appointments");
+      setAppointments(Array.isArray(data) ? data : []);
+    } catch {
+      setAppointments([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const todayAppointments = appointments.filter((a) => {
+    const d = new Date(a.dateTime);
+    return d >= today && d < tomorrow;
+  }).sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+
+  const upcomingAppointments = appointments.filter((a) => {
+    return new Date(a.dateTime) >= tomorrow;
+  }).sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+
+  const completedToday = todayAppointments.filter((a) => a.isCompleted).length;
+
+  return { appointments, todayAppointments, upcomingAppointments, completedToday, loading, refetch: load };
+}
 
 // --- Types ---
 
-interface Appointment {
-  id: string;
-  time: string;
-  patient: string;
-  type: "routine" | "priority" | "post-op";
-}
-
-interface CalendarDay {
-  day: number;
-  month: "current" | "prev" | "next";
-  appointments: Appointment[];
-  isToday?: boolean;
-}
 
 // --- Mock Data ---
 
-const days: CalendarDay[] = [
-  { day: 29, month: "prev", appointments: [] },
-  { day: 30, month: "prev", appointments: [] },
-  { day: 1, month: "current", appointments: [] },
-  {
-    day: 2,
-    month: "current",
-    appointments: [
-      { id: "1", time: "09:00", patient: "Ricardo S.", type: "routine" },
-    ],
-  },
-  { day: 3, month: "current", appointments: [] },
-  {
-    day: 4,
-    month: "current",
-    appointments: [
-      { id: "2", time: "14:30", patient: "Ana Paula", type: "post-op" },
-    ],
-  },
-  { day: 5, month: "current", appointments: [] },
-  { day: 6, month: "current", appointments: [] },
-  {
-    day: 7,
-    month: "current",
-    appointments: [
-      { id: "3", time: "08:00", patient: "Carlos M.", type: "routine" },
-      { id: "4", time: "10:15", patient: "Julia V.", type: "priority" },
-    ],
-  },
-  { day: 8, month: "current", appointments: [] },
-  {
-    day: 9,
-    month: "current",
-    isToday: true,
-    appointments: [
-      { id: "5", time: "11:00", patient: "Mariana F.", type: "routine" },
-      { id: "6", time: "13:00", patient: "Dr. Pedro", type: "priority" },
-      { id: "7", time: "16:45", patient: "Luis G.", type: "post-op" },
-    ],
-  },
-  { day: 10, month: "current", appointments: [] },
-  { day: 11, month: "current", appointments: [] },
-  { day: 12, month: "current", appointments: [] },
-  { day: 13, month: "current", appointments: [] },
-  { day: 14, month: "current", appointments: [] },
-  {
-    day: 15,
-    month: "current",
-    appointments: [
-      { id: "8", time: "09:00", patient: "Urgent: Roberto", type: "priority" },
-    ],
-  },
-  { day: 16, month: "current", appointments: [] },
-  { day: 17, month: "current", appointments: [] },
-  { day: 18, month: "current", appointments: [] },
-  { day: 19, month: "current", appointments: [] },
-  { day: 20, month: "current", appointments: [] },
-  { day: 21, month: "current", appointments: [] },
-  {
-    day: 22,
-    month: "current",
-    appointments: [
-      { id: "9", time: "10:00", patient: "Sofia L.", type: "post-op" },
-    ],
-  },
-  { day: 23, month: "current", appointments: [] },
-  { day: 24, month: "current", appointments: [] },
-  { day: 25, month: "current", appointments: [] },
-  { day: 26, month: "current", appointments: [] },
-];
 
 // --- Day View Data ---
 
-const dayAppointments = [
-  {
-    id: "1",
-    time: "08:30 — 09:45",
-    title: "Reunião Semanal do Departamento",
-    subtitle: "Sala de Conferência B • 4 Participantes",
-    category: "Rotina" as const,
-    top: 100,
-    height: 120,
-    color: "blue" as const,
-  },
-  {
-    id: "2",
-    time: "10:15 — 11:45",
-    title: "Paciente: Sarah Jenkins",
-    subtitle: "Consulta de Cardiologia • Paciente Novo",
-    category: "Prioridade" as const,
-    top: 280,
-    height: 160,
-    color: "indigo" as const,
-    avatar:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBzPh4WOOTDs4bCcy28YWOpKzRyv7Z_gWhfMoh4jVlZWZIEhWwF518gt_RTHTRW2ra0zLM1If0bGM6j0dVgBndnxd1017KNa0DVz-UNrwAgr3IxuMHAvN9wAB5lMpGETNa7Q-M420UAn5ZBZjhOoG3omxFvWmEc111luZZpd4lzPKDYEArJ-zzLY-JymFBpxDv9BOjrDgIUxoPilF83pKcgkLtyzN2n_1ZKExJAaDxIy6uO5ocsVyTkVWS-XeWxy1pTpyQSwUqkQuts",
-    attachment: "Lab_Results_SJ.pdf",
-  },
-  {
-    id: "3",
-    time: "13:30 — 15:00",
-    title: "Robert Miller - Retorno",
-    subtitle: "Recuperação de Prótese de Joelho • Sala 402",
-    category: "Pós-Op" as const,
-    top: 600,
-    height: 160,
-    color: "orange" as const,
-    info: "Revisando progresso da fisioterapia",
-  },
-  {
-    id: "4",
-    time: "16:30 — 17:30",
-    title: "Teleconsulta: Marcella Rossi",
-    subtitle: "Check-up Geral • Link enviado",
-    category: "Rotina" as const,
-    top: 850,
-    height: 100,
-    color: "blue" as const,
-  },
-];
-
-const timelineHours = Array.from(
-  { length: 11 },
-  (_, i) => `${(i + 8).toString().padStart(2, "0")}:00`,
-);
 
 // --- Sidebar ---
+// --- Day View (Dynamic) ---
+
+function DayView({ selectedDate, setSelectedDate, appointments }: { selectedDate: Date; setSelectedDate: (d: Date) => void; appointments: APIAppointment[] }) {
+  const dayStart = new Date(selectedDate); dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(selectedDate); dayEnd.setHours(23, 59, 59, 999);
+
+  const dayAppts = appointments.filter((a) => {
+    const d = new Date(a.dateTime);
+    return d >= dayStart && d <= dayEnd;
+  }).sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+
+
+  function prevDay() { const d = new Date(selectedDate); d.setDate(d.getDate() - 1); setSelectedDate(d); }
+  function nextDay() { const d = new Date(selectedDate); d.setDate(d.getDate() + 1); setSelectedDate(d); }
+  function goToday() { setSelectedDate(new Date()); }
+
+  const dateLabel = selectedDate.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  return (
+    <div className="flex-1">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-3xl font-display font-extrabold text-blue-900 tracking-tight">Agenda do Dia</h2>
+          <p className="text-slate-500 font-medium capitalize">{dateLabel}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button onClick={prevDay} className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all cursor-pointer border-none">
+            <ChevronLeft size={20} className="text-slate-600" />
+          </button>
+          <button onClick={goToday} className="px-5 py-2 bg-slate-200/50 hover:bg-slate-200 rounded-lg font-bold text-sm text-slate-700 transition-all cursor-pointer border-none">Hoje</button>
+          <button onClick={nextDay} className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all cursor-pointer border-none">
+            <ChevronRight size={20} className="text-slate-600" />
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100">
+        {dayAppts.length === 0 ? (
+          <div className="text-center py-16 text-slate-400">
+            <CalendarCheck className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p className="font-medium text-lg">Nenhuma consulta neste dia</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {dayAppts.map((apt) => {
+              const d = new Date(apt.dateTime);
+              const time = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+              const patientName = apt.patient?.name || 'Paciente';
+
+              return (
+                <div key={apt.id} className="flex items-center p-5 hover:bg-slate-50 transition-all group">
+                  <div className="w-20 flex-shrink-0 text-center border-r border-slate-100 mr-5">
+                    <p className="text-sm font-black text-primary">{time}</p>
+                  </div>
+                  <div className="flex-grow">
+                    <p className="text-sm font-bold text-slate-900">{patientName}</p>
+                    <p className="text-xs text-slate-500">{apt.reason || 'Consulta'}</p>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${apt.isCompleted ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-primary'}`}>
+                    {apt.isCompleted ? 'Concluída' : 'Agendada'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- Week View (Dynamic) ---
+
+function WeekView({ selectedDate, onDayClick, appointments }: { selectedDate: Date; onDayClick: (d: Date) => void; appointments: APIAppointment[] }) {
+  const startOfWeek = new Date(selectedDate);
+  const dayOfWeek = startOfWeek.getDay();
+  startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek + 1); // Monday
+
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(startOfWeek);
+    d.setDate(d.getDate() + i);
+    return d;
+  });
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100">
+      <div className="grid grid-cols-7 border-b border-slate-100">
+        {weekDays.map((d, i) => {
+          const isToday = d.getTime() === today.getTime();
+          return (
+            <div
+              key={i}
+              onClick={() => onDayClick(d)}
+              className={`py-4 text-center cursor-pointer hover:bg-primary/5 transition-colors ${isToday ? 'bg-primary/5' : ''}`}
+            >
+              <p className="text-[10px] font-bold uppercase text-slate-400">
+                {d.toLocaleDateString('pt-BR', { weekday: 'short' })}
+              </p>
+              <p className={`text-lg font-bold mt-1 ${isToday ? 'text-primary' : 'text-slate-900'}`}>
+                {d.getDate()}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-7 min-h-[400px]">
+        {weekDays.map((day, i) => {
+          const dayStart = new Date(day); dayStart.setHours(0, 0, 0, 0);
+          const dayEnd = new Date(day); dayEnd.setHours(23, 59, 59);
+          const dayAppts = appointments.filter((a) => {
+            const ad = new Date(a.dateTime);
+            return ad >= dayStart && ad <= dayEnd;
+          }).sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+
+          return (
+            <div key={i} className="border-r border-slate-100 last:border-r-0 p-2 space-y-2">
+              {dayAppts.map((apt) => {
+                const ad = new Date(apt.dateTime);
+                const time = `${ad.getHours().toString().padStart(2, '0')}:${ad.getMinutes().toString().padStart(2, '0')}`;
+                return (
+                  <div
+                    key={apt.id}
+                    onClick={() => onDayClick(day)}
+                    className={`px-2 py-1.5 rounded-lg text-[10px] font-bold truncate cursor-pointer transition-all hover:shadow-sm ${
+                      apt.isCompleted ? 'bg-green-50 border-l-2 border-green-500 text-green-700' : 'bg-primary/5 border-l-2 border-primary text-primary'
+                    }`}
+                  >
+                    {time} {apt.patient?.name?.split(' ')[0] || ''}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+}
+
 // --- Stat Card ---
 
 function StatCard({
@@ -194,486 +252,153 @@ function StatCard({
 
 // --- Day View ---
 
-function DayView() {
-  return (
-    <div className="flex flex-1 gap-0">
-      <div className="flex-1 overflow-y-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-3xl font-display font-extrabold text-blue-900 tracking-tight">
-              Agenda de Hoje
-            </h2>
-            <p className="text-slate-500 font-medium">
-              Monday, October 24, 2023
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all">
-              <ChevronLeft size={20} className="text-slate-600" />
-            </button>
-            <button className="px-5 py-2 bg-slate-200/50 hover:bg-slate-200 rounded-lg font-bold text-sm text-slate-700 transition-all">
-              Hoje
-            </button>
-            <button className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all">
-              <ChevronRight size={20} className="text-slate-600" />
-            </button>
-          </div>
-        </div>
 
-        <div className="bg-white rounded-3xl overflow-hidden flex shadow-sm border border-slate-100 min-h-[1100px]">
-          {/* Time Column */}
-          <div className="w-20 bg-slate-50/50 border-r border-slate-100 flex-shrink-0 pt-10">
-            {timelineHours.map((hour) => (
-              <div
-                key={hour}
-                className="h-24 px-4 flex justify-end items-start text-[11px] font-bold text-slate-400 uppercase tracking-tighter"
-              >
-                {hour}
-              </div>
-            ))}
-          </div>
+// --- Calendar View (Dynamic) ---
 
-          {/* Timeline Canvas */}
-          <div className="flex-1 relative bg-white">
-            {/* Hour Grid Lines */}
-            <div className="absolute inset-0 flex flex-col pointer-events-none">
-              {timelineHours.map((_, i) => (
-                <div
-                  key={i}
-                  className="h-24 border-b border-slate-100/50 w-full"
-                />
-              ))}
-            </div>
+const MONTH_NAMES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
-            {/* Current Time Indicator */}
-            <div className="absolute w-full top-[312px] flex items-center z-10 pointer-events-none">
-              <div className="w-3 h-3 bg-red-500 rounded-full -ml-1.5 ring-4 ring-white shadow-sm" />
-              <div className="h-0.5 flex-1 bg-red-200" />
-              <div className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm ml-2 mr-4">
-                11:15
-              </div>
-            </div>
+function CalendarView({ appointments, onAppointmentClick, onDayClick }: { appointments: APIAppointment[]; onAppointmentClick: (apt: any) => void; onDayClick?: (d: Date) => void }) {
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
-            {/* Appointments */}
-            <div className="absolute inset-0 p-4">
-              {dayAppointments.map((app) => (
-                <motion.div
-                  key={app.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  whileHover={{ scale: 1.01 }}
-                  className={`absolute left-8 right-8 rounded-r-xl border-l-4 p-4 flex flex-col justify-between transition-colors shadow-sm cursor-pointer ${
-                    app.color === "blue"
-                      ? "bg-blue-50/80 border-blue-600 hover:bg-blue-50"
-                      : app.color === "indigo"
-                        ? "bg-indigo-50/80 border-indigo-600 hover:bg-indigo-50"
-                        : "bg-orange-50/80 border-orange-500 hover:bg-orange-50"
-                  }`}
-                  style={{ top: `${app.top}px`, height: `${app.height}px` }}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span
-                          className={`text-[10px] font-bold uppercase tracking-wider ${
-                            app.color === "blue"
-                              ? "text-blue-700"
-                              : app.color === "indigo"
-                                ? "text-indigo-700"
-                                : "text-orange-700"
-                          }`}
-                        >
-                          {app.category}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-medium">
-                          {app.time}
-                        </span>
-                      </div>
-                      <h4 className="font-display font-bold text-slate-900">
-                        {app.title}
-                      </h4>
-                      <p className="text-xs text-slate-500">{app.subtitle}</p>
-                    </div>
-                    {app.avatar && (
-                      <img
-                        src={app.avatar}
-                        alt="Profile"
-                        className="w-8 h-8 rounded-full border-2 border-white shadow-sm"
-                      />
-                    )}
-                  </div>
-                  <div className="flex items-center gap-4 mt-2">
-                    {app.attachment && (
-                      <span className="bg-white text-[10px] font-bold py-1 px-3 rounded-full border border-slate-100 flex items-center gap-1 text-slate-600">
-                        📎 {app.attachment}
-                      </span>
-                    )}
-                    {app.info && (
-                      <span className="text-xs font-medium text-orange-700 flex items-center gap-1">
-                        🕐 {app.info}
-                      </span>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+  const today = new Date();
+  const todayDay = today.getDate();
+  const todayMonth = today.getMonth();
+  const todayYear = today.getFullYear();
 
-      {/* Right Sidebar */}
-      <div className="w-80 border-l border-slate-200 p-6 flex-col gap-8 hidden xl:flex">
-        {/* Daily Progress */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <h3 className="font-display font-extrabold text-slate-900 mb-6">
-            Carga Diária
-          </h3>
-          <div className="space-y-6">
-            <div>
-              <div className="flex justify-between text-xs font-bold text-slate-500 mb-2">
-                <span>Consultas</span>
-                <span className="text-blue-600">12/15</span>
-              </div>
-              <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: "80%" }}
-                  transition={{ duration: 1, ease: "easeOut" }}
-                  className="h-full bg-blue-600 rounded-full"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-slate-50 p-4 rounded-xl text-center border border-slate-100">
-                <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">
-                  Restantes
-                </p>
-                <p className="text-2xl font-display font-extrabold text-blue-600">
-                  3
-                </p>
-              </div>
-              <div className="bg-slate-50 p-4 rounded-xl text-center border border-slate-100">
-                <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">
-                  Concluídas
-                </p>
-                <p className="text-2xl font-display font-extrabold text-indigo-600">
-                  9
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+  function prevMonth() {
+    if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(currentYear - 1); }
+    else setCurrentMonth(currentMonth - 1);
+  }
 
-        {/* Categories */}
-        <div className="space-y-4">
-          <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest px-1">
-            Categorias
-          </h3>
-          <div className="space-y-2">
-            {[
-              { label: "Rotina", color: "bg-blue-400" },
-              { label: "Prioridade", color: "bg-indigo-500" },
-              { label: "Pós-Op", color: "bg-orange-500" },
-            ].map((cat) => (
-              <div
-                key={cat.label}
-                className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-100 transition-all cursor-pointer group border border-transparent hover:border-slate-200"
-              >
-                <div
-                  className={`w-2.5 h-2.5 rounded-full ${cat.color} group-hover:scale-125 transition-transform`}
-                />
-                <span className="text-sm font-bold text-slate-700">
-                  {cat.label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+  function nextMonth() {
+    if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(currentYear + 1); }
+    else setCurrentMonth(currentMonth + 1);
+  }
 
-        {/* Pro Tip */}
-        <div className="mt-auto">
-          <div className="bg-blue-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-200 relative overflow-hidden">
-            <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
-            <h4 className="font-display font-bold mb-3 flex items-center gap-2">
-              💡 Dica Pro
-            </h4>
-            <p className="text-xs text-blue-50 leading-relaxed opacity-90">
-              Você tem um intervalo de 15 minutos entre{" "}
-              <span className="font-bold underline">Jenkins</span> e seu horário
-              de almoço. Perfeito para completar relatórios médicos.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+  // Generate calendar days
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
 
-// --- Week View Data ---
+  const calendarDays: { day: number; month: 'prev' | 'current' | 'next'; isToday: boolean }[] = [];
 
-type WeekAppointment = {
-  id: string;
-  patientName: string;
-  type: string;
-  description: string;
-  startTime: string; // "HH:mm"
-  duration: number; // minutes
-  day: number; // 0-6 (Mon-Sun mapped to displayed days)
-  color: "blue" | "indigo" | "orange" | "slate" | "green";
-};
+  // Previous month days
+  for (let i = firstDay - 1; i >= 0; i--) {
+    calendarDays.push({ day: daysInPrevMonth - i, month: 'prev', isToday: false });
+  }
+  // Current month days
+  for (let i = 1; i <= daysInMonth; i++) {
+    calendarDays.push({ day: i, month: 'current', isToday: i === todayDay && currentMonth === todayMonth && currentYear === todayYear });
+  }
+  // Next month days (fill to 42)
+  const remaining = 42 - calendarDays.length;
+  for (let i = 1; i <= remaining; i++) {
+    calendarDays.push({ day: i, month: 'next', isToday: false });
+  }
 
-const WEEK_DAYS = [
-  { name: "Seg", date: "07" },
-  { name: "Ter", date: "08", isToday: true },
-  { name: "Qua", date: "09" },
-  { name: "Qui", date: "10" },
-  { name: "Sex", date: "11" },
-];
+  // Map appointments to days
+  function getAppointmentsForDay(day: number): APIAppointment[] {
+    return appointments.filter((a) => {
+      const d = new Date(a.dateTime);
+      return d.getDate() === day && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+  }
 
-const WEEK_TIME_SLOTS = Array.from({ length: 11 }, (_, i) => {
-  const hour = i + 8;
-  return `${String(hour).padStart(2, "0")}:00`;
-});
+  function formatTime(dateTime: string): string {
+    const d = new Date(dateTime);
+    return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+  }
 
-const WEEK_APPOINTMENTS: WeekAppointment[] = [
-  {
-    id: "w1",
-    patientName: "Ricardo Santos",
-    type: "CONSULTA",
-    description: "Check-up Geral",
-    startTime: "09:00",
-    duration: 90,
-    day: 0,
-    color: "blue",
-  },
-  {
-    id: "w2",
-    patientName: "Ana Paula Costa",
-    type: "ROTINA",
-    description: "10:00 - 10:45",
-    startTime: "10:00",
-    duration: 45,
-    day: 1,
-    color: "slate",
-  },
-  {
-    id: "w3",
-    patientName: "Mariana Ferreira",
-    type: "URGENTE",
-    description: "Cardiologia de Emergência",
-    startTime: "12:00",
-    duration: 90,
-    day: 1,
-    color: "orange",
-  },
-  {
-    id: "w4",
-    patientName: "Carlos Mendes",
-    type: "RETORNO",
-    description: "Acompanhamento Pós-Op",
-    startTime: "14:00",
-    duration: 60,
-    day: 2,
-    color: "green",
-  },
-  {
-    id: "w5",
-    patientName: "Julia Vieira",
-    type: "RESULTADOS",
-    description: "Resultados de Exames",
-    startTime: "09:00",
-    duration: 75,
-    day: 3,
-    color: "indigo",
-  },
-  {
-    id: "w6",
-    patientName: "Pedro Almeida",
-    type: "EXAME",
-    description: "Exame de Imagem",
-    startTime: "13:00",
-    duration: 60,
-    day: 4,
-    color: "slate",
-  },
-  {
-    id: "w7",
-    patientName: "Sofia Lima",
-    type: "CONSULTA",
-    description: "Consulta Dermatológica",
-    startTime: "15:30",
-    duration: 45,
-    day: 3,
-    color: "blue",
-  },
-  {
-    id: "w8",
-    patientName: "Luis Garcia",
-    type: "RETORNO",
-    description: "Revisão de Medicação",
-    startTime: "11:00",
-    duration: 30,
-    day: 4,
-    color: "green",
-  },
-];
-
-function WeekAppointmentCard({
-  appointment,
-}: {
-  appointment: WeekAppointment;
-}) {
-  const [startHour, startMin] = appointment.startTime.split(":").map(Number);
-  const topOffset = (startHour - 8) * 88 + (startMin / 60) * 88;
-  const height = (appointment.duration / 60) * 88;
-
-  const colorClasses = {
-    blue: "bg-primary/10 border-l-primary text-primary",
-    indigo: "bg-indigo-50 border-l-indigo-500 text-indigo-700",
-    orange: "bg-orange-50 border-l-orange-500 text-orange-700",
-    slate: "bg-slate-100 border-l-slate-400 text-slate-700",
-    green: "bg-emerald-50 border-l-emerald-500 text-emerald-700",
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.02 }}
-      className={`absolute left-1 right-1 rounded-xl border-l-4 p-3 shadow-sm cursor-pointer transition-all z-10 ${colorClasses[appointment.color]}`}
-      style={{ top: `${topOffset}px`, height: `${height}px` }}
-    >
-      <span className="text-[9px] font-bold uppercase tracking-wider opacity-70">
-        {appointment.type}
-      </span>
-      <p className="font-display font-bold text-sm leading-tight mt-1 truncate">
-        {appointment.patientName}
-      </p>
-      {height > 60 && (
-        <p className="opacity-60 text-[10px] font-medium mt-1 truncate">
-          {appointment.description}
-        </p>
-      )}
-    </motion.div>
-  );
-}
-
-function WeekView() {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
+      className="bg-slate-100/50 rounded-[2.5rem] p-8 border border-white/80 backdrop-blur-md shadow-sm"
     >
-      {/* Week Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-3xl font-display font-extrabold text-slate-900 tracking-tight">
-            Agenda Semanal
-          </h2>
-          <p className="text-slate-500 font-medium">October 7 – 11, 2024</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all">
-            <ChevronLeft size={20} className="text-slate-600" />
-          </button>
-          <button className="px-5 py-2 bg-slate-200/50 hover:bg-slate-200 rounded-lg font-bold text-sm text-slate-700 transition-all">
-            Hoje
-          </button>
-          <button className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all">
-            <ChevronRight size={20} className="text-slate-600" />
-          </button>
-        </div>
-      </div>
-
-      {/* Calendar Grid */}
-      <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 flex flex-col overflow-hidden border border-slate-100">
-        {/* Grid Header — Days */}
-        <div className="grid grid-cols-[80px_repeat(5,1fr)] bg-slate-50/50 border-b border-slate-100">
-          <div className="p-4"></div>
-          {WEEK_DAYS.map((day, idx) => (
-            <div
-              key={idx}
-              className={`p-5 text-center transition-colors ${day.isToday ? "bg-primary/5" : ""}`}
-            >
-              <p
-                className={`text-[10px] font-bold uppercase tracking-widest ${day.isToday ? "text-primary" : "text-slate-400"}`}
-              >
-                {day.name}
-              </p>
-              <p
-                className={`text-2xl font-display font-extrabold mt-1 ${day.isToday ? "text-primary" : "text-slate-900"}`}
-              >
-                {day.date}
-              </p>
-            </div>
-          ))}
+      <div className="flex justify-between items-center mb-8">
+        <div className="flex items-center gap-6">
+          <h3 className="text-2xl font-display font-bold text-slate-900">
+            {MONTH_NAMES[currentMonth]} {currentYear}
+          </h3>
+          <div className="flex gap-2">
+            <button onClick={prevMonth} className="p-2 hover:bg-white rounded-full transition-all border border-transparent hover:border-slate-200 cursor-pointer">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button onClick={nextMonth} className="p-2 hover:bg-white rounded-full transition-all border border-transparent hover:border-slate-200 cursor-pointer">
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        {/* Grid Body */}
-        <div className="relative h-[968px] overflow-y-auto">
-          <div className="grid grid-cols-[80px_repeat(5,1fr)] min-h-[968px] relative">
-            {/* Time Slots Labels */}
-            <div className="flex flex-col text-right pr-4 pt-8 text-[10px] font-bold text-slate-400 uppercase tracking-tighter gap-[70px] border-r border-slate-100">
-              {WEEK_TIME_SLOTS.map((time, idx) => (
-                <span key={idx}>{time}</span>
-              ))}
-            </div>
-
-            {/* Day Columns */}
-            {WEEK_DAYS.map((day, dayIdx) => (
-              <div
-                key={dayIdx}
-                className={`relative border-r border-slate-100 p-1 h-full ${day.isToday ? "bg-primary/[0.02]" : ""}`}
-              >
-                {/* Horizontal Grid Lines */}
-                <div className="absolute inset-0 z-0 pointer-events-none">
-                  {WEEK_TIME_SLOTS.map((_, i) => (
-                    <div
-                      key={i}
-                      className="h-[88px] border-b border-slate-100/50"
-                    />
-                  ))}
-                </div>
-
-                {/* Today Line Indicator */}
-                {day.isToday && (
-                  <div className="absolute top-[280px] left-0 right-0 h-0.5 bg-primary z-20 pointer-events-none">
-                    <div className="absolute -left-1 -top-[3px] w-2 h-2 bg-primary rounded-full shadow-sm shadow-primary/40"></div>
-                  </div>
-                )}
-
-                {/* Appointments for this day */}
-                {WEEK_APPOINTMENTS.filter((a) => a.day === dayIdx).map(
-                  (appt) => (
-                    <WeekAppointmentCard key={appt.id} appointment={appt} />
-                  ),
-                )}
-              </div>
-            ))}
+        <div className="flex gap-4 bg-white/50 px-5 py-2.5 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-slate-500">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-primary" /> Agendada
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-500" /> Concluída
           </div>
         </div>
       </div>
 
-      {/* Stats Bar */}
-      <div className="mt-8 flex gap-6">
-        <StatCard
-          icon={CalendarCheck}
-          label="Total Consultas"
-          value="24 Esta Semana"
-          colorClass="bg-primary/10 text-primary"
-        />
-        <StatCard
-          icon={AlertCircle}
-          label="Casos Prioritários"
-          value="03 Alta"
-          colorClass="bg-priority/10 text-priority"
-        />
-        <StatCard
-          icon={FileText}
-          label="Revisões Pós-Op"
-          value="08 Agendadas"
-          colorClass="bg-secondary/10 text-secondary"
-        />
+      <div className="bg-white rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm">
+        <div className="grid grid-cols-7 border-b border-slate-100">
+          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((d) => (
+            <div key={d} className="py-4 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+              {d}
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7">
+          {calendarDays.map((item, idx) => {
+            const dayAppts = item.month === 'current' ? getAppointmentsForDay(item.day) : [];
+            return (
+              <div
+                key={idx}
+                onClick={() => item.month === 'current' && onDayClick?.(new Date(currentYear, currentMonth, item.day))}
+                className={`h-32 p-3 border-r border-b border-slate-100 last:border-r-0 relative transition-all cursor-pointer
+                  ${item.month !== 'current' ? 'bg-slate-50/50 opacity-40' : 'hover:bg-primary/[0.02]'}
+                  ${item.isToday ? 'bg-primary/[0.03]' : ''}`}
+              >
+                {item.isToday && (
+                  <div className="absolute top-3 right-3">
+                    <span className="w-2 h-2 bg-primary rounded-full animate-pulse inline-block" />
+                  </div>
+                )}
+                <span className={`text-xs font-bold ${item.isToday ? 'text-primary' : 'text-slate-900'} ${item.month !== 'current' ? 'text-slate-400' : ''}`}>
+                  {item.day}
+                </span>
+
+                <div className="mt-2 space-y-1 overflow-hidden">
+                  {dayAppts.slice(0, 3).map((appt) => (
+                    <div
+                      key={appt.id}
+                      onClick={() => onAppointmentClick({
+                        id: appt.id,
+                        patientName: appt.patient?.name || 'Paciente',
+                        doctorName: appt.doctorName || '',
+                        type: appt.reason || 'Consulta',
+                        dateTime: new Date(appt.dateTime).toLocaleString('pt-BR'),
+                        status: appt.isCompleted ? 'Concluída' : 'Agendada',
+                      })}
+                      className={`px-2 py-1 rounded text-[9px] font-bold truncate cursor-pointer transition-all hover:shadow-sm ${
+                        appt.isCompleted
+                          ? 'bg-green-50 border-l-2 border-green-500 text-green-700'
+                          : 'bg-primary/5 border-l-2 border-primary text-primary'
+                      }`}
+                    >
+                      {formatTime(appt.dateTime)} {appt.patient?.name?.split(' ')[0] || ''}
+                    </div>
+                  ))}
+                  {dayAppts.length > 3 && (
+                    <span className="text-[9px] text-slate-400 font-medium">+{dayAppts.length - 3} mais</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </motion.div>
   );
@@ -684,7 +409,9 @@ function WeekView() {
 export default function Schedule() {
   const [viewMode, setViewMode] = useState<"Dia" | "Semana" | "Mês">("Mês");
   const [showNewAppointment, setShowNewAppointment] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [showAppointmentDetail, setShowAppointmentDetail] = useState(false);
+  const { todayAppointments, upcomingAppointments, completedToday, appointments: allAppointments } = useScheduleAppointments();
   const [selectedAppointment, setSelectedAppointment] = useState<{
     id: string;
     patientName: string;
@@ -746,148 +473,36 @@ export default function Schedule() {
 
           {/* View Content */}
           {viewMode === "Dia" ? (
-            <DayView />
+            <DayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} appointments={allAppointments} />
           ) : viewMode === "Semana" ? (
-            <WeekView />
+            <WeekView selectedDate={selectedDate} onDayClick={(d: Date) => { setSelectedDate(d); setViewMode("Dia"); }} appointments={allAppointments} />
           ) : (
             <>
-              {/* Calendar Box */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-slate-100/50 rounded-[2.5rem] p-8 border border-white/80 backdrop-blur-md shadow-sm"
-              >
-                <div className="flex justify-between items-center mb-8">
-                  <div className="flex items-center gap-6">
-                    <h3 className="text-2xl font-display font-bold text-slate-900">
-                      October 2024
-                    </h3>
-                    <div className="flex gap-2">
-                      <button className="p-2 hover:bg-white rounded-full transition-all border border-transparent hover:border-slate-200">
-                        <ChevronLeft className="w-5 h-5" />
-                      </button>
-                      <button className="p-2 hover:bg-white rounded-full transition-all border border-transparent hover:border-slate-200">
-                        <ChevronRight className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-4 bg-white/50 px-5 py-2.5 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-primary" />{" "}
-                      Rotina
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-priority" />{" "}
-                      Prioridade
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-secondary" />{" "}
-                      Pós-Op
-                    </div>
-                  </div>
-                </div>
-
-                {/* Grid */}
-                <div className="bg-white rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm">
-                  <div className="grid grid-cols-7 border-b border-slate-100">
-                    {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map(
-                      (day) => (
-                        <div
-                          key={day}
-                          className="py-4 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400"
-                        >
-                          {day}
-                        </div>
-                      ),
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-7">
-                    {days.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className={`h-44 p-4 border-r border-b border-slate-100 last:border-r-0 relative group transition-all
-                      ${item.month !== "current" ? "bg-slate-50/50 opacity-40" : "hover:bg-primary/[0.02]"}
-                      ${item.isToday ? "bg-primary/[0.03]" : ""}`}
-                      >
-                        {item.isToday && (
-                          <div className="absolute top-4 right-4 flex items-center gap-1.5">
-                            <span className="w-2 h-2 bg-primary rounded-full animate-pulse shadow-[0_0_8px_rgba(0,64,205,0.4)]" />
-                          </div>
-                        )}
-                        <span
-                          className={`text-sm font-bold ${item.isToday ? "text-primary" : "text-slate-900"} ${item.month !== "current" ? "text-slate-400" : ""}`}
-                        >
-                          {item.day}
-                        </span>
-
-                        <div className="mt-4 space-y-2">
-                          {item.appointments.map((appt) => (
-                            <motion.div
-                              key={appt.id}
-                              onClick={() =>
-                                handleAppointmentClick({
-                                  id: appt.id,
-                                  patientName: appt.patient,
-                                  doctorName: "Dr. Roberto Silva",
-                                  type:
-                                    appt.type === "routine"
-                                      ? "Rotina"
-                                      : appt.type === "priority"
-                                        ? "Prioridade"
-                                        : "Pós-Op",
-                                  dateTime: `${item.day} Out 2024, ${appt.time}`,
-                                  status: "Confirmado",
-                                })
-                              }
-                              className={`px-3 py-1.5 rounded-lg border-l-2 text-[10px] font-bold truncate transition-all cursor-pointer hover:shadow-md
-                            ${
-                              appt.type === "routine"
-                                ? "bg-primary/5 border-primary text-primary hover:bg-primary/10"
-                                : appt.type === "priority"
-                                  ? "bg-priority/5 border-priority text-priority hover:bg-priority/10"
-                                  : "bg-secondary/5 border-secondary text-secondary hover:bg-secondary/10"
-                            }`}
-                            >
-                              {item.isToday &&
-                              appt.type === "routine" &&
-                              appt.id === "5" ? (
-                                <div className="bg-primary text-white -mx-3 -my-1.5 px-3 py-1.5 rounded-lg">
-                                  {appt.time} - {appt.patient}
-                                </div>
-                              ) : (
-                                <span>
-                                  {appt.time} - {appt.patient}
-                                </span>
-                              )}
-                            </motion.div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
+              {/* Calendar Box - Dynamic */}
+              <CalendarView
+                appointments={allAppointments}
+                onAppointmentClick={handleAppointmentClick}
+                onDayClick={(d: Date) => { setSelectedDate(d); setViewMode("Dia"); }}
+              />
 
               {/* Stats Bar */}
               <div className="mt-8 flex gap-6">
                 <StatCard
                   icon={CalendarCheck}
-                  label="Total Consultas"
-                  value="24 Hoje"
+                  label="Consultas Hoje"
+                  value={`${todayAppointments.length} agendadas`}
                   colorClass="bg-primary/10 text-primary"
                 />
                 <StatCard
                   icon={AlertCircle}
-                  label="Casos Prioritários"
-                  value="03 Alta"
-                  colorClass="bg-priority/10 text-priority"
+                  label="Concluídas"
+                  value={`${completedToday} de ${todayAppointments.length}`}
+                  colorClass="bg-green-50 text-green-600"
                 />
                 <StatCard
                   icon={FileText}
-                  label="Revisões Pós-Op"
-                  value="08 Agendadas"
+                  label="Próximas"
+                  value={`${upcomingAppointments.length} agendadas`}
                   colorClass="bg-secondary/10 text-secondary"
                 />
               </div>
