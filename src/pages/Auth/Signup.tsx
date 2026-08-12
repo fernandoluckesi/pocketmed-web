@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   User,
   Shield,
@@ -21,6 +21,7 @@ import { ApiError } from "../../services/api";
 import { Snackbar } from "../../components/Snackbar";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 import iconLogo from "../../assets/images/icon.png";
+import api from "../../config/api";
 
 const UF_LIST = [
   "AC",
@@ -209,10 +210,12 @@ function ClinicSignupForm({
   onBack,
   navigate,
   setSnackbar,
+  onVerificationNeeded,
 }: {
   onBack: () => void;
   navigate: (path: string) => void;
   setSnackbar: (s: { visible: boolean; message: string }) => void;
+  onVerificationNeeded: (email: string) => void;
 }) {
   const { registerDoctor } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
@@ -250,7 +253,8 @@ function ClinicSignupForm({
           clinicName: values.clinicName,
           cnpj: values.cnpj.replace(/\D/g, ""),
         });
-        navigate("/dashboard");
+        // If we're still here, email verification is needed
+        onVerificationNeeded(values.email);
       } catch (err) {
         if (err instanceof ApiError && err.status === 409) {
           const conflicts: string[] =
@@ -670,6 +674,82 @@ export default function Signup() {
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingVerification, setPendingVerification] = useState<string | null>(null);
+  const [verificationCode, setVerificationCode] = useState(["", "", "", "", "", ""]);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const codeInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
+
+  function handleCodeChange(value: string, index: number) {
+    // Handle paste: if value has multiple characters, distribute across inputs
+    if (value.length > 1) {
+      const digits = value.replace(/\D/g, "").slice(0, 6).split("");
+      const newCode = [...verificationCode];
+      digits.forEach((d, i) => {
+        if (index + i < 6) newCode[index + i] = d;
+      });
+      setVerificationCode(newCode);
+      const nextIndex = Math.min(index + digits.length, 5);
+      codeInputRefs.current[nextIndex]?.focus();
+      if (newCode.join("").length === 6) handleVerifyEmail(newCode.join(""));
+      return;
+    }
+
+    const newCode = [...verificationCode];
+    newCode[index] = value.replace(/\D/, "");
+    setVerificationCode(newCode);
+    if (value && index < 5) {
+      codeInputRefs.current[index + 1]?.focus();
+    }
+    if (value && index === 5) {
+      const fullCode = newCode.join("");
+      if (fullCode.length === 6) handleVerifyEmail(fullCode);
+    }
+  }
+
+  function handleCodeKeyDown(key: string, index: number) {
+    if (key === "Backspace" && !verificationCode[index] && index > 0) {
+      codeInputRefs.current[index - 1]?.focus();
+      const newCode = [...verificationCode];
+      newCode[index - 1] = "";
+      setVerificationCode(newCode);
+    }
+  }
+
+  async function handleVerifyEmail(fullCode?: string) {
+    const code = fullCode || verificationCode.join("");
+    if (code.length !== 6) return;
+    setVerifyLoading(true);
+    try {
+      await api.post("/auth/verify-email", { code });
+      navigate("/dashboard");
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || "Código inválido ou expirado";
+      setSnackbar({ visible: true, message: msg });
+      setVerificationCode(["", "", "", "", "", ""]);
+      codeInputRefs.current[0]?.focus();
+    } finally {
+      setVerifyLoading(false);
+    }
+  }
+
+  async function handleResendCode() {
+    if (resendCooldown > 0) return;
+    try {
+      await api.post("/auth/send-email-verification");
+      setResendCooldown(60);
+      setSnackbar({ visible: true, message: "Código reenviado com sucesso!" });
+    } catch {
+      setSnackbar({ visible: true, message: "Não foi possível reenviar o código." });
+    }
+  }
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -711,6 +791,9 @@ export default function Signup() {
           rqe: values.rqe || undefined,
           profileImage: profileImage || undefined,
         });
+        // If we're still here, email verification is needed
+        setPendingVerification(values.email);
+        setResendCooldown(60);
       } catch (err: unknown) {
         const axiosErr = err as {
           response?: {
@@ -816,16 +899,69 @@ export default function Signup() {
             </div>
             <div className="space-y-2">
               <h2 className="text-3xl font-display font-bold text-slate-900 tracking-tight">
-                Criar conta
+                {pendingVerification ? "Verifique seu email" : "Criar conta"}
               </h2>
               <p className="text-slate-500 text-base">
-                Comece sua jornada digital no PocketMed hoje mesmo.
+                {pendingVerification
+                  ? "Insira o código de 6 dígitos enviado para:"
+                  : "Comece sua jornada digital no PocketMed hoje mesmo."}
               </p>
+              {pendingVerification && (
+                <p className="text-primary font-semibold text-sm">{pendingVerification}</p>
+              )}
             </div>
           </header>
 
+          {/* Email Verification Step */}
+          {pendingVerification && (
+            <div className="space-y-6">
+              <div className="flex justify-center gap-3">
+                {verificationCode.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(el) => { codeInputRefs.current[index] = el; }}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleCodeChange(e.target.value.replace(/\D/, ""), index)}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+                      if (pasted) handleCodeChange(pasted, index);
+                    }}
+                    onKeyDown={(e) => handleCodeKeyDown(e.key, index)}
+                    className="w-12 h-14 text-center text-2xl font-bold border-2 border-slate-200 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-slate-50"
+                    autoFocus={index === 0}
+                  />
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleVerifyEmail()}
+                disabled={verifyLoading || verificationCode.join("").length !== 6}
+                className="w-full py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {verifyLoading ? "Verificando..." : "Confirmar código"}
+              </button>
+
+              <div className="text-center space-y-2">
+                <p className="text-sm text-slate-500">Não recebeu o código?</p>
+                <button
+                  type="button"
+                  onClick={handleResendCode}
+                  disabled={resendCooldown > 0}
+                  className="text-sm font-semibold text-primary hover:underline disabled:text-slate-400 disabled:no-underline border-none bg-transparent cursor-pointer disabled:cursor-not-allowed"
+                >
+                  {resendCooldown > 0 ? `Reenviar em ${resendCooldown}s` : "Reenviar código"}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Role Selection */}
-          {signupType === "select" && (
+          {!pendingVerification && signupType === "select" && (
             <div className="space-y-4">
               <p className="text-sm font-medium text-slate-600">
                 Selecione o tipo de cadastro:
@@ -879,7 +1015,7 @@ export default function Signup() {
           )}
 
           {/* Doctor Form */}
-          {signupType === "doctor" && (
+          {!pendingVerification && signupType === "doctor" && (
             <>
               <button
                 type="button"
@@ -1304,11 +1440,12 @@ export default function Signup() {
           )}
 
           {/* Clinic Form */}
-          {signupType === "clinic" && (
+          {!pendingVerification && signupType === "clinic" && (
             <ClinicSignupForm
               onBack={() => setSignupType("select")}
               navigate={navigate}
               setSnackbar={setSnackbar}
+              onVerificationNeeded={(email) => { setPendingVerification(email); setResendCooldown(60); }}
             />
           )}
         </div>

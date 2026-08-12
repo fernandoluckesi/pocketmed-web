@@ -168,6 +168,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cpf: userData.cpf,
       rqe: userData.rqe,
     });
+
+    // Don't navigate if email not verified — let the signup page handle it
+    if (userData.emailVerified === false) {
+      return;
+    }
     navigate("/dashboard");
   }
 
