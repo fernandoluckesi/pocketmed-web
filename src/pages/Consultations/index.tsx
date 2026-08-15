@@ -47,7 +47,7 @@ export default function Consultations() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [consultations, setConsultations] = useState<Consultation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
   const itemsPerPage = 10;
 
   const loadConsultations = useCallback(async () => {

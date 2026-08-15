@@ -9,7 +9,6 @@ import {
   DollarSign,
   Filter,
   Download,
-  MoreVertical,
   BrainCircuit,
   Lightbulb,
   ChevronRight,
@@ -58,7 +57,6 @@ export default function FinancialDashboard() {
   const [specialties, setSpecialties] = useState<SpecialtyData[]>([]);
   const [transactions, setTransactions] = useState<RevenueTransaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
