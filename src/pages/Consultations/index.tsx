@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Calendar,
   Download,
@@ -12,6 +12,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
+import { api } from "../../services/api";
 
 // --- Types ---
 interface Consultation {
@@ -26,25 +27,18 @@ interface Consultation {
   status: "REALIZADA" | "AGENDADA" | "CANCELADA";
 }
 
-// --- Mock Data ---
-const MOCK_CONSULTATIONS: Consultation[] = [
-  { id: "1", patientName: "Helena S. Ferreira", patientCpf: "123.456.789-01", patientAvatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuBh8Bt9vbn-T5JbThVPMocVHj1SrYLlwlXw65aANAegeqa1tYB4pfXsrZURB-NgfgRHZcnFSEgjbNNOj05JUzhXWkndBWalfJoU_ic0K3UkeF2OJlj78j193DIMyuQLGrWVZ6pKTpWr8kHZmNY8axdy9TNmCF_ffOX7kw3iwIbX8e5UqCpAw_oT25QkyUf7Ah07AyPOOFelUksz9zyOp6sElIWLa7NL11GlWddcOE7sOrvudpp0zJK3ojDCaH7C9gtW_Y4txmcGHJqp", date: "2023-10-18", time: "09:00", doctorName: "Dr. Ricardo Fontes", specialty: "Cardiologia", status: "REALIZADA" },
-  { id: "2", patientName: "Ana Maria Silveira", patientCpf: "456.789.012-89", patientAvatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuB1aLI3LkC8FTBuMzPHLgI0BHNSqd_dRVwp1-i8XT6HjNqGNxJtpDs3VvQ3gx-4_LoyFGMF0wk4xdZylaw1GMH3S254_GR5zj8IK40ubKznd9MgWgpQvK1Ot3axy2bzcm4qtMwwnjShjfguelAuoAGSyGbVX-syGJNe1AwCU3VcTl6nWJ5x-ldi2Arr4lRRKVi-uAxPmKIM2uXu1NcXlYnO9-kpIPxxU1phzrettxnmjMTDZ5BZ2-4OBGIEoRjX63gxRgbdgslAZZ8G", date: "2023-10-19", time: "10:30", doctorName: "Dra. Alice Moraes", specialty: "Dermatologia", status: "AGENDADA" },
-  { id: "3", patientName: "Roberto Santos", patientCpf: "789.012.345-45", patientAvatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuBj_La7YrILsBpsTV9IBYoBt4BSxBaIwMuofEl2AddUP8Ign2SsxDvp4KIyi-9PQRzf2B-tqmGIL9Cufw6JNKKWGCI4YvWih6h0Jpu_yqpz1bZHRHy_CNz2OnrGI_7pgoHUyuF1YJzEinxHjAg2dkw3C3kyKJHRDmzSn9i0wi_vSYdvxbTLq23kCatwS1-EYHr6-xlyUNemF2Gf46RWTdqhjOuEar7UfqSceLRpFKKYSje1Y7xDXcvaKBUWZWkiM-x4TTbyUCt9m0Qx", date: "2023-10-20", time: "14:00", doctorName: "Dr. Ricardo Fontes", specialty: "Cardiologia", status: "CANCELADA" },
-  { id: "4", patientName: "Carlos Pereira", patientCpf: "321.654.987-55", date: "2023-10-21", time: "11:15", doctorName: "Dra. Juliana Lima", specialty: "Neurologia", status: "AGENDADA" },
-  { id: "5", patientName: "Mariana Costa Ribeiro", patientCpf: "234.567.890-12", date: "2023-10-22", time: "08:30", doctorName: "Dr. Ricardo Fontes", specialty: "Cardiologia", status: "REALIZADA" },
-  { id: "6", patientName: "Francisco de Souza", patientCpf: "876.543.210-98", date: "2023-10-23", time: "15:30", doctorName: "Dra. Alice Moraes", specialty: "Clínica Geral", status: "AGENDADA" },
-  { id: "7", patientName: "Aline de Oliveira", patientCpf: "543.210.987-67", date: "2023-10-24", time: "16:00", doctorName: "Dr. Marcos Vale", specialty: "Pediatria", status: "REALIZADA" },
-  { id: "8", patientName: "Gabriel Alencar", patientCpf: "345.678.901-23", date: "2023-10-25", time: "09:45", doctorName: "Dra. Juliana Lima", specialty: "Neurologia", status: "CANCELADA" },
-];
-
 // --- Helpers ---
 function formatDate(dateStr: string) {
-  const parts = dateStr.split("-");
-  if (parts.length !== 3) return dateStr;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
   const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-  const monthIndex = parseInt(parts[1], 10) - 1;
-  return `${parts[2]} ${months[monthIndex]} ${parts[0]}`;
+  return `${d.getDate().toString().padStart(2, "0")} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function mapStatus(apt: any): "REALIZADA" | "AGENDADA" | "CANCELADA" {
+  if (apt.isCompleted || apt.status === "completed") return "REALIZADA";
+  if (apt.status === "rejected" || apt.status === "cancelled") return "CANCELADA";
+  return "AGENDADA";
 }
 
 // --- Main Page ---
@@ -52,9 +46,38 @@ export default function Consultations() {
   const [statusFilter, setStatusFilter] = useState<"Todas" | "Agendadas" | "Realizadas" | "Canceladas">("Todas");
   const [currentPage, setCurrentPage] = useState(1);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const itemsPerPage = 5;
+  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const itemsPerPage = 10;
 
-  const filteredConsultations = MOCK_CONSULTATIONS.filter((con) => {
+  const loadConsultations = useCallback(async () => {
+    try {
+      const data = await api("/appointments");
+      const mapped: Consultation[] = (Array.isArray(data) ? data : []).map((apt: any) => {
+        const dt = new Date(apt.dateTime);
+        return {
+          id: apt.id,
+          patientName: apt.patient?.name || apt.patientName || "Paciente",
+          patientCpf: apt.patient?.phone || "",
+          patientAvatar: apt.patient?.profileImage || undefined,
+          date: apt.dateTime,
+          time: dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+          doctorName: apt.doctorName || "—",
+          specialty: apt.doctorSpecialty || "—",
+          status: mapStatus(apt),
+        };
+      });
+      setConsultations(mapped);
+    } catch {
+      setConsultations([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadConsultations(); }, [loadConsultations]);
+
+  const filteredConsultations = consultations.filter((con) => {
     if (statusFilter === "Todas") return true;
     if (statusFilter === "Agendadas") return con.status === "AGENDADA";
     if (statusFilter === "Realizadas") return con.status === "REALIZADA";

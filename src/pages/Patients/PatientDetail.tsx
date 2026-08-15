@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Calendar,
   User,
+  Users,
   Droplet,
   AlertTriangle,
   Activity,
@@ -14,6 +15,7 @@ import {
   Share2,
   ArrowLeft,
   Check,
+  ChevronRight,
   Loader2,
   Mail,
   Phone,
@@ -181,6 +183,7 @@ const mockDocuments: MedicalDocument[] = [
 // --- Components ---
 
 function PatientHeroFromAPI({ patient, onEdit }: { patient: PatientFromAPI; onEdit?: () => void }) {
+  const navigate = useNavigate();
   const age = patient.birthDate
     ? Math.floor(
         (Date.now() - new Date(patient.birthDate).getTime()) /
@@ -287,6 +290,24 @@ function PatientHeroFromAPI({ patient, onEdit }: { patient: PatientFromAPI; onEd
             </div>
           )}
         </div>
+
+        {/* Responsáveis (for dependents) */}
+        {(patient as any).isDependent && (patient as any).responsibles?.length > 0 && (
+          <div className="flex items-center gap-3 mt-4">
+            <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Responsáveis:</span>
+            <div className="flex gap-2 flex-wrap">
+              {(patient as any).responsibles.map((r: { id: string; name: string }) => (
+                <button
+                  key={r.id}
+                  onClick={() => navigate(`/patients/${r.id}`)}
+                  className="text-sm text-primary font-semibold bg-primary/5 px-3 py-1 rounded-full hover:bg-primary/10 transition-colors cursor-pointer border-none"
+                >
+                  {r.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {onEdit && (
@@ -2405,6 +2426,92 @@ interface Vaccine {
   notes: string | null;
 }
 
+// --- Dependents Section ---
+
+interface DependentItem {
+  id: string;
+  name: string;
+  gender: string;
+  birthDate: string;
+  profileImage: string | null;
+  responsibles: { id: string; name: string }[];
+}
+
+function DependentsSection({ patientId, onSelectDependent }: { patientId: string; onSelectDependent: (id: string) => void }) {
+  const [dependents, setDependents] = useState<DependentItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function loadDependents() {
+    try {
+      const data = await api(`/patients/${patientId}/dependents`);
+      setDependents(Array.isArray(data) ? data : []);
+    } catch { setDependents([]); }
+    finally { setLoading(false); }
+  }
+
+  useState(() => { loadDependents(); });
+
+  if (loading) return <div className="text-center py-8 text-slate-400">Carregando...</div>;
+
+  function calculateAge(birthDate: string) {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    return age;
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="font-bold text-xl font-display tracking-tight">Dependentes</h3>
+      </div>
+
+      {dependents.length === 0 ? (
+        <div className="text-center py-8 text-slate-400">
+          <Users className="w-10 h-10 mx-auto mb-3 opacity-50" />
+          <p className="font-medium">Nenhum dependente cadastrado</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {dependents.map((dep) => (
+            <div
+              key={dep.id}
+              onClick={() => onSelectDependent(dep.id)}
+              className="bg-white rounded-2xl p-6 flex items-center gap-5 border border-slate-100 shadow-sm hover:border-primary/30 hover:shadow-md transition-all cursor-pointer"
+            >
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <span className="text-primary font-bold text-lg">{dep.name.charAt(0)}</span>
+              </div>
+              <div className="flex-grow min-w-0">
+                <h4 className="font-bold text-lg text-slate-900">{dep.name}</h4>
+                <p className="text-xs text-slate-500 mt-1">
+                  {dep.birthDate && `${calculateAge(dep.birthDate)} anos`}
+                  {dep.gender && ` • ${dep.gender === 'male' ? 'Masculino' : dep.gender === 'female' ? 'Feminino' : dep.gender}`}
+                </p>
+                {dep.responsibles.length > 0 && (
+                  <div className="flex items-center gap-1 mt-2">
+                    <span className="text-[10px] text-slate-400 uppercase font-semibold">Responsáveis:</span>
+                    <div className="flex gap-1 flex-wrap">
+                      {dep.responsibles.map((r) => (
+                        <span key={r.id} className="text-xs text-primary font-semibold bg-primary/5 px-2 py-0.5 rounded-full">
+                          {r.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <ChevronRight className="w-5 h-5 text-slate-300 shrink-0" />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function VaccinesSection({ patientId }: { patientId: string }) {
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [loading, setLoading] = useState(true);
@@ -2508,7 +2615,7 @@ export default function PatientDetail() {
   const { id } = useParams<{ id: string }>();
   const { patient, loading, error, refetch } = usePatientDetail(id);
   const [activeTab, setActiveTab] = useState<
-    "consultas" | "medicamentos" | "exames" | "doencas" | "alergias" | "vacinas"
+    "consultas" | "medicamentos" | "exames" | "doencas" | "alergias" | "vacinas" | "dependentes"
   >("consultas");
   const [showConsultaModal, setShowConsultaModal] = useState(false);
   const [showMedicamentoModal, setShowMedicamentoModal] = useState(false);
@@ -2516,6 +2623,14 @@ export default function PatientDetail() {
   const [editingConsulta, setEditingConsulta] = useState<Appointment | null>(null);
   const [showEditPatientModal, setShowEditPatientModal] = useState(false);
   const { user } = useAuth();
+
+  const isDependent = (patient as any)?.isDependent === true;
+  const responsibles = (patient as any)?.responsibles || [];
+
+  // Reset to consultas tab when navigating to a different patient/dependent
+  useEffect(() => {
+    setActiveTab("consultas");
+  }, [id]);
 
   // Loading state
   if (loading) {
@@ -2548,11 +2663,17 @@ export default function PatientDetail() {
         <div className="space-y-8">
           {/* Back Button */}
           <button
-            onClick={() => navigate("/patients")}
+            onClick={() => {
+              if (isDependent && responsibles.length > 0) {
+                navigate(`/patients/${responsibles[0].id}`);
+              } else {
+                navigate("/patients");
+              }
+            }}
             className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent"
           >
             <ArrowLeft size={20} />
-            <span>Voltar para Pacientes</span>
+            <span>{isDependent ? 'Voltar para responsável' : 'Voltar para Pacientes'}</span>
           </button>
 
           {/* Patient Hero */}
@@ -2623,6 +2744,17 @@ export default function PatientDetail() {
             >
               Vacinas
             </button>
+            <button
+              className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
+                activeTab === "dependentes"
+                  ? "bg-primary/5 text-primary"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+              onClick={() => setActiveTab("dependentes")}
+              style={isDependent ? { display: 'none' } : undefined}
+            >
+              Dependentes
+            </button>
           </div>
 
           {/* Tab Content from API */}
@@ -2679,6 +2811,10 @@ export default function PatientDetail() {
 
           {activeTab === "vacinas" && (
             <VaccinesSection patientId={patient.id} />
+          )}
+
+          {activeTab === "dependentes" && (
+            <DependentsSection patientId={patient.id} onSelectDependent={(depId) => navigate(`/patients/${depId}`)} />
           )}
 
           {/* Modals */}
@@ -2750,16 +2886,23 @@ export default function PatientDetail() {
   }
 
   // Fallback to mock data
+
   return (
     <MainLayout>
       <div className="space-y-8">
         {/* Back Button */}
         <button
-          onClick={() => navigate("/patients")}
+          onClick={() => {
+            if (isDependent && responsibles.length > 0) {
+              navigate(`/patients/${responsibles[0].id}`);
+            } else {
+              navigate("/patients");
+            }
+          }}
           className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent"
         >
           <ArrowLeft size={20} />
-          <span>Voltar para Pacientes</span>
+          <span>{isDependent ? 'Voltar para responsável' : 'Voltar para Pacientes'}</span>
         </button>
 
         {/* Patient Hero */}
