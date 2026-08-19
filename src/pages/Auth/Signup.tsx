@@ -20,6 +20,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { ApiError } from "../../services/api";
 import { Snackbar } from "../../components/Snackbar";
 import { CustomSelect } from "../../components/ui/CustomSelect";
+import { PasswordStrengthIndicator } from "../../components/PasswordStrengthIndicator";
 import iconLogo from "../../assets/images/icon.png";
 import api from "../../config/api";
 
@@ -140,7 +141,11 @@ const doctorSchema = Yup.object({
   }),
   email: Yup.string().email("E-mail inválido").required("E-mail é obrigatório"),
   password: Yup.string()
-    .min(6, "Senha deve ter pelo menos 6 caracteres")
+    .min(8, "Senha deve ter pelo menos 8 caracteres")
+    .matches(/[A-Z]/, "Deve conter letra maiúscula")
+    .matches(/[a-z]/, "Deve conter letra minúscula")
+    .matches(/\d/, "Deve conter um número")
+    .matches(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, "Deve conter caractere especial")
     .required("Senha é obrigatória"),
   acceptTerms: Yup.boolean().oneOf([true], "Você deve aceitar os termos"),
 });
@@ -191,7 +196,11 @@ const clinicSchema = Yup.object({
   specialty: Yup.string().required("Especialidade é obrigatória"),
   email: Yup.string().email("E-mail inválido").required("E-mail é obrigatório"),
   password: Yup.string()
-    .min(6, "Senha deve ter pelo menos 6 caracteres")
+    .min(8, "Senha deve ter pelo menos 8 caracteres")
+    .matches(/[A-Z]/, "Deve conter letra maiúscula")
+    .matches(/[a-z]/, "Deve conter letra minúscula")
+    .matches(/\d/, "Deve conter um número")
+    .matches(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, "Deve conter caractere especial")
     .required("Senha é obrigatória"),
   acceptTerms: Yup.boolean().oneOf([true], "Você deve aceitar os termos"),
 });
@@ -596,6 +605,7 @@ function ClinicSignupForm({
                 {fieldError("password")}
               </p>
             )}
+            <PasswordStrengthIndicator password={formik.values.password} />
           </div>
 
           {/* Terms */}
@@ -1370,6 +1380,7 @@ export default function Signup() {
                       {fieldError("password")}
                     </p>
                   )}
+                  <PasswordStrengthIndicator password={formik.values.password} />
                 </div>
 
                 {/* Terms */}

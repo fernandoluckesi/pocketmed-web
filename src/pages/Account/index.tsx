@@ -6,6 +6,7 @@ import { motion } from "motion/react";
 import { MainLayout } from "../../components/MainLayout";
 import { useAuth } from "../../contexts/AuthContext";
 import { CustomSelect } from "../../components/ui/CustomSelect";
+import { PasswordStrengthIndicator } from "../../components/PasswordStrengthIndicator";
 import { Link } from "react-router-dom";
 import api from "../../config/api";
 
@@ -24,10 +25,13 @@ const profileSchema = Yup.object({
 
 const passwordSchema = Yup.object({
   oldPassword: Yup.string()
-    .min(6, "Mínimo 6 caracteres")
     .required("Senha atual é obrigatória"),
   newPassword: Yup.string()
-    .min(6, "Mínimo 6 caracteres")
+    .min(8, "Mínimo 8 caracteres")
+    .matches(/[A-Z]/, "Deve conter letra maiúscula")
+    .matches(/[a-z]/, "Deve conter letra minúscula")
+    .matches(/\d/, "Deve conter um número")
+    .matches(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, "Deve conter caractere especial")
     .required("Nova senha é obrigatória"),
   confirmPassword: Yup.string()
     .oneOf([Yup.ref("newPassword")], "Senhas não conferem")
@@ -44,6 +48,55 @@ export default function Account() {
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Delete account state
+  const [deleteStep, setDeleteStep] = useState<"code" | null>(null);
+  const [deleteCode, setDeleteCode] = useState("");
+  const [deleteSending, setDeleteSending] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleRequestDeletion = async () => {
+    setDeleteSending(true);
+    try {
+      const token = localStorage.getItem("pocketmed_token");
+      await api.post("/auth/request-account-deletion", {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setDeleteStep("code");
+      setDeleteCode("");
+    } catch {
+      alert("Erro ao enviar código de verificação. Tente novamente.");
+    } finally {
+      setDeleteSending(false);
+    }
+  };
+
+  const handleConfirmDeletion = async () => {
+    if (deleteCode.length !== 6) return;
+    setDeleting(true);
+    try {
+      const token = localStorage.getItem("pocketmed_token");
+      await api.delete("/auth/account", {
+        headers: { Authorization: `Bearer ${token}` },
+        data: { verificationCode: deleteCode },
+      });
+      alert("Conta excluída com sucesso.");
+      localStorage.removeItem("pocketmed_token");
+      window.location.href = "/login";
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || "";
+      if (msg.includes("expired")) {
+        alert("Código expirado. Solicite um novo código.");
+        setDeleteStep(null);
+      } else if (msg.includes("Invalid")) {
+        alert("Código inválido. Verifique e tente novamente.");
+      } else {
+        alert("Erro ao excluir conta. Tente novamente.");
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -361,6 +414,7 @@ export default function Account() {
 
         {/* Security Tab */}
         {activeTab === "security" && (
+          <>
           <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 space-y-6 max-w-lg">
             <div>
               <h2 className="text-xl font-bold font-display text-slate-900">
@@ -410,6 +464,7 @@ export default function Account() {
                       {passwordFormik.errors.newPassword}
                     </p>
                   )}
+                <PasswordStrengthIndicator password={passwordFormik.values.newPassword} />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-on-surface-variant ml-1">
@@ -445,6 +500,59 @@ export default function Account() {
               </button>
             </form>
           </div>
+
+          {/* Delete Account */}
+          <div className="bg-white rounded-2xl p-8 shadow-sm border border-red-100 max-w-lg mt-6">
+            <h3 className="text-lg font-bold text-red-600 mb-2">Excluir conta</h3>
+            <p className="text-sm text-slate-500 mb-4">
+              Esta ação é irreversível. Todos os seus dados serão removidos permanentemente.
+            </p>
+
+            {!deleteStep && (
+              <button
+                type="button"
+                onClick={handleRequestDeletion}
+                disabled={deleteSending}
+                className="bg-red-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-red-700 transition-all cursor-pointer border-none disabled:opacity-60"
+              >
+                {deleteSending ? "Enviando código..." : "Excluir minha conta"}
+              </button>
+            )}
+
+            {deleteStep === "code" && (
+              <div className="space-y-4">
+                <p className="text-sm text-slate-700">
+                  Um código de verificação foi enviado para o seu e-mail. Insira-o abaixo para confirmar a exclusão.
+                </p>
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={deleteCode}
+                  onChange={(e) => setDeleteCode(e.target.value.replace(/\D/g, ""))}
+                  placeholder="000000"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 px-4 text-slate-900 text-center tracking-[0.5em] font-mono text-lg outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400"
+                />
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={handleConfirmDeletion}
+                    disabled={deleting || deleteCode.length !== 6}
+                    className="bg-red-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-red-700 transition-all cursor-pointer border-none disabled:opacity-60"
+                  >
+                    {deleting ? "Excluindo..." : "Confirmar exclusão"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setDeleteStep(null); setDeleteCode(""); }}
+                    className="bg-slate-100 text-slate-600 px-6 py-3 rounded-xl font-semibold hover:bg-slate-200 transition-all cursor-pointer border-none"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          </>
         )}
 
         {/* Subscription Tab */}

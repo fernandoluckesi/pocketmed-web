@@ -175,6 +175,7 @@ export default function Login() {
               </label>
               <button
                 type="button"
+                onClick={() => navigate("/forgot-password")}
                 className="font-semibold text-blue-600 hover:text-blue-800 transition-colors border-none bg-transparent cursor-pointer"
               >
                 Esqueceu a senha?
