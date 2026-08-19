@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from "react";
 import {
   Users,
   ShieldCheck,
@@ -11,17 +12,44 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { MainLayout } from "../../components/MainLayout";
+import { api } from "../../services/api";
 
 // --- Types ---
 
+interface Overview {
+  clinicId: string;
+  clinicName: string | null;
+  members: {
+    total: number;
+    admins: number;
+    doctors: number;
+    secretaries: number;
+  };
+  patients: { total: number };
+}
+
 interface Member {
   id: string;
-  name: string;
-  email: string;
-  role: "Administrador" | "Médico";
-  initials: string;
-  bgColor: string;
-  textColor: string;
+  role: string;
+  isActive: boolean;
+  invitedBy: string | null;
+  createdAt: string;
+  professional: {
+    id: string;
+    name: string;
+    email: string;
+    specialty?: string;
+    crm?: string;
+    profileImage?: string | null;
+  } | null;
+}
+
+interface MemberListResponse {
+  items: Member[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 interface LinkedPatient {
@@ -29,93 +57,42 @@ interface LinkedPatient {
   name: string;
   email: string;
   linkedDoctors: Array<{
-    initials: string;
+    id: string;
     name: string;
-    color: string;
+    email: string;
+    specialty: string;
+    crm: string;
   }>;
 }
 
-// --- Mock Data ---
-
-const MEMBERS: Member[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john.doe@pocketmed.com",
-    role: "Administrador",
-    initials: "JD",
-    bgColor: "bg-blue-100",
-    textColor: "text-blue-700",
-  },
-  {
-    id: "2",
-    name: "Sarah Miller",
-    email: "sarah.miller@pocketmed.com",
-    role: "Médico",
-    initials: "SM",
-    bgColor: "bg-emerald-100",
-    textColor: "text-emerald-700",
-  },
-  {
-    id: "3",
-    name: "Robert King",
-    email: "robert.king@pocketmed.com",
-    role: "Médico",
-    initials: "RK",
-    bgColor: "bg-slate-100",
-    textColor: "text-slate-700",
-  },
-];
-
-const PATIENTS: LinkedPatient[] = [
-  {
-    id: "1",
-    name: "Alice Thompson",
-    email: "alice.t@email.com",
-    linkedDoctors: [
-      { initials: "SM", name: "Sarah Miller", color: "bg-blue-500" },
-      { initials: "RK", name: "Robert King", color: "bg-emerald-500" },
-    ],
-  },
-  {
-    id: "2",
-    name: "Mark Stevenson",
-    email: "mark.steve@email.com",
-    linkedDoctors: [
-      { initials: "SM", name: "Sarah Miller", color: "bg-blue-500" },
-    ],
-  },
-];
-
 // --- Components ---
 
-function StatsGrid() {
+function StatsGrid({ overview }: { overview: Overview | null }) {
   const cards = [
     {
       label: "Total de Membros",
-      value: 4,
-      change: "+12%",
+      value: overview?.members.total || 0,
       icon: Users,
       bgColor: "bg-blue-50",
       iconColor: "text-blue-600",
     },
     {
       label: "Administradores",
-      value: 1,
+      value: overview?.members.admins || 0,
       icon: ShieldCheck,
       bgColor: "bg-purple-50",
       iconColor: "text-purple-600",
     },
     {
       label: "Médicos",
-      value: 2,
+      value: overview?.members.doctors || 0,
       icon: Stethoscope,
       bgColor: "bg-emerald-50",
       iconColor: "text-emerald-600",
     },
     {
       label: "Pacientes Vinculados",
-      value: 2,
+      value: overview?.patients.total || 0,
       icon: MapPin,
       bgColor: "bg-amber-50",
       iconColor: "text-amber-600",
@@ -135,11 +112,6 @@ function StatsGrid() {
             >
               <card.icon className="w-6 h-6" />
             </span>
-            {card.change && (
-              <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                {card.change}
-              </span>
-            )}
           </div>
           <div className="mt-4">
             <h3 className="text-3xl font-extrabold font-display text-slate-900">
@@ -153,7 +125,49 @@ function StatsGrid() {
   );
 }
 
-function MembersSection() {
+function MembersSection({
+  members,
+  total,
+  page,
+  totalPages,
+  search,
+  onSearchChange,
+  roleFilter,
+  onRoleFilterChange,
+  onPageChange,
+  onRemove,
+}: {
+  members: Member[];
+  total: number;
+  page: number;
+  totalPages: number;
+  search: string;
+  onSearchChange: (v: string) => void;
+  roleFilter: string;
+  onRoleFilterChange: (v: string) => void;
+  onPageChange: (p: number) => void;
+  onRemove: (membershipId: string) => void;
+}) {
+  const getInitials = (name: string) =>
+    name
+      .split(" ")
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase();
+
+  const roleColors: Record<string, { bg: string; text: string }> = {
+    admin: { bg: "bg-purple-100", text: "text-purple-700" },
+    doctor: { bg: "bg-emerald-100", text: "text-emerald-700" },
+    secretary: { bg: "bg-blue-100", text: "text-blue-700" },
+  };
+
+  const roleLabels: Record<string, string> = {
+    admin: "Administrador",
+    doctor: "Médico",
+    secretary: "Secretária",
+  };
+
   return (
     <section className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-100">
       <div className="px-8 py-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -170,19 +184,22 @@ function MembersSection() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
               className="pl-10 pr-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/20 min-w-[280px] outline-none"
               placeholder="Pesquisar membros..."
             />
           </div>
-          <select className="bg-slate-50 border-none rounded-xl text-sm font-semibold text-slate-600 py-2.5 px-4 focus:ring-2 focus:ring-primary/20 cursor-pointer outline-none">
-            <option>Perfil: Todos</option>
-            <option>Administrador</option>
-            <option>Médico</option>
+          <select
+            value={roleFilter}
+            onChange={(e) => onRoleFilterChange(e.target.value)}
+            className="bg-slate-50 border-none rounded-xl text-sm font-semibold text-slate-600 py-2.5 px-4 focus:ring-2 focus:ring-primary/20 cursor-pointer outline-none"
+          >
+            <option value="">Perfil: Todos</option>
+            <option value="admin">Administrador</option>
+            <option value="doctor">Médico</option>
+            <option value="secretary">Secretária</option>
           </select>
-          <button className="bg-primary hover:brightness-110 text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-md active:scale-95 cursor-pointer border-none">
-            <UserPlus className="w-4 h-4" />
-            <span>Adicionar Membro</span>
-          </button>
         </div>
       </div>
 
@@ -205,42 +222,61 @@ function MembersSection() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {MEMBERS.map((member) => (
-              <tr
-                key={member.id}
-                className="hover:bg-slate-50/50 transition-colors"
-              >
-                <td className="px-8 py-5">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-9 h-9 rounded-full ${member.bgColor} flex items-center justify-center ${member.textColor} font-bold text-xs`}
-                    >
-                      {member.initials}
-                    </div>
-                    <span className="font-semibold text-slate-900">
-                      {member.name}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-8 py-5 text-sm text-slate-500">
-                  {member.email}
-                </td>
-                <td className="px-8 py-5">
-                  <select
-                    className="bg-slate-100 border-none text-xs font-bold rounded-lg px-3 py-1.5 focus:ring-1 focus:ring-primary/20 cursor-pointer outline-none"
-                    defaultValue={member.role}
-                  >
-                    <option>Administrador</option>
-                    <option>Médico</option>
-                  </select>
-                </td>
-                <td className="px-8 py-5 text-right">
-                  <button className="text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer">
-                    Remover
-                  </button>
+            {members.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={4}
+                  className="px-8 py-12 text-center text-slate-400 text-sm"
+                >
+                  Nenhum membro encontrado
                 </td>
               </tr>
-            ))}
+            ) : (
+              members.map((member) => {
+                const name = member.professional?.name || "—";
+                const colors = roleColors[member.role] || {
+                  bg: "bg-slate-100",
+                  text: "text-slate-700",
+                };
+                return (
+                  <tr
+                    key={member.id}
+                    className="hover:bg-slate-50/50 transition-colors"
+                  >
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-9 h-9 rounded-full ${colors.bg} flex items-center justify-center ${colors.text} font-bold text-xs`}
+                        >
+                          {getInitials(name)}
+                        </div>
+                        <span className="font-semibold text-slate-900">
+                          {name}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-5 text-sm text-slate-500">
+                      {member.professional?.email || "—"}
+                    </td>
+                    <td className="px-8 py-5">
+                      <span
+                        className={`px-3 py-1 rounded-lg text-xs font-bold ${colors.bg} ${colors.text}`}
+                      >
+                        {roleLabels[member.role] || member.role}
+                      </span>
+                    </td>
+                    <td className="px-8 py-5 text-right">
+                      <button
+                        onClick={() => onRemove(member.id)}
+                        className="text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer"
+                      >
+                        Remover
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
@@ -248,22 +284,24 @@ function MembersSection() {
       <div className="px-8 py-6 bg-slate-50/30 flex items-center justify-between border-t border-slate-100">
         <p className="text-sm text-slate-500 font-medium">
           Exibindo{" "}
-          <span className="font-bold text-slate-900">{MEMBERS.length}</span> de{" "}
-          <span className="font-bold text-slate-900">4</span> membros
+          <span className="font-bold text-slate-900">{members.length}</span> de{" "}
+          <span className="font-bold text-slate-900">{total}</span> membros
         </p>
         <div className="flex items-center gap-1">
           <button
+            onClick={() => onPageChange(page - 1)}
             className="p-2 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-30"
-            disabled
+            disabled={page <= 1}
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           <div className="px-4 py-1.5 bg-primary text-white text-xs font-bold rounded-lg shadow-sm">
-            Página 1 de 1
+            Página {page} de {totalPages || 1}
           </div>
           <button
+            onClick={() => onPageChange(page + 1)}
             className="p-2 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-30"
-            disabled
+            disabled={page >= totalPages}
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -273,7 +311,15 @@ function MembersSection() {
   );
 }
 
-function LinkedPatientsSection() {
+function LinkedPatientsSection({ patients }: { patients: LinkedPatient[] }) {
+  const getInitials = (name: string) =>
+    name
+      .split(" ")
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase();
+
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-100">
       <div className="px-8 py-6 border-b border-slate-100">
@@ -301,34 +347,45 @@ function LinkedPatientsSection() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {PATIENTS.map((patient) => (
-              <tr
-                key={patient.id}
-                className="hover:bg-slate-50/50 transition-colors"
-              >
-                <td className="px-8 py-5">
-                  <span className="font-semibold text-slate-900">
-                    {patient.name}
-                  </span>
-                </td>
-                <td className="px-8 py-5 text-sm text-slate-500">
-                  {patient.email}
-                </td>
-                <td className="px-8 py-5">
-                  <div className="flex -space-x-2">
-                    {patient.linkedDoctors.map((doc, idx) => (
-                      <div
-                        key={idx}
-                        className={`w-8 h-8 rounded-full border-2 border-white ${doc.color} flex items-center justify-center text-[10px] text-white font-bold cursor-help`}
-                        title={doc.name}
-                      >
-                        {doc.initials}
-                      </div>
-                    ))}
-                  </div>
+            {patients.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={3}
+                  className="px-8 py-12 text-center text-slate-400 text-sm"
+                >
+                  Nenhum paciente vinculado
                 </td>
               </tr>
-            ))}
+            ) : (
+              patients.map((patient) => (
+                <tr
+                  key={patient.id}
+                  className="hover:bg-slate-50/50 transition-colors"
+                >
+                  <td className="px-8 py-5">
+                    <span className="font-semibold text-slate-900">
+                      {patient.name}
+                    </span>
+                  </td>
+                  <td className="px-8 py-5 text-sm text-slate-500">
+                    {patient.email}
+                  </td>
+                  <td className="px-8 py-5">
+                    <div className="flex -space-x-2">
+                      {patient.linkedDoctors.map((doc) => (
+                        <div
+                          key={doc.id}
+                          className="w-8 h-8 rounded-full border-2 border-white bg-blue-500 flex items-center justify-center text-[10px] text-white font-bold cursor-help"
+                          title={doc.name}
+                        >
+                          {getInitials(doc.name)}
+                        </div>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -336,44 +393,31 @@ function LinkedPatientsSection() {
   );
 }
 
-function SidePanel() {
+function SidePanel({ overview }: { overview: Overview | null }) {
+  const totalMembers = overview?.members.total || 0;
+  const capacity =
+    totalMembers > 0 ? Math.min((totalMembers / 10) * 100, 100) : 0;
+
   return (
     <div className="space-y-6">
-      {/* Clinic Performance */}
       <div className="bg-gradient-to-br from-primary to-blue-400 p-6 rounded-xl shadow-lg text-white">
         <h3 className="font-bold font-display mb-2">Desempenho da Clínica</h3>
         <p className="text-white/80 text-sm mb-4">
-          Sua clínica está operando com eficiência máxima. 98% de satisfação dos
-          pacientes registrada este mês.
+          {overview?.clinicName || "Sua clínica"} está operando com{" "}
+          {totalMembers} membros ativos e {overview?.patients.total || 0}{" "}
+          pacientes vinculados.
         </p>
         <div className="w-full bg-white/20 rounded-full h-2 mb-2">
           <motion.div
             className="bg-white h-2 rounded-full"
             initial={{ width: 0 }}
-            animate={{ width: "85%" }}
+            animate={{ width: `${capacity}%` }}
             transition={{ duration: 1, ease: "easeOut" }}
           />
         </div>
         <span className="text-[10px] font-black uppercase tracking-tighter opacity-70">
-          Capacidade: 85% ocupada
+          Capacidade: {Math.round(capacity)}% ocupada
         </span>
-      </div>
-
-      {/* Urgent Attention Alert */}
-      <div className="bg-orange-50 p-6 rounded-xl shadow-sm border border-orange-200/50">
-        <div className="flex items-center gap-3 mb-4">
-          <AlertCircle className="text-orange-700 w-5 h-5" />
-          <h3 className="font-bold font-display text-orange-900">
-            Atenção Urgente
-          </h3>
-        </div>
-        <p className="text-orange-800 text-sm font-medium">
-          2 solicitações de verificação de membros pendentes requerem aprovação
-          do administrador.
-        </p>
-        <button className="mt-4 w-full bg-orange-700 text-white py-2 rounded-lg font-bold text-xs hover:bg-orange-800 transition-colors cursor-pointer border-none">
-          Revisar Solicitações
-        </button>
       </div>
     </div>
   );
@@ -382,6 +426,84 @@ function SidePanel() {
 // --- Main Page ---
 
 export default function ClinicalManagement() {
+  const [overview, setOverview] = useState<Overview | null>(null);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [patients, setPatients] = useState<LinkedPatient[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  const loadOverview = useCallback(async () => {
+    try {
+      const data = await api("/clinic-admin/overview");
+      setOverview(data);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const loadMembers = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
+      params.set("page", String(page));
+      params.set("pageSize", "10");
+      if (search) params.set("search", search);
+      if (roleFilter) params.set("role", roleFilter);
+
+      const data: MemberListResponse = await api(
+        `/clinic-admin/members?${params.toString()}`,
+      );
+      setMembers(data.items);
+      setTotal(data.total);
+      setTotalPages(data.totalPages);
+    } catch {
+      // ignore
+    }
+  }, [page, search, roleFilter]);
+
+  const loadPatients = useCallback(async () => {
+    try {
+      const data = await api("/clinic-admin/patients");
+      setPatients(Array.isArray(data) ? data : []);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    Promise.all([loadOverview(), loadMembers(), loadPatients()]).finally(() =>
+      setLoading(false),
+    );
+  }, [loadOverview, loadMembers, loadPatients]);
+
+  useEffect(() => {
+    loadMembers();
+  }, [loadMembers]);
+
+  const handleRemove = async (membershipId: string) => {
+    if (!confirm("Tem certeza que deseja remover este membro?")) return;
+    try {
+      await api(`/clinic-admin/members/${membershipId}`, { method: "DELETE" });
+      loadMembers();
+      loadOverview();
+    } catch {
+      // ignore
+    }
+  };
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       <motion.div
@@ -390,7 +512,6 @@ export default function ClinicalManagement() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        {/* Page Title */}
         <div>
           <h1 className="text-4xl font-display font-extrabold text-slate-900 tracking-tight">
             Gestão da Clínica
@@ -400,19 +521,33 @@ export default function ClinicalManagement() {
           </p>
         </div>
 
-        {/* Stats Grid */}
-        <StatsGrid />
+        <StatsGrid overview={overview} />
 
-        {/* Members Table */}
-        <MembersSection />
+        <MembersSection
+          members={members}
+          total={total}
+          page={page}
+          totalPages={totalPages}
+          search={search}
+          onSearchChange={(v) => {
+            setSearch(v);
+            setPage(1);
+          }}
+          roleFilter={roleFilter}
+          onRoleFilterChange={(v) => {
+            setRoleFilter(v);
+            setPage(1);
+          }}
+          onPageChange={setPage}
+          onRemove={handleRemove}
+        />
 
-        {/* Linked Patients + Side Panel */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           <div className="lg:col-span-2">
-            <LinkedPatientsSection />
+            <LinkedPatientsSection patients={patients} />
           </div>
           <div className="lg:col-span-1">
-            <SidePanel />
+            <SidePanel overview={overview} />
           </div>
         </section>
       </motion.div>

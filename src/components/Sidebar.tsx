@@ -47,11 +47,11 @@ export const Sidebar = () => {
   );
 
   return (
-    <aside className="h-screen w-64 fixed left-0 top-0 bg-slate-100 flex flex-col p-6 space-y-8 z-50">
-      <div className="flex items-center space-x-3 px-2">
-        <img src={iconLogo} alt="PocketMed" className="w-10 h-10 rounded-xl" />
+    <aside className="h-screen w-64 fixed left-0 top-0 bg-slate-100 flex flex-col py-4 px-4 z-50 overflow-y-auto">
+      <div className="flex items-center space-x-3 px-2 mb-4">
+        <img src={iconLogo} alt="PocketMed" className="w-9 h-9 rounded-xl" />
         <div>
-          <h2 className="text-xl font-black text-primary tracking-tight font-manrope">
+          <h2 className="text-lg font-black text-primary tracking-tight font-manrope">
             PocketMed
           </h2>
           <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60">
@@ -60,14 +60,14 @@ export const Sidebar = () => {
         </div>
       </div>
 
-      <nav className="flex-grow space-y-1">
+      <nav className="flex-grow space-y-0.5">
         {filteredNavItems.map((item, idx) => {
           const isActive = location.pathname === item.path;
           return (
             <motion.div key={idx} whileHover={{ x: 4 }}>
               <Link
                 to={item.path}
-                className={`flex items-center space-x-3 px-4 py-3 rounded-full transition-all duration-200 font-manrope text-sm font-semibold ${
+                className={`flex items-center space-x-3 px-4 py-2.5 rounded-full transition-all duration-200 font-manrope text-sm font-semibold ${
                   isActive
                     ? "bg-white text-primary shadow-sm"
                     : "text-slate-600 hover:text-primary hover:bg-slate-200"
@@ -80,7 +80,7 @@ export const Sidebar = () => {
           );
         })}
 
-        <div className="pt-6 pb-2 px-4">
+        <div className="pt-4 pb-1 px-4">
           <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/40">
             Pessoal
           </p>
@@ -92,7 +92,7 @@ export const Sidebar = () => {
             <motion.div key={idx} whileHover={{ x: 4 }}>
               <Link
                 to={item.path}
-                className={`flex items-center space-x-3 px-4 py-3 rounded-full transition-all duration-200 font-manrope text-sm font-semibold ${
+                className={`flex items-center space-x-3 px-4 py-2.5 rounded-full transition-all duration-200 font-manrope text-sm font-semibold ${
                   isActive
                     ? "bg-white text-primary shadow-sm"
                     : "text-slate-600 hover:text-primary hover:bg-slate-200"
@@ -106,9 +106,9 @@ export const Sidebar = () => {
         })}
       </nav>
 
-      <div className="mt-auto border-t border-slate-200/50 pt-4">
+      <div className="mt-auto border-t border-slate-200/50 pt-3">
         <a
-          className="flex items-center space-x-3 px-4 py-3 text-error hover:bg-error-container/20 transition-all rounded-full font-manrope text-sm font-semibold"
+          className="flex items-center space-x-3 px-4 py-2.5 text-error hover:bg-error-container/20 transition-all rounded-full font-manrope text-sm font-semibold"
           href="#"
         >
           <ICONS.Logout size={18} />
