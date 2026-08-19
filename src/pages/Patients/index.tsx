@@ -9,6 +9,7 @@ import {
   List,
   Eye,
   X,
+  Ban,
   History,
   Hourglass,
   CheckCircle,
@@ -412,20 +413,26 @@ function RequestsTable({
                   </td>
                   <td className="px-6 py-5">
                     <div className="flex justify-end gap-2">
-                      <button
-                        className="p-2 text-on-surface-variant hover:text-primary hover:bg-blue-50 rounded-lg transition-all"
-                        title="Visualizar"
-                      >
-                        <Eye size={18} />
-                      </button>
                       {req.status === "pending" && (
                         <button
                           onClick={() => onCancel(req)}
-                          className="p-2 text-on-surface-variant hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                          title="Cancelar solicitação"
+                          className="text-xs font-semibold text-red-600 hover:text-red-800 hover:underline cursor-pointer border-none bg-transparent"
                         >
-                          <X size={18} />
+                          Cancelar Solicitação
                         </button>
+                      )}
+                      {req.status === "rejected" && (
+                        <button
+                          onClick={() => onCancel(req)}
+                          className="text-xs font-semibold text-primary hover:text-primary/80 hover:underline cursor-pointer border-none bg-transparent"
+                        >
+                          Solicitar novamente
+                        </button>
+                      )}
+                      {req.status === "approved" && (
+                        <span className="text-slate-300" title="Acesso concedido">
+                          <Ban size={16} />
+                        </span>
                       )}
                     </div>
                   </td>
@@ -1239,7 +1246,12 @@ export default function Patients() {
               {tabs.map((tab) => (
                 <button
                   key={tab}
-                  onClick={() => setActiveTab(tab)}
+                  onClick={() => {
+                    setActiveTab(tab);
+                    if (tab === "Meus Pacientes" && refetchPatientsRef.current) {
+                      refetchPatientsRef.current();
+                    }
+                  }}
                   className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all ${
                     tab === activeTab
                       ? "bg-primary/5 text-primary"

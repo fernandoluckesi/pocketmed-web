@@ -231,30 +231,8 @@ export function MainLayout({ children }: MainLayoutProps) {
       <main className="ml-64 flex-grow flex flex-col min-h-screen">
         {/* Top Bar */}
         <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 flex justify-between items-center px-8 py-4">
-          {/* Left: Navigation */}
-          <nav className="flex items-center space-x-1">
-            {["Painel", "Pacientes", "Agenda"].map((item) => {
-              const pathMap: Record<string, string> = {
-                Painel: "/dashboard",
-                Pacientes: "/patients",
-                Agenda: "/schedule",
-              };
-              const isActive = location.pathname === pathMap[item];
-              return (
-                <Link
-                  key={item}
-                  to={pathMap[item]}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-semibold font-manrope transition-colors ${
-                    isActive
-                      ? "text-primary font-bold bg-primary/5"
-                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
-                >
-                  {item}
-                </Link>
-              );
-            })}
-          </nav>
+          {/* Left: empty spacer */}
+          <div></div>
 
           {/* Right: Search + Actions + Profile */}
           <div className="flex items-center gap-4">
