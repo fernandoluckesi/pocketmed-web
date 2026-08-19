@@ -73,12 +73,17 @@ function DonutChart({ expenses }: { expenses: Expense[] }) {
     }))
     .sort((a, b) => b.value - a.value);
 
-  let currentAngle = 0;
   const radius = 64;
   const strokeWidth = 14;
   const circumference = 2 * Math.PI * radius;
   const largestSlice = slices[0];
   const largestPercentage = largestSlice ? Math.round(largestSlice.percentage) : 0;
+
+  const sliceRotations = slices.reduce<number[]>((acc, _slice, idx) => {
+    const prev = idx === 0 ? 0 : acc[idx - 1] + (slices[idx - 1].percentage / 100) * 360;
+    acc.push(prev);
+    return acc;
+  }, []);
 
   return (
     <div className="flex flex-col h-full justify-between">
@@ -87,8 +92,7 @@ function DonutChart({ expenses }: { expenses: Expense[] }) {
           {slices.map((slice, idx) => {
             const strokeLength = (slice.percentage / 100) * circumference;
             const strokeOffset = circumference - strokeLength;
-            const rotation = currentAngle;
-            currentAngle += (slice.percentage / 100) * 360;
+            const rotation = sliceRotations[idx];
             return (
               <circle
                 key={slice.category}

@@ -106,7 +106,7 @@ export default function Account() {
         setSelectedFile(null);
         // Reload to reflect changes in header
         setTimeout(() => window.location.reload(), 1000);
-      } catch (err) {
+      } catch (_err) {
         setSuccessMsg("Erro ao salvar perfil. Tente novamente.");
       } finally {
         setSaving(false);

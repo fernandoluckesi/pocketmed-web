@@ -65,7 +65,6 @@ export default function Register() {
     onSubmit: async (values, { setSubmitting }) => {
       setError("");
       try {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { confirmPassword: _unused, ...rest } = values;
         const formData = new FormData();
         Object.entries(rest).forEach(([key, value]) => {

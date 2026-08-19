@@ -1,3 +1,4 @@
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
@@ -6,34 +7,30 @@ import Dashboard from '../../pages/Dashboard/index';
 // Mock motion/react to render plain elements
 vi.mock('motion/react', () => ({
   motion: {
-    div: ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => <div {...props}>{children}</div>,
-    button: ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => <button {...props}>{children}</button>,
+    div: ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => React.createElement('div', props, children),
+    button: ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => React.createElement('button', props, children),
   },
 }));
 
-// Mock lucide-react icons
-vi.mock('lucide-react', () => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const MockIcon = (_props: Record<string, unknown>) => <span data-testid="icon" />;
-  return {
-    LayoutDashboard: MockIcon,
-    Users: MockIcon,
-    Stethoscope: MockIcon,
-    Calendar: MockIcon,
-    Activity: MockIcon,
-    UserCircle: MockIcon,
-    CreditCard: MockIcon,
-    LogOut: MockIcon,
-    Search: MockIcon,
-    Bell: MockIcon,
-    Settings: MockIcon,
-    TrendingUp: MockIcon,
-    ChevronRight: MockIcon,
-    Filter: MockIcon,
-    Plus: MockIcon,
-    Clock: MockIcon,
-  };
+// Mock lucide-react - use importOriginal to get all exports and override with mock icons
+vi.mock('lucide-react', async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  const MockIcon = (_props: Record<string, unknown>) => React.createElement('span', { 'data-testid': 'icon' });
+  const mocked: Record<string, unknown> = {};
+  for (const key of Object.keys(actual)) {
+    mocked[key] = MockIcon;
+  }
+  return mocked;
 });
+
+// Mock AuthContext
+vi.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { id: '1', name: 'Test Doctor', type: 'doctor', role: 'doctor' },
+    token: 'mock-token',
+    logout: vi.fn(),
+  }),
+}));
 
 function renderDashboard() {
   return render(

@@ -7,7 +7,6 @@ import {
   Info,
   LayoutGrid,
   List,
-  Eye,
   X,
   Ban,
   History,
@@ -970,6 +969,7 @@ function SolicitacoesTabContent({ active }: { active: boolean }) {
 
   useEffect(() => {
     if (active) refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
   const handleCancelConfirm = async () => {

@@ -184,9 +184,10 @@ const mockDocuments: MedicalDocument[] = [
 
 function PatientHeroFromAPI({ patient, onEdit }: { patient: PatientFromAPI; onEdit?: () => void }) {
   const navigate = useNavigate();
+  const [now] = useState(() => Date.now());
   const age = patient.birthDate
     ? Math.floor(
-        (Date.now() - new Date(patient.birthDate).getTime()) /
+        (now - new Date(patient.birthDate).getTime()) /
           (365.25 * 24 * 60 * 60 * 1000),
       )
     : null;
