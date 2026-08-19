@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Coins, CheckCircle, Clock, FileCheck } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
-import { financialApi, DoctorTransfer } from "../../services/financial";
+import { financialApi, type DoctorTransfer } from "../../services/financial";
 
 export default function Transfers() {
   const [transfers, setTransfers] = useState<DoctorTransfer[]>([]);

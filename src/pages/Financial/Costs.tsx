@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Network, Plus } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
-import { financialApi, CostCenter } from "../../services/financial";
+import { financialApi, type CostCenter } from "../../services/financial";
 
 export default function Costs() {
   const [costCenters, setCostCenters] = useState<CostCenter[]>([]);

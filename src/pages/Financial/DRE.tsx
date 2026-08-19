@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { BarChart3, Download, Calendar } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
-import { financialApi, DREResult } from "../../services/financial";
+import { financialApi, type DREResult } from "../../services/financial";
 
 export default function DRE() {
   const [selectedMonth, setSelectedMonth] = useState(

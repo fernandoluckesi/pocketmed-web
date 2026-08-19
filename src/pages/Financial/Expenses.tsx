@@ -4,7 +4,6 @@ import {
   PlusCircle,
   Filter,
   Download,
-  Eye,
   Clock,
   AlertCircle,
   X,
@@ -13,24 +12,22 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { MainLayout } from "../../components/MainLayout";
-import { financialApi, Expense as ExpenseType } from "../../services/financial";
+import {
+  financialApi,
+  type Expense as ExpenseType,
+} from "../../services/financial";
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState<ExpenseType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("Todos");
-  const [categoryFilter, setCategoryFilter] = useState("Todos");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [selectedExpense, setSelectedExpense] = useState<ExpenseType | null>(
-    null,
-  );
 
   const loadData = useCallback(async () => {
     try {
       const filters: Record<string, string> = {};
       if (statusFilter !== "Todos") filters.status = statusFilter;
-      if (categoryFilter !== "Todos") filters.category = categoryFilter;
       const result = await financialApi.listExpenses(filters);
       setExpenses(result.data || []);
     } catch {
@@ -38,7 +35,7 @@ export default function Expenses() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, categoryFilter]);
+  }, [statusFilter]);
 
   useEffect(() => {
     loadData();
@@ -359,7 +356,7 @@ function AddExpenseModal({
   const [dueDate, setDueDate] = useState(
     new Date().toISOString().split("T")[0],
   );
-  const [status, setStatus] = useState("PENDENTE");
+  const [status] = useState("PENDENTE");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

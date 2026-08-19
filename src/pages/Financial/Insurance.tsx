@@ -11,7 +11,7 @@ import {
   Handshake,
 } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
-import { financialApi, Convenio } from "../../services/financial";
+import { financialApi, type Convenio } from "../../services/financial";
 
 export default function Insurance() {
   const [convenios, setConvenios] = useState<Convenio[]>([]);

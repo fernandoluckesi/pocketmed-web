@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Search, Trash2 } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
-import { financialApi, Revenue as RevenueType } from "../../services/financial";
+import {
+  financialApi,
+  type Revenue as RevenueType,
+} from "../../services/financial";
 
 export default function Revenue() {
   const [showAddForm, setShowAddForm] = useState(false);

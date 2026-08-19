@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ArrowUpRight, ArrowDownRight, Wallet } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
-import { financialApi, CashflowEntry } from "../../services/financial";
+import { financialApi, type CashflowEntry } from "../../services/financial";
 
 export default function CashFlow() {
   const [entries, setEntries] = useState<CashflowEntry[]>([]);

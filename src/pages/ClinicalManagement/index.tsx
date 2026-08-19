@@ -5,10 +5,8 @@ import {
   Stethoscope,
   MapPin,
   Search,
-  UserPlus,
   ChevronLeft,
   ChevronRight,
-  AlertCircle,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { MainLayout } from "../../components/MainLayout";
