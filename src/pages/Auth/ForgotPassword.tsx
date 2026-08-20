@@ -46,7 +46,7 @@ export default function ForgotPassword() {
     onSubmit: async (values, { setSubmitting }) => {
       setError("");
       try {
-        await api.post("/auth/forgot-password", { email: values.email });
+        await api.post("/auth/doctor/forgot-password", { email: values.email });
         setEmail(values.email);
         setStep("code");
       } catch (err: any) {
@@ -79,7 +79,7 @@ export default function ForgotPassword() {
     onSubmit: async (values, { setSubmitting }) => {
       setError("");
       try {
-        await api.post("/auth/reset-password", {
+        await api.post("/auth/doctor/reset-password", {
           email,
           resetCode: code,
           newPassword: values.password,
