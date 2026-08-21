@@ -2,6 +2,10 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/Auth/Login";
 import Signup from "../pages/Auth/Signup";
 import ForgotPassword from "../pages/Auth/ForgotPassword";
+import LandingPage from "../pages/LandingPage";
+import InstitutionalHome from "../pages/Institutional";
+import InstitutionalMobile from "../pages/Institutional/Mobile";
+import InstitutionalPlatform from "../pages/Institutional/Platform";
 import Verification from "../pages/Verification";
 import Dashboard from "../pages/Dashboard";
 import Consultations from "../pages/Consultations";
@@ -29,9 +33,13 @@ export default function AppRoutes() {
   return (
     <Routes>
       {/* Public routes */}
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/institutional" element={<InstitutionalHome />} />
+      <Route path="/institutional/mobile" element={<InstitutionalMobile />} />
+      <Route path="/institutional/platform" element={<InstitutionalPlatform />} />
 
       {/* Protected routes */}
       <Route
@@ -206,7 +214,7 @@ export default function AppRoutes() {
       />
 
       {/* Fallback */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

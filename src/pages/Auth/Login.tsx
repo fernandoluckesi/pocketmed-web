@@ -6,6 +6,12 @@ import * as Yup from "yup";
 import { useAuth } from "../../contexts/AuthContext";
 import { Snackbar } from "../../components/Snackbar";
 import iconLogo from "../../assets/images/icon.png";
+import {
+  LegalModal,
+  PrivacyPolicyContent,
+  TermsOfServiceContent,
+  SecurityStandardsContent,
+} from "../Institutional/LegalModal";
 
 const loginSchema = Yup.object({
   email: Yup.string().email("E-mail inválido").required("E-mail é obrigatório"),
@@ -17,6 +23,7 @@ export default function Login() {
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [snackbar, setSnackbar] = useState({ visible: false, message: "" });
+  const [legalModal, setLegalModal] = useState<"privacy" | "terms" | "security" | null>(null);
 
   const formik = useFormik({
     initialValues: {
@@ -214,14 +221,14 @@ export default function Login() {
         {/* Bottom footer */}
         <div className="mt-auto pt-8 pb-6 text-center lg:text-left space-y-2 w-full max-w-md">
           <div className="flex items-center gap-3 justify-center lg:justify-start text-[10px] font-semibold uppercase tracking-wider text-slate-400 whitespace-nowrap">
-            <span>Políticas de Privacidade</span>
+            <button onClick={() => setLegalModal("privacy")} className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400">Politicas de Privacidade</button>
             <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-            <span>Termos de Serviço</span>
+            <button onClick={() => setLegalModal("terms")} className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400">Termos de Servico</button>
             <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-            <span>Padrões de Segurança</span>
+            <button onClick={() => setLegalModal("security")} className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400">Padroes de Seguranca</button>
           </div>
           <p className="text-[10px] text-slate-400">
-            © 2026 PocketMed Clinical Systems. Todos os direitos reservados.
+            © {new Date().getFullYear()} PocketMed Clinical Systems. Todos os direitos reservados.
           </p>
         </div>
 
@@ -233,6 +240,16 @@ export default function Login() {
         visible={snackbar.visible}
         onClose={() => setSnackbar({ visible: false, message: "" })}
       />
+
+      <LegalModal open={legalModal === "privacy"} onClose={() => setLegalModal(null)} title="Politica de Privacidade">
+        <PrivacyPolicyContent />
+      </LegalModal>
+      <LegalModal open={legalModal === "terms"} onClose={() => setLegalModal(null)} title="Termos de Servico">
+        <TermsOfServiceContent />
+      </LegalModal>
+      <LegalModal open={legalModal === "security"} onClose={() => setLegalModal(null)} title="Padroes de Seguranca">
+        <SecurityStandardsContent />
+      </LegalModal>
     </div>
   );
 }

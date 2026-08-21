@@ -13,6 +13,7 @@ const PASSWORD_RULES = [
   { label: "Caractere especial", test: (p: string) => /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(p) },
 ];
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function validatePasswordStrength(password: string): boolean {
   return PASSWORD_RULES.every((rule) => rule.test(password));
 }
