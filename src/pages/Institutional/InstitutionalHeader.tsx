@@ -13,7 +13,7 @@ export function InstitutionalHeader({ currentPage }: InstitutionalHeaderProps) {
   return (
     <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-lg border-b border-slate-100">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-        <Link to="/institutional" className="flex items-center gap-2.5">
+        <Link to="/" className="flex items-center gap-2.5">
           <img src={iconLogo} alt="PocketMed" className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl" />
           <span className="text-lg sm:text-xl font-extrabold text-slate-900">
             Pocket<span className="text-primary">Med</span>
@@ -23,8 +23,8 @@ export function InstitutionalHeader({ currentPage }: InstitutionalHeaderProps) {
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-6">
           {currentPage !== "home" && (
-            <Link to="/institutional" className="text-sm font-medium text-slate-600 hover:text-primary transition-colors">
-              Inicio
+            <Link to="/" className="text-sm font-medium text-slate-600 hover:text-primary transition-colors">
+              Início
             </Link>
           )}
           {currentPage !== "mobile" && (
@@ -56,11 +56,11 @@ export function InstitutionalHeader({ currentPage }: InstitutionalHeaderProps) {
         <div className="md:hidden border-t border-slate-100 bg-white px-4 py-4 space-y-2">
           {currentPage !== "home" && (
             <Link
-              to="/institutional"
+              to="/"
               onClick={() => setMenuOpen(false)}
               className="block px-4 py-3 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
             >
-              Inicio
+              Início
             </Link>
           )}
           {currentPage !== "mobile" && (

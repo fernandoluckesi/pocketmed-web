@@ -101,8 +101,8 @@ export function MainLayout({ children }: MainLayoutProps) {
             alt="PocketMed"
             className="w-10 h-10 rounded-xl"
           />
-          <h2 className="text-xl font-black text-primary tracking-tight font-manrope">
-            PocketMed
+          <h2 className="text-xl font-black tracking-tight font-manrope">
+            <span className="text-slate-900">Pocket</span><span className="text-primary">Med</span>
           </h2>
         </div>
 

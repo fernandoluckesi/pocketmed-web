@@ -87,8 +87,8 @@ export default function Login() {
                 alt="PocketMed"
                 className="w-[72px] h-[72px] rounded-xl"
               />
-              <h1 className="text-4xl font-display font-extrabold text-blue-700 tracking-tight">
-                PocketMed
+              <h1 className="text-4xl font-display font-extrabold tracking-tight">
+                <span className="text-slate-900">Pocket</span><span className="text-primary">Med</span>
               </h1>
             </div>
             <div className="space-y-2">

@@ -13,9 +13,9 @@ import {
   Wifi,
   Clock,
 } from "lucide-react";
-import iconLogo from "../../assets/images/icon.png";
 import { InstitutionalFooter } from "./InstitutionalFooter";
 import { InstitutionalHeader } from "./InstitutionalHeader";
+import { PhoneCarousel } from "../../components/PhoneCarousel";
 
 export default function InstitutionalMobile() {
   return (
@@ -27,7 +27,7 @@ export default function InstitutionalMobile() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-blue-50/30" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-20 md:py-28">
-          <Link to="/institutional" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-primary mb-6 sm:mb-8 transition-colors">
+          <Link to="/" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-primary mb-6 sm:mb-8 transition-colors">
             <ArrowLeft size={16} />
             Voltar para o início
           </Link>
@@ -42,24 +42,17 @@ export default function InstitutionalMobile() {
                 <span className="text-primary">no bolso</span>
               </h1>
               <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-6 sm:mb-8">
-                O aplicativo PocketMed permite que pacientes acessem todo o seu histórico
+                O aplicativo PocketMed é gratuito e permite que pacientes acessem todo o seu histórico
                 médico de forma simples, segura e instantânea. Consultas, exames, medicamentos,
-                vacinas e alergias — tudo em um só lugar.
+                vacinas e alergias, tudo em um só lugar.
               </p>
               <div className="flex flex-wrap gap-2 sm:gap-3">
                 <span className="bg-slate-100 text-slate-700 px-4 py-2 rounded-full text-sm font-medium">Android</span>
                 <span className="bg-slate-100 text-slate-700 px-4 py-2 rounded-full text-sm font-medium">iOS</span>
-                <span className="bg-slate-100 text-slate-700 px-4 py-2 rounded-full text-sm font-medium">Gratuito</span>
               </div>
             </div>
             <div className="flex justify-center">
-              <div className="w-56 sm:w-72 h-[440px] sm:h-[580px] bg-slate-900 rounded-[2.4rem] sm:rounded-[3rem] p-2 sm:p-3 shadow-2xl shadow-slate-900/20">
-                <div className="w-full h-full bg-gradient-to-b from-primary to-blue-700 rounded-[2rem] sm:rounded-[2.4rem] flex flex-col items-center justify-center text-white p-6 sm:p-8">
-                  <img src={iconLogo} alt="PocketMed" className="w-14 sm:w-20 h-14 sm:h-20 rounded-2xl mb-4 sm:mb-6" />
-                  <h3 className="text-xl sm:text-2xl font-extrabold mb-2">PocketMed</h3>
-                  <p className="text-blue-200 text-center text-xs sm:text-sm">Seu prontuário sempre com você</p>
-                </div>
-              </div>
+              <PhoneCarousel />
             </div>
           </div>
         </div>

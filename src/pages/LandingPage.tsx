@@ -5,7 +5,6 @@ import {
   Shield,
   Heart,
   Users,
-  FileText,
   ArrowRight,
   CheckCircle,
   Stethoscope,
@@ -16,6 +15,7 @@ import {
   Star,
 } from "lucide-react";
 import iconLogo from "../assets/images/icon.png";
+import { PhoneCarousel } from "../components/PhoneCarousel";
 import {
   LegalModal,
   PrivacyPolicyContent,
@@ -99,35 +99,7 @@ export default function LandingPage() {
             </div>
             {/* Hero Visual */}
             <div className="hidden md:flex justify-center relative">
-              <div className="relative">
-                {/* Phone mockup */}
-                <div className="w-64 h-[520px] bg-slate-900 rounded-[2.8rem] p-2.5 shadow-2xl shadow-slate-900/30 rotate-3 hover:rotate-0 transition-transform duration-500">
-                  <div className="w-full h-full bg-gradient-to-b from-primary to-blue-700 rounded-[2.2rem] flex flex-col items-center justify-center text-white">
-                    <img src={iconLogo} alt="" className="w-16 h-16 rounded-xl mb-4" />
-                    <p className="font-extrabold text-lg">PocketMed</p>
-                    <p className="text-blue-200 text-xs mt-1">App do Paciente</p>
-                  </div>
-                </div>
-                {/* Floating cards */}
-                <div className="absolute -left-16 top-16 bg-white rounded-2xl p-4 shadow-xl shadow-slate-200/50 flex items-center gap-3 animate-bounce" style={{ animationDuration: "3s" }}>
-                  <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
-                    <CheckCircle className="text-emerald-600" size={20} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-900">Consulta confirmada</p>
-                    <p className="text-[10px] text-slate-500">Dr. Silva - 14:00</p>
-                  </div>
-                </div>
-                <div className="absolute -right-12 bottom-24 bg-white rounded-2xl p-4 shadow-xl shadow-slate-200/50 flex items-center gap-3 animate-bounce" style={{ animationDuration: "4s", animationDelay: "1s" }}>
-                  <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <FileText className="text-blue-600" size={20} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-900">Exame disponível</p>
-                    <p className="text-[10px] text-slate-500">Hemograma completo</p>
-                  </div>
-                </div>
-              </div>
+              <PhoneCarousel />
             </div>
           </div>
         </div>
@@ -315,7 +287,7 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <img src={iconLogo} alt="PocketMed" className="w-8 h-8 rounded-lg" />
-              <span className="text-sm font-bold text-slate-700">PocketMed</span>
+              <span className="text-sm font-bold text-slate-700">Pocket<span className="text-primary">Med</span></span>
             </div>
             <div className="flex items-center gap-6 text-sm text-slate-500">
               <Link to="/institutional" className="hover:text-primary transition-colors">Sobre</Link>

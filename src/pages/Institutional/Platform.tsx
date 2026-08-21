@@ -28,7 +28,7 @@ export default function InstitutionalPlatform() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-blue-50/30" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-20 md:py-28">
-          <Link to="/institutional" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-primary mb-6 sm:mb-8 transition-colors">
+          <Link to="/" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-primary mb-6 sm:mb-8 transition-colors">
             <ArrowLeft size={16} />
             Voltar para o início
           </Link>
