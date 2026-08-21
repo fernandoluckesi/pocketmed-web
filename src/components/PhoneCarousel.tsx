@@ -22,7 +22,10 @@ interface PhoneCarouselProps {
   interval?: number;
 }
 
-export function PhoneCarousel({ autoPlay = true, interval = 4000 }: PhoneCarouselProps) {
+export function PhoneCarousel({
+  autoPlay = true,
+  interval = 4000,
+}: PhoneCarouselProps) {
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {
@@ -33,7 +36,8 @@ export function PhoneCarousel({ autoPlay = true, interval = 4000 }: PhoneCarouse
     return () => clearInterval(timer);
   }, [autoPlay, interval]);
 
-  const prev = () => setCurrent((c) => (c - 1 + screens.length) % screens.length);
+  const prev = () =>
+    setCurrent((c) => (c - 1 + screens.length) % screens.length);
   const next = () => setCurrent((c) => (c + 1) % screens.length);
 
   return (
@@ -55,15 +59,15 @@ export function PhoneCarousel({ autoPlay = true, interval = 4000 }: PhoneCarouse
         </button>
 
         {/* Phone */}
-        <div className="w-[260px] sm:w-[280px] h-[530px] sm:h-[570px] bg-slate-900 rounded-[2.8rem] sm:rounded-[3rem] p-[10px] sm:p-3 shadow-2xl shadow-slate-900/30">
-          {/* Notch */}
-          <div className="absolute top-[18px] sm:top-[20px] left-1/2 -translate-x-1/2 w-[90px] sm:w-[100px] h-[26px] sm:h-[28px] bg-slate-900 rounded-full z-20" />
+        <div className="aspect-[9/19.5] h-[420px] sm:h-[450px] bg-slate-900 rounded-[2.5rem] sm:rounded-[2.7rem] p-[9px] sm:p-[11px] shadow-2xl shadow-slate-900/30 relative">
+          {/* Dynamic Island */}
+          <div className="absolute top-[14px] sm:top-[16px] left-1/2 -translate-x-1/2 w-[80px] sm:w-[90px] h-[22px] sm:h-[24px] bg-slate-900 rounded-full z-20" />
           {/* Screen */}
-          <div className="w-full h-full rounded-[2.2rem] sm:rounded-[2.4rem] overflow-hidden bg-white relative">
+          <div className="w-full h-full rounded-[2rem] sm:rounded-[2.2rem] overflow-hidden bg-white relative">
             <img
               src={screens[current]}
               alt={labels[current]}
-              className="w-full h-full object-cover object-top transition-opacity duration-500"
+              className="w-full h-full object-cover object-center transition-opacity duration-500"
             />
           </div>
         </div>

@@ -23,6 +23,12 @@ import { CustomSelect } from "../../components/ui/CustomSelect";
 import { PasswordStrengthIndicator } from "../../components/PasswordStrengthIndicator";
 import iconLogo from "../../assets/images/icon.png";
 import api from "../../config/api";
+import {
+  LegalModal,
+  PrivacyPolicyContent,
+  TermsOfServiceContent,
+  SecurityStandardsContent,
+} from "../Institutional/LegalModal";
 
 const UF_LIST = [
   "AC",
@@ -145,7 +151,10 @@ const doctorSchema = Yup.object({
     .matches(/[A-Z]/, "Deve conter letra maiúscula")
     .matches(/[a-z]/, "Deve conter letra minúscula")
     .matches(/\d/, "Deve conter um número")
-    .matches(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, "Deve conter caractere especial")
+    .matches(
+      /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/,
+      "Deve conter caractere especial",
+    )
     .required("Senha é obrigatória"),
   acceptTerms: Yup.boolean().oneOf([true], "Você deve aceitar os termos"),
 });
@@ -200,7 +209,10 @@ const clinicSchema = Yup.object({
     .matches(/[A-Z]/, "Deve conter letra maiúscula")
     .matches(/[a-z]/, "Deve conter letra minúscula")
     .matches(/\d/, "Deve conter um número")
-    .matches(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, "Deve conter caractere especial")
+    .matches(
+      /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/,
+      "Deve conter caractere especial",
+    )
     .required("Senha é obrigatória"),
   acceptTerms: Yup.boolean().oneOf([true], "Você deve aceitar os termos"),
 });
@@ -626,19 +638,21 @@ function ClinicSignupForm({
               htmlFor="clinic-terms"
             >
               Eu concordo com os{" "}
-              <a
-                className="text-primary font-semibold hover:underline"
-                href="#"
+              <button
+                type="button"
+                className="text-primary font-semibold hover:underline bg-transparent border-none cursor-pointer p-0 inline"
+                onClick={() => setLegalModal("terms")}
               >
                 Termos de Serviço
-              </a>{" "}
+              </button>{" "}
               e a{" "}
-              <a
-                className="text-primary font-semibold hover:underline"
-                href="#"
+              <button
+                type="button"
+                className="text-primary font-semibold hover:underline bg-transparent border-none cursor-pointer p-0 inline"
+                onClick={() => setLegalModal("privacy")}
               >
                 Política de Privacidade
-              </a>{" "}
+              </button>{" "}
               do PocketMed.
             </label>
           </div>
@@ -681,18 +695,33 @@ export default function Signup() {
   );
   const [showPassword, setShowPassword] = useState(false);
   const [snackbar, setSnackbar] = useState({ visible: false, message: "" });
+  const [legalModal, setLegalModal] = useState<
+    "privacy" | "terms" | "security" | null
+  >(null);
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [pendingVerification, setPendingVerification] = useState<string | null>(null);
-  const [verificationCode, setVerificationCode] = useState(["", "", "", "", "", ""]);
+  const [pendingVerification, setPendingVerification] = useState<string | null>(
+    null,
+  );
+  const [verificationCode, setVerificationCode] = useState([
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+  ]);
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const codeInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     if (resendCooldown > 0) {
-      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      const timer = setTimeout(
+        () => setResendCooldown(resendCooldown - 1),
+        1000,
+      );
       return () => clearTimeout(timer);
     }
   }, [resendCooldown]);
@@ -757,7 +786,10 @@ export default function Signup() {
       setResendCooldown(60);
       setSnackbar({ visible: true, message: "Código reenviado com sucesso!" });
     } catch {
-      setSnackbar({ visible: true, message: "Não foi possível reenviar o código." });
+      setSnackbar({
+        visible: true,
+        message: "Não foi possível reenviar o código.",
+      });
     }
   }
 
@@ -904,7 +936,8 @@ export default function Signup() {
                 className="w-[72px] h-[72px] rounded-xl"
               />
               <h1 className="text-4xl font-display font-extrabold tracking-tight">
-                <span className="text-slate-900">Pocket</span><span className="text-primary">Med</span>
+                <span className="text-slate-900">Pocket</span>
+                <span className="text-primary">Med</span>
               </h1>
             </div>
             <div className="space-y-2">
@@ -917,7 +950,9 @@ export default function Signup() {
                   : "Comece sua jornada digital no PocketMed hoje mesmo."}
               </p>
               {pendingVerification && (
-                <p className="text-primary font-semibold text-sm">{pendingVerification}</p>
+                <p className="text-primary font-semibold text-sm">
+                  {pendingVerification}
+                </p>
               )}
             </div>
           </header>
@@ -929,15 +964,22 @@ export default function Signup() {
                 {verificationCode.map((digit, index) => (
                   <input
                     key={index}
-                    ref={(el) => { codeInputRefs.current[index] = el; }}
+                    ref={(el) => {
+                      codeInputRefs.current[index] = el;
+                    }}
                     type="text"
                     inputMode="numeric"
                     maxLength={1}
                     value={digit}
-                    onChange={(e) => handleCodeChange(e.target.value.replace(/\D/, ""), index)}
+                    onChange={(e) =>
+                      handleCodeChange(e.target.value.replace(/\D/, ""), index)
+                    }
                     onPaste={(e) => {
                       e.preventDefault();
-                      const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+                      const pasted = e.clipboardData
+                        .getData("text")
+                        .replace(/\D/g, "")
+                        .slice(0, 6);
                       if (pasted) handleCodeChange(pasted, index);
                     }}
                     onKeyDown={(e) => handleCodeKeyDown(e.key, index)}
@@ -950,7 +992,9 @@ export default function Signup() {
               <button
                 type="button"
                 onClick={() => handleVerifyEmail()}
-                disabled={verifyLoading || verificationCode.join("").length !== 6}
+                disabled={
+                  verifyLoading || verificationCode.join("").length !== 6
+                }
                 className="w-full py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {verifyLoading ? "Verificando..." : "Confirmar código"}
@@ -964,7 +1008,9 @@ export default function Signup() {
                   disabled={resendCooldown > 0}
                   className="text-sm font-semibold text-primary hover:underline disabled:text-slate-400 disabled:no-underline border-none bg-transparent cursor-pointer disabled:cursor-not-allowed"
                 >
-                  {resendCooldown > 0 ? `Reenviar em ${resendCooldown}s` : "Reenviar código"}
+                  {resendCooldown > 0
+                    ? `Reenviar em ${resendCooldown}s`
+                    : "Reenviar código"}
                 </button>
               </div>
             </div>
@@ -1380,7 +1426,9 @@ export default function Signup() {
                       {fieldError("password")}
                     </p>
                   )}
-                  <PasswordStrengthIndicator password={formik.values.password} />
+                  <PasswordStrengthIndicator
+                    password={formik.values.password}
+                  />
                 </div>
 
                 {/* Terms */}
@@ -1402,19 +1450,21 @@ export default function Signup() {
                       htmlFor="terms"
                     >
                       Eu concordo com os{" "}
-                      <a
-                        className="text-primary font-semibold hover:underline"
-                        href="#"
+                      <button
+                        type="button"
+                        className="text-primary font-semibold hover:underline bg-transparent border-none cursor-pointer p-0 inline"
+                        onClick={() => setLegalModal("terms")}
                       >
                         Termos de Serviço
-                      </a>{" "}
+                      </button>{" "}
                       e a{" "}
-                      <a
-                        className="text-primary font-semibold hover:underline"
-                        href="#"
+                      <button
+                        type="button"
+                        className="text-primary font-semibold hover:underline bg-transparent border-none cursor-pointer p-0 inline"
+                        onClick={() => setLegalModal("privacy")}
                       >
                         Política de Privacidade
-                      </a>{" "}
+                      </button>{" "}
                       do PocketMed.
                     </label>
                   </div>
@@ -1456,7 +1506,10 @@ export default function Signup() {
               onBack={() => setSignupType("select")}
               navigate={navigate}
               setSnackbar={setSnackbar}
-              onVerificationNeeded={(email) => { setPendingVerification(email); setResendCooldown(60); }}
+              onVerificationNeeded={(email) => {
+                setPendingVerification(email);
+                setResendCooldown(60);
+              }}
             />
           )}
         </div>
@@ -1464,11 +1517,26 @@ export default function Signup() {
         {/* Bottom footer */}
         <div className="mt-auto pt-8 pb-6 text-center lg:text-left space-y-2 w-full max-w-md">
           <div className="flex items-center gap-3 justify-center lg:justify-start text-[10px] font-semibold uppercase tracking-wider text-slate-400 whitespace-nowrap">
-            <span>Políticas de Privacidade</span>
+            <button
+              onClick={() => setLegalModal("privacy")}
+              className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400"
+            >
+              Políticas de Privacidade
+            </button>
             <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-            <span>Termos de Serviço</span>
+            <button
+              onClick={() => setLegalModal("terms")}
+              className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400"
+            >
+              Termos de Serviço
+            </button>
             <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-            <span>Padrões de Segurança</span>
+            <button
+              onClick={() => setLegalModal("security")}
+              className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400"
+            >
+              Padrões de Segurança
+            </button>
           </div>
           <p className="text-[10px] text-slate-400">
             © 2026 PocketMed Clinical Systems. Todos os direitos reservados.
@@ -1483,6 +1551,29 @@ export default function Signup() {
         visible={snackbar.visible}
         onClose={() => setSnackbar({ visible: false, message: "" })}
       />
+
+      {/* Legal Modals */}
+      <LegalModal
+        open={legalModal === "privacy"}
+        onClose={() => setLegalModal(null)}
+        title="Política de Privacidade"
+      >
+        <PrivacyPolicyContent />
+      </LegalModal>
+      <LegalModal
+        open={legalModal === "terms"}
+        onClose={() => setLegalModal(null)}
+        title="Termos de Serviço"
+      >
+        <TermsOfServiceContent />
+      </LegalModal>
+      <LegalModal
+        open={legalModal === "security"}
+        onClose={() => setLegalModal(null)}
+        title="Padrões de Segurança"
+      >
+        <SecurityStandardsContent />
+      </LegalModal>
     </div>
   );
 }
