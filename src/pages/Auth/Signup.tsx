@@ -240,6 +240,7 @@ function ClinicSignupForm({
 }) {
   const { registerDoctor } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [legalModal, setLegalModal] = useState<"privacy" | "terms" | "security" | null>(null);
 
   const formik = useFormik({
     initialValues: {
@@ -683,6 +684,13 @@ function ClinicSignupForm({
           </button>
         </p>
       </footer>
+
+      <LegalModal open={legalModal === "privacy"} onClose={() => setLegalModal(null)} title="Política de Privacidade">
+        <PrivacyPolicyContent />
+      </LegalModal>
+      <LegalModal open={legalModal === "terms"} onClose={() => setLegalModal(null)} title="Termos de Serviço">
+        <TermsOfServiceContent />
+      </LegalModal>
     </>
   );
 }

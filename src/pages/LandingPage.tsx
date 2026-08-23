@@ -15,7 +15,7 @@ import {
   Star,
 } from "lucide-react";
 import iconLogo from "../assets/images/icon.png";
-import { PhoneCarousel } from "../components/PhoneCarousel";
+import mobileImg from "../assets/images/mobile.png";
 import {
   LegalModal,
   PrivacyPolicyContent,
@@ -81,11 +81,8 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden h-[calc(100vh-73px)] max-h-[800px] flex items-center">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-indigo-50/40" />
-        <div className="absolute top-20 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-100/50 rounded-full blur-3xl" />
-        <div className="relative max-w-6xl mx-auto px-6 py-8">
+      <section className="relative overflow-hidden h-[calc(100vh-73px)] max-h-[800px] flex items-center bg-white">
+        <div className="relative max-w-6xl mx-auto px-6 py-8 w-full">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <div>
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold mb-8">
@@ -120,7 +117,11 @@ export default function LandingPage() {
             </div>
             {/* Hero Visual */}
             <div className="hidden md:flex justify-center relative">
-              <PhoneCarousel />
+              <img
+                src={mobileImg}
+                alt="PocketMed App"
+                className="w-[300px] drop-shadow-2xl"
+              />
             </div>
           </div>
         </div>

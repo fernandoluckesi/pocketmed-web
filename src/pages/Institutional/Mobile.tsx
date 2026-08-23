@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { InstitutionalFooter } from "./InstitutionalFooter";
 import { InstitutionalHeader } from "./InstitutionalHeader";
-import { PhoneCarousel } from "../../components/PhoneCarousel";
+import mobileImg from "../../assets/images/mobile.png";
 
 export default function InstitutionalMobile() {
   return (
@@ -24,9 +24,8 @@ export default function InstitutionalMobile() {
       <InstitutionalHeader currentPage="mobile" />
 
       {/* Hero */}
-      <section className="relative overflow-hidden min-h-[calc(100vh-65px)] max-h-[750px]">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-blue-50/30" />
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-6">
+      <section className="relative overflow-hidden bg-white">
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
           <Link
             to="/"
             className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-primary mb-4 sm:mb-6 transition-colors"
@@ -61,7 +60,11 @@ export default function InstitutionalMobile() {
               </div>
             </div>
             <div className="flex justify-center">
-              <PhoneCarousel />
+              <img
+                src={mobileImg}
+                alt="PocketMed App"
+                className="w-[260px] sm:w-[300px] drop-shadow-2xl"
+              />
             </div>
           </div>
         </div>
