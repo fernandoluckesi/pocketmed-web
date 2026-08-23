@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Pencil,
   Trash2,
+  Send,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { MainLayout } from "../../components/MainLayout";
@@ -36,6 +37,7 @@ interface Member {
   id: string;
   role: string;
   isActive: boolean;
+  isShadow?: boolean;
   invitedBy: string | null;
   createdAt: string;
   professional: {
@@ -145,6 +147,7 @@ function MembersSection({
   onPageChange,
   onRemove,
   onEdit,
+  onResendCode,
 }: {
   members: Member[];
   total: number;
@@ -157,6 +160,7 @@ function MembersSection({
   onPageChange: (p: number) => void;
   onRemove: (membershipId: string) => void;
   onEdit: (member: Member) => void;
+  onResendCode: (membershipId: string) => void;
 }) {
   const getInitials = (name: string) =>
     name
@@ -226,6 +230,9 @@ function MembersSection({
               <th className="px-8 py-4 text-[11px] font-black uppercase tracking-widest text-slate-400">
                 Perfil
               </th>
+              <th className="px-8 py-4 text-[11px] font-black uppercase tracking-widest text-slate-400">
+                Status
+              </th>
               <th className="px-8 py-4 text-[11px] font-black uppercase tracking-widest text-slate-400 text-right">
                 Ações
               </th>
@@ -235,7 +242,7 @@ function MembersSection({
             {members.length === 0 ? (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={5}
                   className="px-8 py-12 text-center text-slate-400 text-sm"
                 >
                   Nenhum membro encontrado
@@ -275,9 +282,27 @@ function MembersSection({
                         {roleLabels[member.role] || member.role}
                       </span>
                     </td>
+                    <td className="px-8 py-5">
+                      {member.role === "admin" ? (
+                        <span className="px-3 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700">Ativo</span>
+                      ) : member.isShadow ? (
+                        <span className="px-3 py-1 rounded-lg text-xs font-bold bg-amber-100 text-amber-700">Pendente</span>
+                      ) : (
+                        <span className="px-3 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700">Ativo</span>
+                      )}
+                    </td>
                     <td className="px-8 py-5 text-right">
                       {member.role !== "admin" && (
                         <div className="flex items-center justify-end gap-2">
+                          {member.isShadow && (
+                            <button
+                              onClick={() => onResendCode(member.id)}
+                              className="p-2 rounded-lg hover:bg-blue-50 text-slate-500 hover:text-blue-600 transition-all cursor-pointer border-none bg-transparent"
+                              title="Reenviar código"
+                            >
+                              <Send size={16} />
+                            </button>
+                          )}
                           <button
                             onClick={() => onEdit(member)}
                             className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-primary transition-all cursor-pointer border-none bg-transparent"
@@ -549,6 +574,15 @@ export default function ClinicalManagement() {
     setShowAddModal(true);
   };
 
+  const handleResendCode = async (membershipId: string) => {
+    try {
+      await api(`/secretaries/${membershipId}/resend-code`, { method: "POST" });
+      alert("Código reenviado com sucesso!");
+    } catch {
+      alert("Erro ao reenviar código.");
+    }
+  };
+
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
     setAddError("");
@@ -592,7 +626,7 @@ export default function ClinicalManagement() {
     } catch (err: any) {
       const msg = err?.message || "";
       if (msg.includes("already") || msg.includes("Conflict") || msg.includes("cadastrado")) {
-        setAddError("Este email já está cadastrado.");
+        setAddError("Este email já está cadastrado nesta clínica.");
       } else {
         setAddError(editingMember ? "Erro ao atualizar. Tente novamente." : "Erro ao adicionar. Tente novamente.");
       }
@@ -657,6 +691,7 @@ export default function ClinicalManagement() {
           onPageChange={setPage}
           onRemove={handleRemove}
           onEdit={handleEdit}
+          onResendCode={handleResendCode}
         />
 
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
