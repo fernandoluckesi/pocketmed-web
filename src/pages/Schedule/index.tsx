@@ -93,8 +93,7 @@ function DayView({ selectedDate, setSelectedDate, appointments }: { selectedDate
     <div className="flex-1">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-3xl font-display font-extrabold text-blue-900 tracking-tight">Agenda do Dia</h2>
-          <p className="text-slate-500 font-medium capitalize">{dateLabel}</p>
+          <p className="text-slate-500 font-medium capitalize">Agenda do Dia: {dateLabel}</p>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={prevDay} className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all cursor-pointer border-none">
