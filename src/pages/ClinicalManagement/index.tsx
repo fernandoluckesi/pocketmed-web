@@ -503,9 +503,51 @@ export default function ClinicalManagement() {
       const data: MemberListResponse = await api(
         `/clinic-admin/members?${params.toString()}`,
       );
-      setMembers(data.items);
-      setTotal(data.total);
-      setTotalPages(data.totalPages);
+
+      // Also fetch secretaries from new table and merge
+      let secretaryMembers: Member[] = [];
+      if (!roleFilter || roleFilter === "secretary") {
+        try {
+          const secretaries = await api("/secretaries");
+          secretaryMembers = (Array.isArray(secretaries) ? secretaries : []).map((s: any) => ({
+            id: s.id,
+            role: "secretary",
+            isActive: s.isActive,
+            isShadow: s.isShadow,
+            invitedBy: s.invitedBy,
+            createdAt: s.createdAt,
+            professional: {
+              id: s.id,
+              name: s.name,
+              email: s.email,
+            },
+          }));
+        } catch {
+          // ignore
+        }
+      }
+
+      // Filter out old secretary members from clinic_memberships to avoid duplicates
+      const clinicMembers = data.items.filter(
+        (m) => m.role !== "secretary",
+      );
+
+      const allMembers = [...clinicMembers, ...secretaryMembers];
+
+      // Apply search filter to secretary members too
+      const filtered = search
+        ? allMembers.filter((m) => {
+            const term = search.toLowerCase();
+            return (
+              m.professional?.name?.toLowerCase().includes(term) ||
+              m.professional?.email?.toLowerCase().includes(term)
+            );
+          })
+        : allMembers;
+
+      setMembers(filtered);
+      setTotal(data.total + secretaryMembers.length);
+      setTotalPages(Math.max(data.totalPages, 1));
     } catch {
       // ignore
     }
