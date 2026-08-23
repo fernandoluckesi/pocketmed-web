@@ -91,7 +91,7 @@ export default function InstitutionalPlatform() {
             {
               icon: Stethoscope,
               title: "Equipe Medica",
-              desc: "Gestão de múltiplos profissionais na clínica. Perfis de admin, médico e secretaria com permissões diferenciadas.",
+              desc: "Gestão de múltiplos profissionais na clínica. Perfis de admin, médico e secretário(a) com permissões diferenciadas.",
             },
             {
               icon: FileText,
@@ -210,14 +210,14 @@ export default function InstitutionalPlatform() {
               perms: [
                 "Gestão de membros da clínica",
                 "Painel financeiro completo",
-                "Cadastro de médicos e secretarias",
+                "Cadastro de médicos e secretários(as)",
                 "Configuracoes da clínica",
                 "Visão geral de pacientes",
               ],
             },
             {
               icon: BarChart3,
-              role: "Secretaria",
+              role: "Secretário(a)",
               perms: [
                 "Agendamento de consultas",
                 "Visualizacao basica de pacientes",

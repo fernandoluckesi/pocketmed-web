@@ -7,6 +7,9 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  UserPlus,
+  X,
+  Loader2,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { MainLayout } from "../../components/MainLayout";
@@ -68,28 +71,32 @@ interface LinkedPatient {
 function StatsGrid({ overview }: { overview: Overview | null }) {
   const cards = [
     {
-      label: "Total de Membros",
+      singular: "Membro",
+      plural: "Membros",
       value: overview?.members.total || 0,
       icon: Users,
       bgColor: "bg-blue-50",
       iconColor: "text-blue-600",
     },
     {
-      label: "Administradores",
+      singular: "Administrador",
+      plural: "Administradores",
       value: overview?.members.admins || 0,
       icon: ShieldCheck,
       bgColor: "bg-purple-50",
       iconColor: "text-purple-600",
     },
     {
-      label: "Médicos",
+      singular: "Médico",
+      plural: "Médicos",
       value: overview?.members.doctors || 0,
       icon: Stethoscope,
       bgColor: "bg-emerald-50",
       iconColor: "text-emerald-600",
     },
     {
-      label: "Pacientes Vinculados",
+      singular: "Paciente Vinculado",
+      plural: "Pacientes Vinculados",
       value: overview?.patients.total || 0,
       icon: MapPin,
       bgColor: "bg-amber-50",
@@ -101,22 +108,22 @@ function StatsGrid({ overview }: { overview: Overview | null }) {
     <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {cards.map((card) => (
         <div
-          key={card.label}
-          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:border-primary/20 transition-all flex flex-col justify-between"
+          key={card.singular}
+          className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:border-primary/20 transition-all"
         >
-          <div className="flex justify-between items-start">
+          <div className="flex items-center justify-between mb-4">
             <span
               className={`p-3 ${card.bgColor} ${card.iconColor} rounded-lg`}
             >
               <card.icon className="w-6 h-6" />
             </span>
           </div>
-          <div className="mt-4">
-            <h3 className="text-3xl font-extrabold font-display text-slate-900">
-              {card.value}
-            </h3>
-            <p className="text-slate-500 font-medium text-sm">{card.label}</p>
-          </div>
+          <p className="text-slate-900 font-display flex items-baseline gap-2">
+            <span className="text-3xl font-extrabold">{card.value}</span>
+            <span className="text-sm font-medium text-slate-500">
+              {card.value === 1 ? card.singular : card.plural}
+            </span>
+          </p>
         </div>
       ))}
     </section>
@@ -163,7 +170,7 @@ function MembersSection({
   const roleLabels: Record<string, string> = {
     admin: "Administrador",
     doctor: "Médico",
-    secretary: "Secretária",
+    secretary: "Secretário(a)",
   };
 
   return (
@@ -196,7 +203,7 @@ function MembersSection({
             <option value="">Perfil: Todos</option>
             <option value="admin">Administrador</option>
             <option value="doctor">Médico</option>
-            <option value="secretary">Secretária</option>
+            <option value="secretary">Secretário(a)</option>
           </select>
         </div>
       </div>
@@ -492,6 +499,50 @@ export default function ClinicalManagement() {
     }
   };
 
+  // --- Add Member Modal ---
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addForm, setAddForm] = useState({ name: "", email: "", phone: "" });
+  const [addLoading, setAddLoading] = useState(false);
+  const [addError, setAddError] = useState("");
+  const [addSuccess, setAddSuccess] = useState("");
+
+  const handleAddMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddError("");
+    setAddSuccess("");
+
+    if (!addForm.name.trim() || !addForm.email.trim() || !addForm.phone.trim()) {
+      setAddError("Preencha todos os campos.");
+      return;
+    }
+
+    setAddLoading(true);
+    try {
+      await api("/clinic-admin/members", {
+        method: "POST",
+        body: JSON.stringify({
+          role: "secretary",
+          name: addForm.name.trim(),
+          email: addForm.email.trim(),
+          phone: addForm.phone.replace(/\D/g, ""),
+        }),
+      });
+      setAddSuccess("Secretário(a) cadastrado(a)! Um código de acesso foi enviado para o email informado.");
+      setAddForm({ name: "", email: "", phone: "" });
+      loadMembers();
+      loadOverview();
+    } catch (err: any) {
+      const msg = err?.message || "";
+      if (msg.includes("already registered") || msg.includes("Conflict")) {
+        setAddError("Este email já está cadastrado na plataforma.");
+      } else {
+        setAddError("Erro ao adicionar membro. Tente novamente.");
+      }
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <MainLayout>
@@ -510,13 +561,22 @@ export default function ClinicalManagement() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div>
-          <h1 className="text-4xl font-display font-extrabold text-slate-900 tracking-tight">
-            Gestão da Clínica
-          </h1>
-          <p className="text-slate-500 font-medium mt-1">
-            Gerencie membros, permissões e pacientes vinculados.
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-display font-extrabold text-slate-900 tracking-tight">
+              Gestão da Clínica
+            </h1>
+            <p className="text-slate-500 font-medium mt-1">
+              Gerencie membros, permissões e pacientes vinculados.
+            </p>
+          </div>
+          <button
+            onClick={() => { setShowAddModal(true); setAddError(""); setAddSuccess(""); }}
+            className="bg-primary text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer border-none"
+          >
+            <UserPlus size={18} />
+            Adicionar Secretário(a)
+          </button>
         </div>
 
         <StatsGrid overview={overview} />
@@ -549,6 +609,86 @@ export default function ClinicalManagement() {
           </div>
         </section>
       </motion.div>
+
+      {/* Add Member Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowAddModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+              <h2 className="text-lg font-extrabold text-slate-900">Adicionar Secretário(a)</h2>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="p-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer border-none bg-transparent"
+              >
+                <X size={20} className="text-slate-500" />
+              </button>
+            </div>
+            <form onSubmit={handleAddMember} className="px-6 py-5 space-y-4">
+              {addError && (
+                <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                  <p className="text-sm text-red-700">{addError}</p>
+                </div>
+              )}
+              {addSuccess && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+                  <p className="text-sm text-emerald-700">{addSuccess}</p>
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-slate-700">Nome completo</label>
+                <input
+                  type="text"
+                  value={addForm.name}
+                  onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                  placeholder="Nome do secretário(a)"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-slate-700">Email</label>
+                <input
+                  type="email"
+                  value={addForm.email}
+                  onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                  placeholder="email@exemplo.com"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-slate-700">Telefone</label>
+                <input
+                  type="tel"
+                  value={addForm.phone}
+                  onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
+                  placeholder="(11) 99999-9999"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                />
+              </div>
+              <p className="text-xs text-slate-500">
+                Um código de primeiro acesso será enviado para o email informado. O secretário(a) poderá criar sua senha através desse código.
+              </p>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-200 transition-colors cursor-pointer border-none"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={addLoading}
+                  className="flex-1 bg-primary text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors cursor-pointer border-none disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {addLoading && <Loader2 size={16} className="animate-spin" />}
+                  {addLoading ? "Enviando..." : "Adicionar"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </MainLayout>
   );
 }

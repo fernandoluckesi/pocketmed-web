@@ -23,7 +23,7 @@ const banners = [
     icon: Shield,
     title: "Gestão de Clínica",
     subtitle: "Controle total da sua equipe médica",
-    description: "Gerencie médicos, secretárias e permissões de acesso. Convide profissionais, defina papéis e acompanhe a produtividade da clínica em um painel centralizado.",
+    description: "Gerencie médicos, secretários(as) e permissões de acesso. Convide profissionais, defina papéis e acompanhe a produtividade da clínica em um painel centralizado.",
     cta: "Gerenciar",
   },
   {

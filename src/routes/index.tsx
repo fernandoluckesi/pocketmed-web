@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/Auth/Login";
 import Signup from "../pages/Auth/Signup";
 import ForgotPassword from "../pages/Auth/ForgotPassword";
+import ActivateAccount from "../pages/Auth/ActivateAccount";
 import LandingPage from "../pages/LandingPage";
 import InstitutionalHome from "../pages/Institutional";
 import InstitutionalMobile from "../pages/Institutional/Mobile";
@@ -37,6 +38,7 @@ export default function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/activate-account" element={<ActivateAccount />} />
       <Route path="/institutional" element={<InstitutionalHome />} />
       <Route path="/institutional/mobile" element={<InstitutionalMobile />} />
       <Route path="/institutional/platform" element={<InstitutionalPlatform />} />

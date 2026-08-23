@@ -62,7 +62,7 @@ const PLANS: Plan[] = [
       "Tudo do Profissional",
       "Até 10 profissionais",
       "Gestão de equipe",
-      "Secretárias e admins",
+      "Secretários(as) e admins",
       "Multi-agenda",
       "Faturamento integrado",
       "API personalizada",

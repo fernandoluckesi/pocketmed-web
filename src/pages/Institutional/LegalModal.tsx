@@ -259,7 +259,7 @@ export function SecurityStandardsContent() {
         <li>Política de senha forte: mínimo 8 caracteres com maiusculas, minusculas, numeros e simbolos;</li>
         <li>Verificação de email obrigatória por código de 6 digitos;</li>
         <li>Verificação por código para operações criticas (exclusão de conta);</li>
-        <li>Controle de acesso baseado em papeis (RBAC): médico, admin, secretaria, paciente.</li>
+        <li>Controle de acesso baseado em papeis (RBAC): médico, admin, secretário(a), paciente.</li>
       </ul>
 
       <h3 className="text-lg font-bold text-slate-900">4. Sistema de Auditoria</h3>
@@ -290,7 +290,7 @@ export function SecurityStandardsContent() {
         <li>Profissionais só acessam prontuários com autorização explícita do paciente;</li>
         <li>Pacientes podem revogar acesso a qualquer momento;</li>
         <li>Tentativas de acesso não autorizado sao registradas e auditadas;</li>
-        <li>Secretarias não possuem acesso a dados clinicos.</li>
+        <li>Secretários(as) não possuem acesso a dados clinicos.</li>
       </ul>
 
       <h3 className="text-lg font-bold text-slate-900">7. Infraestrutura</h3>
