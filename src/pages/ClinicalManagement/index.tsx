@@ -10,6 +10,9 @@ import {
   UserPlus,
   X,
   Loader2,
+  AlertTriangle,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { MainLayout } from "../../components/MainLayout";
@@ -141,6 +144,7 @@ function MembersSection({
   onRoleFilterChange,
   onPageChange,
   onRemove,
+  onEdit,
 }: {
   members: Member[];
   total: number;
@@ -152,6 +156,7 @@ function MembersSection({
   onRoleFilterChange: (v: string) => void;
   onPageChange: (p: number) => void;
   onRemove: (membershipId: string) => void;
+  onEdit: (member: Member) => void;
 }) {
   const getInitials = (name: string) =>
     name
@@ -271,12 +276,24 @@ function MembersSection({
                       </span>
                     </td>
                     <td className="px-8 py-5 text-right">
-                      <button
-                        onClick={() => onRemove(member.id)}
-                        className="text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 cursor-pointer"
-                      >
-                        Remover
-                      </button>
+                      {member.role !== "admin" && (
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => onEdit(member)}
+                            className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-primary transition-all cursor-pointer border-none bg-transparent"
+                            title="Editar"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            onClick={() => onRemove(member.id)}
+                            className="p-2 rounded-lg hover:bg-red-50 text-slate-500 hover:text-red-600 transition-all cursor-pointer border-none bg-transparent"
+                            title="Remover"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );
@@ -489,54 +506,94 @@ export default function ClinicalManagement() {
   }, [loadMembers]);
 
   const handleRemove = async (membershipId: string) => {
-    if (!confirm("Tem certeza que deseja remover este membro?")) return;
+    setRemoveTarget(membershipId);
+  };
+
+  const confirmRemove = async () => {
+    if (!removeTarget) return;
     try {
-      await api(`/clinic-admin/members/${membershipId}`, { method: "DELETE" });
+      // Try new secretaries endpoint first, fall back to clinic-admin
+      try {
+        await api(`/secretaries/${removeTarget}`, { method: "DELETE" });
+      } catch {
+        await api(`/clinic-admin/members/${removeTarget}`, { method: "DELETE" });
+      }
       loadMembers();
       loadOverview();
     } catch {
       // ignore
+    } finally {
+      setRemoveTarget(null);
     }
   };
 
-  // --- Add Member Modal ---
+  const [removeTarget, setRemoveTarget] = useState<string | null>(null);
+
+  // --- Add/Edit Member Modal ---
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [addForm, setAddForm] = useState({ name: "", email: "", phone: "" });
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState("");
   const [addSuccess, setAddSuccess] = useState("");
+
+  const handleEdit = (member: Member) => {
+    setEditingMember(member);
+    setAddForm({
+      name: member.professional?.name || "",
+      email: member.professional?.email || "",
+      phone: "",
+    });
+    setAddError("");
+    setAddSuccess("");
+    setShowAddModal(true);
+  };
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
     setAddError("");
     setAddSuccess("");
 
-    if (!addForm.name.trim() || !addForm.email.trim() || !addForm.phone.trim()) {
+    if (!addForm.name.trim() || !addForm.email.trim() || (!editingMember && !addForm.phone.trim())) {
       setAddError("Preencha todos os campos.");
       return;
     }
 
     setAddLoading(true);
     try {
-      await api("/clinic-admin/members", {
-        method: "POST",
-        body: JSON.stringify({
-          role: "secretary",
-          name: addForm.name.trim(),
-          email: addForm.email.trim(),
-          phone: addForm.phone.replace(/\D/g, ""),
-        }),
-      });
-      setAddSuccess("Secretário(a) cadastrado(a)! Um código de acesso foi enviado para o email informado.");
+      if (editingMember) {
+        // Update via PATCH /secretaries/:id
+        await api(`/secretaries/${editingMember.id}`, {
+          method: "PATCH",
+          body: {
+            name: addForm.name.trim(),
+            email: addForm.email.trim(),
+            ...(addForm.phone.trim() ? { phone: addForm.phone.replace(/\D/g, "") } : {}),
+          },
+        });
+        setAddSuccess("Secretário(a) atualizado(a) com sucesso!");
+      } else {
+        // Create via POST /secretaries
+        await api("/secretaries", {
+          method: "POST",
+          body: {
+            name: addForm.name.trim(),
+            email: addForm.email.trim(),
+            phone: addForm.phone.replace(/\D/g, ""),
+          },
+        });
+        setAddSuccess("Secretário(a) cadastrado(a)! Um código de acesso foi enviado para o email informado.");
+      }
       setAddForm({ name: "", email: "", phone: "" });
+      setEditingMember(null);
       loadMembers();
       loadOverview();
     } catch (err: any) {
       const msg = err?.message || "";
-      if (msg.includes("already registered") || msg.includes("Conflict")) {
-        setAddError("Este email já está cadastrado na plataforma.");
+      if (msg.includes("already") || msg.includes("Conflict") || msg.includes("cadastrado")) {
+        setAddError("Este email já está cadastrado.");
       } else {
-        setAddError("Erro ao adicionar membro. Tente novamente.");
+        setAddError(editingMember ? "Erro ao atualizar. Tente novamente." : "Erro ao adicionar. Tente novamente.");
       }
     } finally {
       setAddLoading(false);
@@ -571,7 +628,7 @@ export default function ClinicalManagement() {
             </p>
           </div>
           <button
-            onClick={() => { setShowAddModal(true); setAddError(""); setAddSuccess(""); }}
+            onClick={() => { setShowAddModal(true); setAddError(""); setAddSuccess(""); setEditingMember(null); setAddForm({ name: "", email: "", phone: "" }); }}
             className="bg-primary text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer border-none"
           >
             <UserPlus size={18} />
@@ -598,6 +655,7 @@ export default function ClinicalManagement() {
           }}
           onPageChange={setPage}
           onRemove={handleRemove}
+          onEdit={handleEdit}
         />
 
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
@@ -616,7 +674,7 @@ export default function ClinicalManagement() {
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowAddModal(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full">
             <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
-              <h2 className="text-lg font-extrabold text-slate-900">Adicionar Secretário(a)</h2>
+              <h2 className="text-lg font-extrabold text-slate-900">{editingMember ? "Editar Secretário(a)" : "Adicionar Secretário(a)"}</h2>
               <button
                 onClick={() => setShowAddModal(false)}
                 className="p-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer border-none bg-transparent"
@@ -666,7 +724,7 @@ export default function ClinicalManagement() {
                 />
               </div>
               <p className="text-xs text-slate-500">
-                Um código de primeiro acesso será enviado para o email informado. O secretário(a) poderá criar sua senha através desse código.
+                {editingMember ? "Atualize os dados do secretário(a)." : "Um código de primeiro acesso será enviado para o email informado."}
               </p>
               <div className="flex gap-3 pt-2">
                 <button
@@ -682,10 +740,40 @@ export default function ClinicalManagement() {
                   className="flex-1 bg-primary text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors cursor-pointer border-none disabled:opacity-60 flex items-center justify-center gap-2"
                 >
                   {addLoading && <Loader2 size={16} className="animate-spin" />}
-                  {addLoading ? "Enviando..." : "Adicionar"}
+                  {addLoading ? "Salvando..." : editingMember ? "Salvar" : "Adicionar"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Remove Confirmation Dialog */}
+      {removeTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setRemoveTarget(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center">
+            <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-5">
+              <AlertTriangle className="text-red-600" size={28} />
+            </div>
+            <h3 className="text-lg font-extrabold text-slate-900 mb-2">Remover membro</h3>
+            <p className="text-sm text-slate-600 mb-6">
+              Tem certeza que deseja remover este membro da clínica? Ele perderá o acesso à plataforma.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setRemoveTarget(null)}
+                className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-200 transition-colors cursor-pointer border-none"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmRemove}
+                className="flex-1 bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-red-700 transition-colors cursor-pointer border-none"
+              >
+                Remover
+              </button>
+            </div>
           </div>
         </div>
       )}
