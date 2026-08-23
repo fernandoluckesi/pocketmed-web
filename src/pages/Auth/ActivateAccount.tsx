@@ -69,9 +69,25 @@ export default function ActivateAccount() {
     validationSchema: codeSchema,
     onSubmit: async (values, { setSubmitting }) => {
       setError("");
-      setCode(values.code);
-      setStep("password");
-      setSubmitting(false);
+      try {
+        await api.post("/auth/validate-code", {
+          email,
+          verificationCode: values.code,
+        });
+        setCode(values.code);
+        setStep("password");
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || "";
+        if (msg.includes("expired") || msg.includes("expirado")) {
+          setError("Código expirado. Solicite um novo código ao administrador.");
+        } else if (msg.includes("Invalid") || msg.includes("inválido")) {
+          setError("Código inválido. Verifique e tente novamente.");
+        } else {
+          setError("Erro ao validar código. Tente novamente.");
+        }
+      } finally {
+        setSubmitting(false);
+      }
     },
   });
 
