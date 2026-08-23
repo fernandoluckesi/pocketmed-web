@@ -586,6 +586,7 @@ export default function ClinicalManagement() {
       }
       setAddForm({ name: "", email: "", phone: "" });
       setEditingMember(null);
+      setShowAddModal(false);
       loadMembers();
       loadOverview();
     } catch (err: any) {
@@ -718,7 +719,15 @@ export default function ClinicalManagement() {
                 <input
                   type="tel"
                   value={addForm.phone}
-                  onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                    let masked = "";
+                    if (digits.length > 0) masked += `(${digits.slice(0, 2)}`;
+                    if (digits.length >= 2) masked += `) `;
+                    if (digits.length > 2) masked += digits.slice(2, 7);
+                    if (digits.length > 7) masked += `-${digits.slice(7, 11)}`;
+                    setAddForm({ ...addForm, phone: masked });
+                  }}
                   placeholder="(11) 99999-9999"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
                 />
