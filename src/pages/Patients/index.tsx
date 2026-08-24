@@ -40,7 +40,6 @@ import { useAuth } from "../../contexts/AuthContext";
 
 // --- Types ---
 
-
 type TabType = "Meus Pacientes" | "Pesquisar Pacientes" | "Solicitações";
 
 // --- Search Tab Components ---
@@ -56,34 +55,31 @@ function SearchHero({
     <motion.section
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary via-primary to-[#2b5aed] p-12 text-white shadow-2xl shadow-primary/20"
+      className="space-y-4"
     >
-      <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-[30rem] h-[30rem] bg-white/10 rounded-full blur-[80px]" />
-      <div className="relative z-10 max-w-3xl mx-auto text-center space-y-8">
-        <div className="space-y-4">
-          <h3 className="text-4xl lg:text-5xl font-black font-display tracking-tighter">
-            Encontre Novos Pacientes
-          </h3>
-          <p className="text-white/80 text-lg font-medium">
-            Pesquise na base global do PocketMed por nome ou CPF do paciente.
-          </p>
+      <div className="space-y-2">
+        <h3 className="text-2xl font-black font-display tracking-tight text-gray-900">
+          Encontre Novos Pacientes
+        </h3>
+        <p className="text-gray-500 text-sm font-medium">
+          Pesquise na base global do PocketMed por nome ou CPF do paciente.
+        </p>
+      </div>
+      <div className="flex flex-col md:flex-row gap-2 max-w-lg">
+        <div className="flex-1 relative flex items-center">
+          <Users className="absolute left-3 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Nome ou CPF do paciente..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-gray-900 text-sm placeholder:text-gray-400 outline-none focus:border-primary focus:ring-1 focus:ring-primary/10 transition-all"
+          />
         </div>
-        <div className="glass p-2 rounded-2xl flex flex-col md:flex-row gap-2 shadow-2xl">
-          <div className="flex-1 relative flex items-center">
-            <Users className="absolute left-4 w-5 h-5 text-white/60" />
-            <input
-              type="text"
-              placeholder="Nome ou CPF do paciente..."
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full bg-transparent border-none focus:ring-0 pl-12 py-4 text-white placeholder:text-white/60 text-lg"
-            />
-          </div>
-          <button className="bg-white text-primary px-10 py-4 rounded-xl font-bold hover:bg-white/90 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-black/10">
-            <Search className="w-5 h-5" />
-            Pesquisar
-          </button>
-        </div>
+        <button className="bg-primary text-white px-6 py-3 rounded-xl font-semibold text-sm hover:bg-primary/90 transition-all active:scale-95 flex items-center justify-center gap-2">
+          <Search className="w-4 h-4" />
+          Pesquisar
+        </button>
       </div>
     </motion.section>
   );
@@ -429,7 +425,10 @@ function RequestsTable({
                         </button>
                       )}
                       {req.status === "approved" && (
-                        <span className="text-slate-300" title="Acesso concedido">
+                        <span
+                          className="text-slate-300"
+                          title="Acesso concedido"
+                        >
                           <Ban size={16} />
                         </span>
                       )}
@@ -699,7 +698,9 @@ function AddPatientModal({
                   type="tel"
                   placeholder="(11) 98877-6655"
                   value={formik.values.phone}
-                  onChange={(e) => formik.setFieldValue("phone", formatPhone(e.target.value))}
+                  onChange={(e) =>
+                    formik.setFieldValue("phone", formatPhone(e.target.value))
+                  }
                   onBlur={formik.handleBlur("phone")}
                 />
                 {formik.touched.phone && formik.errors.phone && (
@@ -857,95 +858,94 @@ function SearchTabContent({
     <>
       <SearchHero searchQuery={searchQuery} onSearchChange={setSearchQuery} />
       {hasSearchQuery && (
-      <section className="space-y-8 mt-10">
-        <div className="flex justify-between items-end">
-          <div>
-            <p className="text-primary font-bold text-xs uppercase tracking-[0.2em] mb-1">
-              Resultados da Busca
-            </p>
-            <h4 className="text-3xl font-black font-display tracking-tight">
-              {searchLoading
-                ? "Buscando..."
-                : `${displayResults.length} Pacientes Encontrados`}
-            </h4>
+        <section className="space-y-8 mt-10">
+          <div className="flex justify-between items-end">
+            <div>
+              <p className="text-primary font-bold text-xs uppercase tracking-[0.2em] mb-1">
+                Resultados da Busca
+              </p>
+              <h4 className="text-3xl font-black font-display tracking-tight">
+                {searchLoading
+                  ? "Buscando..."
+                  : `${displayResults.length} Pacientes Encontrados`}
+              </h4>
+            </div>
+            <div className="flex gap-2 bg-white p-1 rounded-xl shadow-sm border border-gray-100">
+              <button
+                onClick={() => setView("grid")}
+                className={`p-2 rounded-lg transition-all ${view === "grid" ? "bg-primary text-white shadow-md" : "text-gray-400 hover:text-primary"}`}
+              >
+                <LayoutGrid className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setView("list")}
+                className={`p-2 rounded-lg transition-all ${view === "list" ? "bg-primary text-white shadow-md" : "text-gray-400 hover:text-primary"}`}
+              >
+                <List className="w-5 h-5" />
+              </button>
+            </div>
           </div>
-          <div className="flex gap-2 bg-white p-1 rounded-xl shadow-sm border border-gray-100">
-            <button
-              onClick={() => setView("grid")}
-              className={`p-2 rounded-lg transition-all ${view === "grid" ? "bg-primary text-white shadow-md" : "text-gray-400 hover:text-primary"}`}
-            >
-              <LayoutGrid className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setView("list")}
-              className={`p-2 rounded-lg transition-all ${view === "list" ? "bg-primary text-white shadow-md" : "text-gray-400 hover:text-primary"}`}
-            >
-              <List className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
 
-        {/* Loading state for search */}
-        {hasSearchQuery && searchLoading && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 text-primary animate-spin" />
-            <span className="ml-3 text-slate-500 font-medium">
-              Buscando pacientes...
-            </span>
-          </div>
-        )}
+          {/* Loading state for search */}
+          {hasSearchQuery && searchLoading && (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              <span className="ml-3 text-slate-500 font-medium">
+                Buscando pacientes...
+              </span>
+            </div>
+          )}
 
-        {/* API search results */}
-        {hasSearchQuery && !searchLoading && displayResults.length > 0 && (
-          <motion.div
-            layout
-            className={
-              view === "grid"
-                ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
-                : "space-y-4"
-            }
-          >
-            <AnimatePresence>
-              {displayResults.map((patient, idx) =>
-                view === "grid" ? (
-                  <motion.div
-                    key={patient.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.1 }}
-                  >
-                    <APIPatientCard
+          {/* API search results */}
+          {hasSearchQuery && !searchLoading && displayResults.length > 0 && (
+            <motion.div
+              layout
+              className={
+                view === "grid"
+                  ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
+                  : "space-y-4"
+              }
+            >
+              <AnimatePresence>
+                {displayResults.map((patient, idx) =>
+                  view === "grid" ? (
+                    <motion.div
+                      key={patient.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.1 }}
+                    >
+                      <APIPatientCard
+                        patient={patient}
+                        accessStatus={getAccessStatus(patient.id)}
+                        onRequestAccess={handleRequestAccess}
+                      />
+                    </motion.div>
+                  ) : (
+                    <APIPatientListRow
+                      key={patient.id}
                       patient={patient}
+                      index={idx}
                       accessStatus={getAccessStatus(patient.id)}
                       onRequestAccess={handleRequestAccess}
                     />
-                  </motion.div>
-                ) : (
-                  <APIPatientListRow
-                    key={patient.id}
-                    patient={patient}
-                    index={idx}
-                    accessStatus={getAccessStatus(patient.id)}
-                    onRequestAccess={handleRequestAccess}
-                  />
-                ),
-              )}
-            </AnimatePresence>
-          </motion.div>
-        )}
+                  ),
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
 
-        {/* Empty search results */}
-        {hasSearchQuery && !searchLoading && displayResults.length === 0 && (
-          <EmptyState
-            icon={Search}
-            title="Nenhum resultado encontrado"
-            description="Tente buscar com outros termos ou verifique a ortografia."
-          />
-        )}
+          {/* Empty search results */}
+          {hasSearchQuery && !searchLoading && displayResults.length === 0 && (
+            <EmptyState
+              icon={Search}
+              title="Nenhum resultado encontrado"
+              description="Tente buscar com outros termos ou verifique a ortografia."
+            />
+          )}
 
-        {/* No mock results — only show when user searches */}
-
-      </section>
+          {/* No mock results — only show when user searches */}
+        </section>
       )}
 
       {/* Request Access Modal */}
@@ -1082,9 +1082,11 @@ function MyPatientsContent({
   // Render from API data
   if (hasAPIData) {
     const filteredPatients = searchFilter.trim()
-      ? patients.filter((p) =>
-          p.name.toLowerCase().includes(searchFilter.toLowerCase()) ||
-          (p.email && p.email.toLowerCase().includes(searchFilter.toLowerCase()))
+      ? patients.filter(
+          (p) =>
+            p.name.toLowerCase().includes(searchFilter.toLowerCase()) ||
+            (p.email &&
+              p.email.toLowerCase().includes(searchFilter.toLowerCase())),
         )
       : patients;
 
@@ -1149,14 +1151,19 @@ function MyPatientsContent({
                     </p>
                   </div>
                   <div className="shrink-0">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${patient.isShadow ? "bg-blue-50 text-blue-700" : "bg-green-100 text-green-700"}`}>
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${patient.isShadow ? "bg-blue-50 text-blue-700" : "bg-green-100 text-green-700"}`}
+                    >
                       <CheckCircle size={12} />
                       {patient.isShadow ? "Local" : "Ativo"}
                       {patient.isShadow && (
                         <span className="relative group/tip cursor-help">
                           <Info size={12} className="text-blue-500" />
                           <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-slate-900 text-white text-[10px] font-normal normal-case rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 text-center leading-relaxed shadow-lg">
-                            Este paciente está cadastrado somente para visualização deste médico. Para compartilhar com outros profissionais, o paciente deve baixar o aplicativo PocketMed no celular.
+                            Este paciente está cadastrado somente para
+                            visualização deste médico. Para compartilhar com
+                            outros profissionais, o paciente deve baixar o
+                            aplicativo PocketMed no celular.
                           </span>
                         </span>
                       )}
@@ -1248,7 +1255,10 @@ export default function Patients() {
                   key={tab}
                   onClick={() => {
                     setActiveTab(tab);
-                    if (tab === "Meus Pacientes" && refetchPatientsRef.current) {
+                    if (
+                      tab === "Meus Pacientes" &&
+                      refetchPatientsRef.current
+                    ) {
                       refetchPatientsRef.current();
                     }
                   }}
