@@ -41,7 +41,10 @@ import { SearchableSelect } from "../../components/ui/SearchableSelect";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 import { EXAM_CATALOG } from "../../data/exam-catalog";
 import { useAuth } from "../../contexts/AuthContext";
-import { generateExamPdf, generatePrescriptionPdf } from "../../utils/generate-pdf";
+import {
+  generateExamPdf,
+  generatePrescriptionPdf,
+} from "../../utils/generate-pdf";
 import { api } from "../../services/api";
 
 // --- Types ---
@@ -90,99 +93,15 @@ interface MedicalDocument {
   type: "Exame" | "Laudo" | "Receita";
 }
 
-// --- Mock Data (fallback) ---
-
-const mockPatient: Patient = {
-  id: "MED-88291",
-  name: "Helena S. Ferreira",
-  birthDate: "12 Mai 1985",
-  age: 38,
-  bloodType: "O+ Positivo",
-  contact: "(11) 98822-1020",
-  allergies: ["Penicilina", "Ácaros"],
-  imageUrl:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCwD3agWDI7SEvl1bpLwdUioc7oKfWMda1hFdviDdkL__XzNKtH3o-6rtY3rBLOxixtQLTlfswQ3TiMHYIALBh9da4nqcC1KzWx3LnsTbsBJL0cKxJgyoZISEnSVBSQVWzIEat6E6bGqLD9P0yRbIqMaV0gvzeFtzjwxcVMeQMDdFSqqz05Kcybg76U_rc-ipke32alRy7MLsl4gfqg5x4SZ-jBdBy4N8ibE9_mF6fBXW_veVdzKPr9AoZtyjKC33fjCN7x1x6fImN1",
-  verified: true,
-};
-
-const mockConsultations: Consultation[] = [
-  {
-    id: "C-1",
-    patientId: "MED-88291",
-    dateDay: "14",
-    dateMonth: "OUT",
-    title: "Check-up Geral Trimestral",
-    doctorName: "Dr. Ricardo Fontes",
-    specialty: "Cardiologia",
-    locationOrTime: "Unidade Paulista",
-    status: "Concluído",
-  },
-  {
-    id: "C-2",
-    patientId: "MED-88291",
-    dateDay: "02",
-    dateMonth: "NOV",
-    title: "Retorno Exames de Sangue",
-    doctorName: "Dra. Alice Moraes",
-    specialty: "Clínica",
-    locationOrTime: "09:30 AM",
-    status: "Agendado",
-  },
-];
-
-const mockMedications: Medication[] = [
-  {
-    id: "M-1",
-    patientId: "MED-88291",
-    name: "Losartana Potássica",
-    dosage: "50mg",
-    frequency: "1 comprimido ao dia",
-    type: "Contínuo",
-    nextDose: "Amanhã, 08:00",
-    stockInfo: "15 dias restantes",
-  },
-  {
-    id: "M-2",
-    patientId: "MED-88291",
-    name: "Vitamina D3",
-    dosage: "2.000 UI",
-    frequency: "1 gota ao dia",
-    type: "Suplemento",
-    nextDose: "Hoje, 20:00",
-    stockInfo: "Estoque regular",
-  },
-];
-
-const mockDocuments: MedicalDocument[] = [
-  {
-    id: "D-1",
-    patientId: "MED-88291",
-    title: "Hemograma Completo.pdf",
-    date: "12 Out 2023",
-    source: "Lab. Fleury",
-    type: "Exame",
-  },
-  {
-    id: "D-2",
-    patientId: "MED-88291",
-    title: "Ecocardiograma_Doppler.pdf",
-    date: "05 Out 2023",
-    source: "Hosp. Albert Einstein",
-    type: "Laudo",
-  },
-  {
-    id: "D-3",
-    patientId: "MED-88291",
-    title: "Receita_Padrão_Losartana.pdf",
-    date: "14 Ago 2023",
-    source: "Dr. Ricardo F.",
-    type: "Receita",
-  },
-];
-
 // --- Components ---
 
-function PatientHeroFromAPI({ patient, onEdit }: { patient: PatientFromAPI; onEdit?: () => void }) {
+function PatientHeroFromAPI({
+  patient,
+  onEdit,
+}: {
+  patient: PatientFromAPI;
+  onEdit?: () => void;
+}) {
   const navigate = useNavigate();
   const [now] = useState(() => Date.now());
   const age = patient.birthDate
@@ -222,7 +141,9 @@ function PatientHeroFromAPI({ patient, onEdit }: { patient: PatientFromAPI; onEd
               <span className="relative group/tip cursor-help">
                 <Info size={12} className="text-blue-500" />
                 <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-slate-900 text-white text-[10px] font-normal normal-case rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 text-center leading-relaxed shadow-lg">
-                  Este paciente está cadastrado somente para visualização deste médico. Para compartilhar com outros profissionais, o paciente deve baixar o aplicativo PocketMed no celular.
+                  Este paciente está cadastrado somente para visualização deste
+                  médico. Para compartilhar com outros profissionais, o paciente
+                  deve baixar o aplicativo PocketMed no celular.
                 </span>
               </span>
             </span>
@@ -293,27 +214,35 @@ function PatientHeroFromAPI({ patient, onEdit }: { patient: PatientFromAPI; onEd
         </div>
 
         {/* Responsáveis (for dependents) */}
-        {(patient as any).isDependent && (patient as any).responsibles?.length > 0 && (
-          <div className="flex items-center gap-3 mt-4">
-            <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Responsáveis:</span>
-            <div className="flex gap-2 flex-wrap">
-              {(patient as any).responsibles.map((r: { id: string; name: string }) => (
-                <button
-                  key={r.id}
-                  onClick={() => navigate(`/patients/${r.id}`)}
-                  className="text-sm text-primary font-semibold bg-primary/5 px-3 py-1 rounded-full hover:bg-primary/10 transition-colors cursor-pointer border-none"
-                >
-                  {r.name}
-                </button>
-              ))}
+        {(patient as any).isDependent &&
+          (patient as any).responsibles?.length > 0 && (
+            <div className="flex items-center gap-3 mt-4">
+              <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">
+                Responsáveis:
+              </span>
+              <div className="flex gap-2 flex-wrap">
+                {(patient as any).responsibles.map(
+                  (r: { id: string; name: string }) => (
+                    <button
+                      key={r.id}
+                      onClick={() => navigate(`/patients/${r.id}`)}
+                      className="text-sm text-primary font-semibold bg-primary/5 px-3 py-1 rounded-full hover:bg-primary/10 transition-colors cursor-pointer border-none"
+                    >
+                      {r.name}
+                    </button>
+                  ),
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
 
       {onEdit && (
         <div className="flex gap-2 self-start pt-2">
-          <button onClick={onEdit} className="p-3 rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 transition-colors cursor-pointer border-none">
+          <button
+            onClick={onEdit}
+            className="p-3 rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 transition-colors cursor-pointer border-none"
+          >
             <Edit className="w-4 h-4" />
           </button>
         </div>
@@ -448,7 +377,9 @@ function AppointmentsSection({
             key={apt.id}
             onClick={() => onSelect(apt)}
             className={`group bg-white hover:bg-slate-50 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6 transition-all duration-300 border border-slate-100 shadow-sm cursor-pointer ${
-              apt.status === "scheduled" || apt.status === "approved" ? "border-l-4 border-l-primary" : ""
+              apt.status === "scheduled" || apt.status === "approved"
+                ? "border-l-4 border-l-primary"
+                : ""
             }`}
           >
             <div className="flex flex-col items-center justify-center bg-white w-20 h-20 rounded-2xl shadow-sm border border-slate-100 flex-shrink-0">
@@ -567,9 +498,20 @@ function MedicationsSection({
   );
 }
 
-function ExamsSection({ exams, patientId: _pid, onRefresh }: { exams: PatientFromAPI["exams"]; patientId: string; onRefresh: () => void }) {
+function ExamsSection({
+  exams,
+  patientId: _pid,
+  onRefresh,
+}: {
+  exams: PatientFromAPI["exams"];
+  patientId: string;
+  onRefresh: () => void;
+}) {
   const [openBatch, setOpenBatch] = useState<string | null>(null);
-  const [resultModal, setResultModal] = useState<{ examId: string; examName: string } | null>(null);
+  const [resultModal, setResultModal] = useState<{
+    examId: string;
+    examName: string;
+  } | null>(null);
 
   if (!exams || exams.length === 0) {
     return (
@@ -581,7 +523,12 @@ function ExamsSection({ exams, patientId: _pid, onRefresh }: { exams: PatientFro
   }
 
   // Group exams by batchId
-  const groups: { key: string; description: string; date: string; exams: typeof exams }[] = [];
+  const groups: {
+    key: string;
+    description: string;
+    date: string;
+    exams: typeof exams;
+  }[] = [];
   const batchMap = new Map<string, typeof exams>();
   const soloExams: typeof exams = [];
 
@@ -612,7 +559,8 @@ function ExamsSection({ exams, patientId: _pid, onRefresh }: { exams: PatientFro
     });
   }
 
-  const allCompleted = (batchExams: typeof exams) => batchExams.every((e) => e.status === "completed");
+  const allCompleted = (batchExams: typeof exams) =>
+    batchExams.every((e) => e.status === "completed");
 
   return (
     <>
@@ -622,7 +570,10 @@ function ExamsSection({ exams, patientId: _pid, onRefresh }: { exams: PatientFro
           const completed = allCompleted(group.exams);
 
           return (
-            <div key={group.key} className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+            <div
+              key={group.key}
+              className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm"
+            >
               {/* Accordion Header */}
               <button
                 type="button"
@@ -630,17 +581,33 @@ function ExamsSection({ exams, patientId: _pid, onRefresh }: { exams: PatientFro
                 className="w-full p-5 flex items-center justify-between text-left cursor-pointer border-none bg-transparent hover:bg-slate-50 transition-colors"
               >
                 <div className="min-w-0">
-                  <p className="font-semibold text-sm text-slate-800 truncate">{group.description}</p>
+                  <p className="font-semibold text-sm text-slate-800 truncate">
+                    {group.description}
+                  </p>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    {new Date(group.date).toLocaleDateString("pt-BR")} • {group.exams.length} exame{group.exams.length > 1 ? "s" : ""}
+                    {new Date(group.date).toLocaleDateString("pt-BR")} •{" "}
+                    {group.exams.length} exame
+                    {group.exams.length > 1 ? "s" : ""}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${completed ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${completed ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}
+                  >
                     {completed ? "Realizado" : "Pendente"}
                   </span>
-                  <svg className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <svg
+                    className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </div>
               </button>
@@ -649,9 +616,14 @@ function ExamsSection({ exams, patientId: _pid, onRefresh }: { exams: PatientFro
               {isOpen && (
                 <div className="px-5 pb-5 border-t border-slate-100 pt-4 space-y-3">
                   {group.exams.map((exam) => (
-                    <div key={exam.id} className="flex items-center justify-between py-2">
+                    <div
+                      key={exam.id}
+                      className="flex items-center justify-between py-2"
+                    >
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-slate-700">{exam.title}</p>
+                        <p className="text-sm font-medium text-slate-700">
+                          {exam.title}
+                        </p>
                         <p className="text-[11px] text-slate-400">
                           {exam.status === "completed" && exam.completedAt
                             ? `Realizado em ${new Date(exam.completedAt).toLocaleDateString("pt-BR")}`
@@ -661,15 +633,25 @@ function ExamsSection({ exams, patientId: _pid, onRefresh }: { exams: PatientFro
                       {exam.status !== "completed" && (
                         <button
                           type="button"
-                          onClick={() => setResultModal({ examId: exam.id, examName: exam.title })}
+                          onClick={() =>
+                            setResultModal({
+                              examId: exam.id,
+                              examName: exam.title,
+                            })
+                          }
                           className="text-xs font-semibold text-primary hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
                         >
                           Inserir resultado
                         </button>
                       )}
-                      {exam.status === "completed" && exam.resultFiles && exam.resultFiles.length > 0 && (
-                        <span className="text-[10px] text-green-600 font-medium">{exam.resultFiles.length} arquivo{exam.resultFiles.length > 1 ? "s" : ""}</span>
-                      )}
+                      {exam.status === "completed" &&
+                        exam.resultFiles &&
+                        exam.resultFiles.length > 0 && (
+                          <span className="text-[10px] text-green-600 font-medium">
+                            {exam.resultFiles.length} arquivo
+                            {exam.resultFiles.length > 1 ? "s" : ""}
+                          </span>
+                        )}
                     </div>
                   ))}
                 </div>
@@ -685,7 +667,10 @@ function ExamsSection({ exams, patientId: _pid, onRefresh }: { exams: PatientFro
           examId={resultModal.examId}
           examName={resultModal.examName}
           onClose={() => setResultModal(null)}
-          onSaved={() => { setResultModal(null); onRefresh(); }}
+          onSaved={() => {
+            setResultModal(null);
+            onRefresh();
+          }}
         />
       )}
     </>
@@ -694,7 +679,17 @@ function ExamsSection({ exams, patientId: _pid, onRefresh }: { exams: PatientFro
 
 // --- Exam Result Modal ---
 
-function ExamResultModal({ examId, examName, onClose, onSaved }: { examId: string; examName: string; onClose: () => void; onSaved: () => void }) {
+function ExamResultModal({
+  examId,
+  examName,
+  onClose,
+  onSaved,
+}: {
+  examId: string;
+  examName: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const [completedAt, setCompletedAt] = useState("");
   const [files, setFiles] = useState<FileList | null>(null);
   const [saving, setSaving] = useState(false);
@@ -710,11 +705,16 @@ function ExamResultModal({ examId, examName, onClose, onSaved }: { examId: strin
           formData.append("files", files[i]);
         }
       }
-      await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3000"}/exams/${examId}/result`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${localStorage.getItem("pocketmed_token")}` },
-        body: formData,
-      });
+      await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:3000"}/exams/${examId}/result`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("pocketmed_token")}`,
+          },
+          body: formData,
+        },
+      );
       onSaved();
     } catch (err) {
       console.error("Erro ao enviar resultado:", err);
@@ -954,17 +954,29 @@ function DocumentsTab({ documents }: { documents: MedicalDocument[] }) {
 
 // --- Exam Request Form ---
 
-function ExamRequestForm({ onClose, patientName, patientId, onSaved }: { onClose: () => void; patientName: string; patientId: string; onSaved: () => void }) {
+function ExamRequestForm({
+  onClose,
+  patientName,
+  patientId,
+  onSaved,
+}: {
+  onClose: () => void;
+  patientName: string;
+  patientId: string;
+  onSaved: () => void;
+}) {
   const { user } = useAuth();
   const [examNames, setExamNames] = useState<string[]>([""]);
   const [description, setDescription] = useState("");
   const [_file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const examOptions = [...EXAM_CATALOG].sort((a, b) => a.localeCompare(b, "pt-BR")).map((name) => ({
-    value: name,
-    label: name,
-  }));
+  const examOptions = [...EXAM_CATALOG]
+    .sort((a, b) => a.localeCompare(b, "pt-BR"))
+    .map((name) => ({
+      value: name,
+      label: name,
+    }));
 
   function handleExamChange(index: number, value: string) {
     const updated = [...examNames];
@@ -1068,7 +1080,9 @@ function ExamRequestForm({ onClose, patientName, patientId, onSaved }: { onClose
 
       <div className="flex items-center gap-4 py-2">
         <div className="flex-1 h-px bg-slate-200" />
-        <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Ou</span>
+        <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">
+          Ou
+        </span>
         <div className="flex-1 h-px bg-slate-200" />
       </div>
 
@@ -1110,11 +1124,16 @@ const FREQUENCY_OPTIONS = [
 
 function getTimeSlotsCount(frequency: string): number {
   switch (frequency) {
-    case "daily": return 1;
-    case "twice_daily": return 2;
-    case "three_times_daily": return 3;
-    case "four_times_daily": return 4;
-    default: return 1;
+    case "daily":
+      return 1;
+    case "twice_daily":
+      return 2;
+    case "three_times_daily":
+      return 3;
+    case "four_times_daily":
+      return 4;
+    default:
+      return 1;
   }
 }
 
@@ -1132,13 +1151,31 @@ function generateDistributedTimes(count: number): string[] {
   });
 }
 
-function PrescriptionForm({ onClose, patientName }: { onClose: () => void; patientName: string }) {
+function PrescriptionForm({
+  onClose,
+  patientName,
+}: {
+  onClose: () => void;
+  patientName: string;
+}) {
   const { user } = useAuth();
   const [medications, setMedications] = useState<MedFormItem[]>([
-    { name: "", dosage: "", frequency: "daily", times: ["08:00"], startDate: "", endDate: "", instructions: "" },
+    {
+      name: "",
+      dosage: "",
+      frequency: "daily",
+      times: ["08:00"],
+      startDate: "",
+      endDate: "",
+      instructions: "",
+    },
   ]);
 
-  function updateMed(index: number, field: keyof MedFormItem, value: string | string[]) {
+  function updateMed(
+    index: number,
+    field: keyof MedFormItem,
+    value: string | string[],
+  ) {
     const updated = [...medications];
     updated[index] = { ...updated[index], [field]: value };
     if (field === "frequency" && typeof value === "string") {
@@ -1157,7 +1194,18 @@ function PrescriptionForm({ onClose, patientName }: { onClose: () => void; patie
   }
 
   function addMed() {
-    setMedications([...medications, { name: "", dosage: "", frequency: "daily", times: ["08:00"], startDate: "", endDate: "", instructions: "" }]);
+    setMedications([
+      ...medications,
+      {
+        name: "",
+        dosage: "",
+        frequency: "daily",
+        times: ["08:00"],
+        startDate: "",
+        endDate: "",
+        instructions: "",
+      },
+    ]);
   }
 
   async function handleGeneratePdf() {
@@ -1192,7 +1240,9 @@ function PrescriptionForm({ onClose, patientName }: { onClose: () => void; patie
         <div key={index} className="space-y-4">
           {index > 0 && <div className="h-px bg-slate-100" />}
           <TextInput
-            label={index === 0 ? "Nome do Medicamento" : `Medicamento ${index + 1}`}
+            label={
+              index === 0 ? "Nome do Medicamento" : `Medicamento ${index + 1}`
+            }
             name={`med-nome-${index}`}
             value={med.name}
             onChange={(val) => updateMed(index, "name", val)}
@@ -1273,17 +1323,22 @@ function PrescriptionForm({ onClose, patientName }: { onClose: () => void; patie
         Gerar PDF da Receita
       </button>
 
-      <FormActions
-        onCancel={onClose}
-        submitLabel="Prescrever"
-      />
+      <FormActions onCancel={onClose} submitLabel="Prescrever" />
     </form>
   );
 }
 
 // --- Consulta Form ---
 
-function ConsultaForm({ onClose, patientId, onSaved }: { onClose: () => void; patientId: string; onSaved: () => void }) {
+function ConsultaForm({
+  onClose,
+  patientId,
+  onSaved,
+}: {
+  onClose: () => void;
+  patientId: string;
+  onSaved: () => void;
+}) {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [sintomas, setSintomas] = useState("");
@@ -1294,17 +1349,31 @@ function ConsultaForm({ onClose, patientId, onSaved }: { onClose: () => void; pa
   const [addMedication, setAddMedication] = useState(false);
   const [addExam, setAddExam] = useState(false);
   const [medications, setMedications] = useState<MedFormItem[]>([
-    { name: "", dosage: "", frequency: "daily", times: ["08:00"], startDate: "", endDate: "", instructions: "" },
+    {
+      name: "",
+      dosage: "",
+      frequency: "daily",
+      times: ["08:00"],
+      startDate: "",
+      endDate: "",
+      instructions: "",
+    },
   ]);
   const [examNames, setExamNames] = useState<string[]>([""]);
   const [submissionErrors, setSubmissionErrors] = useState<string[]>([]);
 
-  const examOptions = [...EXAM_CATALOG].sort((a, b) => a.localeCompare(b, "pt-BR")).map((name) => ({
-    value: name,
-    label: name,
-  }));
+  const examOptions = [...EXAM_CATALOG]
+    .sort((a, b) => a.localeCompare(b, "pt-BR"))
+    .map((name) => ({
+      value: name,
+      label: name,
+    }));
 
-  function handleMedicationChange(index: number, field: string, value: string | string[]) {
+  function handleMedicationChange(
+    index: number,
+    field: string,
+    value: string | string[],
+  ) {
     const updated = [...medications];
     updated[index] = { ...updated[index], [field]: value };
     if (field === "frequency" && typeof value === "string") {
@@ -1314,7 +1383,11 @@ function ConsultaForm({ onClose, patientId, onSaved }: { onClose: () => void; pa
     setMedications(updated);
   }
 
-  function handleMedTimeChange(medIndex: number, timeIndex: number, value: string) {
+  function handleMedTimeChange(
+    medIndex: number,
+    timeIndex: number,
+    value: string,
+  ) {
     const updated = [...medications];
     const times = [...updated[medIndex].times];
     times[timeIndex] = value;
@@ -1407,7 +1480,7 @@ function ConsultaForm({ onClose, patientId, onSaved }: { onClose: () => void; pa
   }
 
   return (
-    <form  className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
+    <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
       {submissionErrors.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 relative">
           <button
@@ -1436,7 +1509,10 @@ function ConsultaForm({ onClose, patientId, onSaved }: { onClose: () => void; pa
           onChange={setDate}
         />
         <div className="space-y-1.5">
-          <label htmlFor="consulta-hora" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+          <label
+            htmlFor="consulta-hora"
+            className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5"
+          >
             Hora
           </label>
           <input
@@ -1465,7 +1541,9 @@ function ConsultaForm({ onClose, patientId, onSaved }: { onClose: () => void; pa
           onChange={(e) => setFinalizada(e.target.checked)}
           className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/30 cursor-pointer accent-primary"
         />
-        <span className="text-sm font-medium text-slate-700">Consulta finalizada</span>
+        <span className="text-sm font-medium text-slate-700">
+          Consulta finalizada
+        </span>
       </label>
 
       {finalizada && (
@@ -1494,12 +1572,24 @@ function ConsultaForm({ onClose, patientId, onSaved }: { onClose: () => void; pa
               onChange={(e) => {
                 setAddMedication(e.target.checked);
                 if (!e.target.checked) {
-                  setMedications([{ name: "", dosage: "", frequency: "daily", times: ["08:00"], startDate: "", endDate: "", instructions: "" }]);
+                  setMedications([
+                    {
+                      name: "",
+                      dosage: "",
+                      frequency: "daily",
+                      times: ["08:00"],
+                      startDate: "",
+                      endDate: "",
+                      instructions: "",
+                    },
+                  ]);
                 }
               }}
               className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/30 cursor-pointer accent-primary"
             />
-            <span className="text-sm font-medium text-slate-700">Adicionar medicamento</span>
+            <span className="text-sm font-medium text-slate-700">
+              Adicionar medicamento
+            </span>
           </label>
 
           {addMedication && (
@@ -1511,21 +1601,27 @@ function ConsultaForm({ onClose, patientId, onSaved }: { onClose: () => void; pa
                     label="Nome do Medicamento"
                     name={`med-name-${index}`}
                     value={med.name}
-                    onChange={(val) => handleMedicationChange(index, "name", val)}
+                    onChange={(val) =>
+                      handleMedicationChange(index, "name", val)
+                    }
                     placeholder="Ex: Losartana 50mg"
                   />
                   <TextInput
                     label="Dosagem"
                     name={`med-dosage-${index}`}
                     value={med.dosage}
-                    onChange={(val) => handleMedicationChange(index, "dosage", val)}
+                    onChange={(val) =>
+                      handleMedicationChange(index, "dosage", val)
+                    }
                     placeholder="Ex: 50mg"
                   />
                   <SelectInput
                     label="Frequência"
                     name={`med-frequency-${index}`}
                     value={med.frequency}
-                    onChange={(val) => handleMedicationChange(index, "frequency", val)}
+                    onChange={(val) =>
+                      handleMedicationChange(index, "frequency", val)
+                    }
                     options={FREQUENCY_OPTIONS}
                   />
                   <div className="space-y-1.5">
@@ -1538,7 +1634,9 @@ function ConsultaForm({ onClose, patientId, onSaved }: { onClose: () => void; pa
                           key={tIdx}
                           type="time"
                           value={t}
-                          onChange={(e) => handleMedTimeChange(index, tIdx, e.target.value)}
+                          onChange={(e) =>
+                            handleMedTimeChange(index, tIdx, e.target.value)
+                          }
                           className="bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-900 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
                         />
                       ))}
@@ -1549,20 +1647,26 @@ function ConsultaForm({ onClose, patientId, onSaved }: { onClose: () => void; pa
                       label="Data de Início"
                       name={`med-start-${index}`}
                       value={med.startDate}
-                      onChange={(val) => handleMedicationChange(index, "startDate", val)}
+                      onChange={(val) =>
+                        handleMedicationChange(index, "startDate", val)
+                      }
                     />
                     <DateInput
                       label="Data de Fim"
                       name={`med-end-${index}`}
                       value={med.endDate}
-                      onChange={(val) => handleMedicationChange(index, "endDate", val)}
+                      onChange={(val) =>
+                        handleMedicationChange(index, "endDate", val)
+                      }
                     />
                   </div>
                   <Textarea
                     label="Instruções"
                     name={`med-instructions-${index}`}
                     value={med.instructions}
-                    onChange={(val) => handleMedicationChange(index, "instructions", val)}
+                    onChange={(val) =>
+                      handleMedicationChange(index, "instructions", val)
+                    }
                     placeholder="Instruções de uso"
                     rows={2}
                   />
@@ -1570,7 +1674,20 @@ function ConsultaForm({ onClose, patientId, onSaved }: { onClose: () => void; pa
               ))}
               <button
                 type="button"
-                onClick={() => setMedications([...medications, { name: "", dosage: "", frequency: "daily", times: ["08:00"], startDate: "", endDate: "", instructions: "" }])}
+                onClick={() =>
+                  setMedications([
+                    ...medications,
+                    {
+                      name: "",
+                      dosage: "",
+                      frequency: "daily",
+                      times: ["08:00"],
+                      startDate: "",
+                      endDate: "",
+                      instructions: "",
+                    },
+                  ])
+                }
                 className="flex items-center gap-1 text-primary text-xs font-semibold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -1591,7 +1708,9 @@ function ConsultaForm({ onClose, patientId, onSaved }: { onClose: () => void; pa
               }}
               className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/30 cursor-pointer accent-primary"
             />
-            <span className="text-sm font-medium text-slate-700">Adicionar exame</span>
+            <span className="text-sm font-medium text-slate-700">
+              Adicionar exame
+            </span>
           </label>
 
           {addExam && (
@@ -1646,13 +1765,15 @@ function EditConsultaForm({
 }) {
   const dateObj = new Date(consultation.date);
   const [date, setDate] = useState(dateObj.toISOString().split("T")[0]);
-  const [time, setTime] = useState(
-    dateObj.toTimeString().slice(0, 5)
-  );
+  const [time, setTime] = useState(dateObj.toTimeString().slice(0, 5));
   const [sintomas, setSintomas] = useState(consultation.type || "");
-  const [finalizada, setFinalizada] = useState(consultation.status === "completed");
+  const [finalizada, setFinalizada] = useState(
+    consultation.status === "completed",
+  );
   const [diagnostico, setDiagnostico] = useState(consultation.notes || "");
-  const [orientacoes, setOrientacoes] = useState(consultation.instructions || "");
+  const [orientacoes, setOrientacoes] = useState(
+    consultation.instructions || "",
+  );
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -1680,7 +1801,7 @@ function EditConsultaForm({
   }
 
   return (
-    <form  className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
+    <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
       <div className="grid grid-cols-2 gap-6">
         <DateInput
           label="Data"
@@ -1689,7 +1810,10 @@ function EditConsultaForm({
           onChange={setDate}
         />
         <div className="space-y-1.5">
-          <label htmlFor="edit-consulta-hora" className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+          <label
+            htmlFor="edit-consulta-hora"
+            className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5"
+          >
             Hora
           </label>
           <input
@@ -1718,7 +1842,9 @@ function EditConsultaForm({
           onChange={(e) => setFinalizada(e.target.checked)}
           className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/30 cursor-pointer accent-primary"
         />
-        <span className="text-sm font-medium text-slate-700">Consulta finalizada</span>
+        <span className="text-sm font-medium text-slate-700">
+          Consulta finalizada
+        </span>
       </label>
 
       {finalizada && (
@@ -1786,13 +1912,19 @@ function ConsultaDetailView({
   async function handleResend() {
     setResending(true);
     try {
-      await api(`/patients/${patientId}/consultations/${consultation.id}/resend`, {
-        method: "POST",
-      });
+      await api(
+        `/patients/${patientId}/consultations/${consultation.id}/resend`,
+        {
+          method: "POST",
+        },
+      );
       setCooldown(120);
       const interval = setInterval(() => {
         setCooldown((prev) => {
-          if (prev <= 1) { clearInterval(interval); return 0; }
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
           return prev - 1;
         });
       }, 1000);
@@ -1821,7 +1953,9 @@ function ConsultaDetailView({
       {consultation.lockedByDoctor && (
         <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-100">
           <Stethoscope className="w-3.5 h-3.5 text-primary" />
-          <span className="text-xs font-medium text-blue-700">Registro médico — preenchido pelo profissional de saúde</span>
+          <span className="text-xs font-medium text-blue-700">
+            Registro médico — preenchido pelo profissional de saúde
+          </span>
         </div>
       )}
 
@@ -1829,48 +1963,81 @@ function ConsultaDetailView({
       <div className="space-y-5">
         <div className="grid grid-cols-2 gap-6">
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Data</p>
-            <p className="text-sm font-medium text-slate-800">{formattedDate}</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Data
+            </p>
+            <p className="text-sm font-medium text-slate-800">
+              {formattedDate}
+            </p>
           </div>
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Hora</p>
-            <p className="text-sm font-medium text-slate-800">{formattedTime}</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Hora
+            </p>
+            <p className="text-sm font-medium text-slate-800">
+              {formattedTime}
+            </p>
           </div>
         </div>
 
         <div>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Status</p>
-          <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
-            consultation.status === "completed"
-              ? "bg-green-100 text-green-700"
-              : consultation.status === "cancelled" || consultation.status === "rejected"
-                ? "bg-red-100 text-red-700"
-                : consultation.status === "pending_approval"
-                  ? "bg-amber-100 text-amber-700"
-                  : "bg-blue-100 text-primary"
-          }`}>
-            {consultation.status === "completed" ? "Concluído" : consultation.status === "cancelled" ? "Cancelado" : consultation.status === "rejected" ? "Recusado" : consultation.status === "pending_approval" ? "Aguardando aprovação" : "Agendado"}
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+            Status
+          </p>
+          <span
+            className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
+              consultation.status === "completed"
+                ? "bg-green-100 text-green-700"
+                : consultation.status === "cancelled" ||
+                    consultation.status === "rejected"
+                  ? "bg-red-100 text-red-700"
+                  : consultation.status === "pending_approval"
+                    ? "bg-amber-100 text-amber-700"
+                    : "bg-blue-100 text-primary"
+            }`}
+          >
+            {consultation.status === "completed"
+              ? "Concluído"
+              : consultation.status === "cancelled"
+                ? "Cancelado"
+                : consultation.status === "rejected"
+                  ? "Recusado"
+                  : consultation.status === "pending_approval"
+                    ? "Aguardando aprovação"
+                    : "Agendado"}
           </span>
         </div>
 
         {consultation.type && (
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Sintomas / Motivo</p>
-            <p className="text-sm text-slate-700 leading-relaxed">{consultation.type}</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Sintomas / Motivo
+            </p>
+            <p className="text-sm text-slate-700 leading-relaxed">
+              {consultation.type}
+            </p>
           </div>
         )}
 
         {consultation.notes && (
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Diagnóstico</p>
-            <p className="text-sm text-slate-700 leading-relaxed">{consultation.notes}</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Diagnóstico
+            </p>
+            <p className="text-sm text-slate-700 leading-relaxed">
+              {consultation.notes}
+            </p>
           </div>
         )}
 
         {consultation.instructions && (
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Orientações</p>
-            <p className="text-sm text-slate-700 leading-relaxed">{consultation.instructions}</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Orientações
+            </p>
+            <p className="text-sm text-slate-700 leading-relaxed">
+              {consultation.instructions}
+            </p>
           </div>
         )}
       </div>
@@ -1897,7 +2064,11 @@ function ConsultaDetailView({
           disabled={resending || cooldown > 0}
           className="w-full py-3 bg-primary text-white rounded-full font-bold hover:opacity-90 transition-all cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {resending ? "Reenviando..." : cooldown > 0 ? `Aguarde ${Math.floor(cooldown / 60)}:${(cooldown % 60).toString().padStart(2, "0")}` : "Reenviar Consulta"}
+          {resending
+            ? "Reenviando..."
+            : cooldown > 0
+              ? `Aguarde ${Math.floor(cooldown / 60)}:${(cooldown % 60).toString().padStart(2, "0")}`
+              : "Reenviar Consulta"}
         </button>
       )}
 
@@ -1931,7 +2102,7 @@ function EditPatientForm({
   const [phone, setPhone] = useState(patient.phone || "");
   const [gender, setGender] = useState(patient.gender || "");
   const [birthDate, setBirthDate] = useState(
-    patient.birthDate ? patient.birthDate.split("T")[0] : ""
+    patient.birthDate ? patient.birthDate.split("T")[0] : "",
   );
   const [saving, setSaving] = useState(false);
 
@@ -1961,7 +2132,7 @@ function EditPatientForm({
   }
 
   return (
-    <form  className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
+    <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
       <TextInput
         label="Nome Completo"
         name="edit-patient-name"
@@ -2036,20 +2207,32 @@ const DISEASE_STATUS_OPTIONS = [
 ];
 
 function getDiseaseStatusLabel(status: string): string {
-  return DISEASE_STATUS_OPTIONS.find((o) => o.value === status)?.label || status;
+  return (
+    DISEASE_STATUS_OPTIONS.find((o) => o.value === status)?.label || status
+  );
 }
 
 function getDiseaseStatusStyle(status: string): string {
   switch (status) {
-    case "cured": return "bg-green-100 text-green-700";
-    case "in_treatment": return "bg-blue-100 text-primary";
-    case "treatment_ended": return "bg-slate-100 text-slate-600";
-    case "treatment_suspended": return "bg-amber-100 text-amber-700";
-    default: return "bg-slate-100 text-slate-600";
+    case "cured":
+      return "bg-green-100 text-green-700";
+    case "in_treatment":
+      return "bg-blue-100 text-primary";
+    case "treatment_ended":
+      return "bg-slate-100 text-slate-600";
+    case "treatment_suspended":
+      return "bg-amber-100 text-amber-700";
+    default:
+      return "bg-slate-100 text-slate-600";
   }
 }
 
-function DiseasesSection({ patientId }: { patientId: string; onRefresh?: () => void }) {
+function DiseasesSection({
+  patientId,
+}: {
+  patientId: string;
+  onRefresh?: () => void;
+}) {
   const [diseases, setDiseases] = useState<Disease[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -2066,7 +2249,9 @@ function DiseasesSection({ patientId }: { patientId: string; onRefresh?: () => v
     }
   }
 
-  useState(() => { loadDiseases(); });
+  useState(() => {
+    loadDiseases();
+  });
 
   if (loading) {
     return <div className="text-center py-8 text-slate-400">Carregando...</div>;
@@ -2101,12 +2286,18 @@ function DiseasesSection({ patientId }: { patientId: string; onRefresh?: () => v
               className="group bg-white hover:bg-slate-50 rounded-2xl p-6 flex items-center gap-6 transition-all border border-slate-100 shadow-sm cursor-pointer"
             >
               <div className="flex-grow min-w-0">
-                <h4 className="font-bold text-lg text-slate-900">{disease.name}</h4>
+                <h4 className="font-bold text-lg text-slate-900">
+                  {disease.name}
+                </h4>
                 {disease.description && (
-                  <p className="text-xs text-slate-500 mt-1 truncate">{disease.description}</p>
+                  <p className="text-xs text-slate-500 mt-1 truncate">
+                    {disease.description}
+                  </p>
                 )}
               </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 ${getDiseaseStatusStyle(disease.status)}`}>
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 ${getDiseaseStatusStyle(disease.status)}`}
+              >
                 {getDiseaseStatusLabel(disease.status)}
               </span>
             </div>
@@ -2125,7 +2316,10 @@ function DiseasesSection({ patientId }: { patientId: string; onRefresh?: () => v
         <DiseaseForm
           patientId={patientId}
           onClose={() => setShowCreateModal(false)}
-          onSaved={() => { loadDiseases(); setShowCreateModal(false); }}
+          onSaved={() => {
+            loadDiseases();
+            setShowCreateModal(false);
+          }}
         />
       </Modal>
 
@@ -2142,7 +2336,10 @@ function DiseasesSection({ patientId }: { patientId: string; onRefresh?: () => v
             disease={viewingDisease}
             patientId={patientId}
             onClose={() => setViewingDisease(null)}
-            onSaved={() => { loadDiseases(); setViewingDisease(null); }}
+            onSaved={() => {
+              loadDiseases();
+              setViewingDisease(null);
+            }}
           />
         )}
       </Modal>
@@ -2150,7 +2347,12 @@ function DiseasesSection({ patientId }: { patientId: string; onRefresh?: () => v
   );
 }
 
-function DiseaseForm({ patientId, onClose, onSaved, initial }: {
+function DiseaseForm({
+  patientId,
+  onClose,
+  onSaved,
+  initial,
+}: {
   patientId: string;
   onClose: () => void;
   onSaved: () => void;
@@ -2160,9 +2362,15 @@ function DiseaseForm({ patientId, onClose, onSaved, initial }: {
   const [description, setDescription] = useState(initial?.description || "");
   const [observations, setObservations] = useState(initial?.observations || "");
   const [status, setStatus] = useState(initial?.status || "in_treatment");
-  const [diagnosisDate, setDiagnosisDate] = useState(initial?.diagnosisDate?.split("T")[0] || "");
-  const [treatmentStartDate, setTreatmentStartDate] = useState(initial?.treatmentStartDate?.split("T")[0] || "");
-  const [treatmentEndDate, setTreatmentEndDate] = useState(initial?.treatmentEndDate?.split("T")[0] || "");
+  const [diagnosisDate, setDiagnosisDate] = useState(
+    initial?.diagnosisDate?.split("T")[0] || "",
+  );
+  const [treatmentStartDate, setTreatmentStartDate] = useState(
+    initial?.treatmentStartDate?.split("T")[0] || "",
+  );
+  const [treatmentEndDate, setTreatmentEndDate] = useState(
+    initial?.treatmentEndDate?.split("T")[0] || "",
+  );
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -2181,7 +2389,10 @@ function DiseaseForm({ patientId, onClose, onSaved, initial }: {
       };
 
       if (initial) {
-        await api(`/patients/${patientId}/diseases/${initial.id}`, { method: "PUT", body });
+        await api(`/patients/${patientId}/diseases/${initial.id}`, {
+          method: "PUT",
+          body,
+        });
       } else {
         await api(`/patients/${patientId}/diseases`, { method: "POST", body });
       }
@@ -2195,11 +2406,33 @@ function DiseaseForm({ patientId, onClose, onSaved, initial }: {
 
   return (
     <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
-      <TextInput label="Nome da Doença" name="disease-name" value={name} onChange={setName} placeholder="Ex: Diabetes Tipo 2" />
-      <Textarea label="Descrição" name="disease-description" value={description} onChange={setDescription} placeholder="Descrição da condição" rows={2} />
-      <Textarea label="Observação" name="disease-observations" value={observations} onChange={setObservations} placeholder="Observações adicionais sobre o tratamento" rows={3} />
+      <TextInput
+        label="Nome da Doença"
+        name="disease-name"
+        value={name}
+        onChange={setName}
+        placeholder="Ex: Diabetes Tipo 2"
+      />
+      <Textarea
+        label="Descrição"
+        name="disease-description"
+        value={description}
+        onChange={setDescription}
+        placeholder="Descrição da condição"
+        rows={2}
+      />
+      <Textarea
+        label="Observação"
+        name="disease-observations"
+        value={observations}
+        onChange={setObservations}
+        placeholder="Observações adicionais sobre o tratamento"
+        rows={3}
+      />
       <div className="space-y-1.5">
-        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Status</label>
+        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+          Status
+        </label>
         <CustomSelect
           name="disease-status"
           value={status}
@@ -2208,17 +2441,41 @@ function DiseaseForm({ patientId, onClose, onSaved, initial }: {
           placeholder="Selecione o status"
         />
       </div>
-      <DateInput label="Data do Diagnóstico" name="disease-diagnosis-date" value={diagnosisDate} onChange={setDiagnosisDate} />
+      <DateInput
+        label="Data do Diagnóstico"
+        name="disease-diagnosis-date"
+        value={diagnosisDate}
+        onChange={setDiagnosisDate}
+      />
       <div className="grid grid-cols-2 gap-6">
-        <DateInput label="Início do Tratamento" name="disease-start" value={treatmentStartDate} onChange={setTreatmentStartDate} />
-        <DateInput label="Fim do Tratamento" name="disease-end" value={treatmentEndDate} onChange={setTreatmentEndDate} />
+        <DateInput
+          label="Início do Tratamento"
+          name="disease-start"
+          value={treatmentStartDate}
+          onChange={setTreatmentStartDate}
+        />
+        <DateInput
+          label="Fim do Tratamento"
+          name="disease-end"
+          value={treatmentEndDate}
+          onChange={setTreatmentEndDate}
+        />
       </div>
-      <FormActions onCancel={onClose} submitLabel={initial ? "Salvar Alterações" : "Adicionar"} loading={saving} />
+      <FormActions
+        onCancel={onClose}
+        submitLabel={initial ? "Salvar Alterações" : "Adicionar"}
+        loading={saving}
+      />
     </form>
   );
 }
 
-function DiseaseDetailView({ disease, patientId, onClose, onSaved }: {
+function DiseaseDetailView({
+  disease,
+  patientId,
+  onClose,
+  onSaved,
+}: {
   disease: Disease;
   patientId: string;
   onClose: () => void;
@@ -2227,51 +2484,80 @@ function DiseaseDetailView({ disease, patientId, onClose, onSaved }: {
   const [editing, setEditing] = useState(false);
 
   if (editing) {
-    return <DiseaseForm patientId={patientId} onClose={() => setEditing(false)} onSaved={onSaved} initial={disease} />;
+    return (
+      <DiseaseForm
+        patientId={patientId}
+        onClose={() => setEditing(false)}
+        onSaved={onSaved}
+        initial={disease}
+      />
+    );
   }
 
   return (
     <div className="p-8 pt-0 space-y-6">
       <div className="space-y-5">
         <div>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Status</p>
-          <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${getDiseaseStatusStyle(disease.status)}`}>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+            Status
+          </p>
+          <span
+            className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${getDiseaseStatusStyle(disease.status)}`}
+          >
             {getDiseaseStatusLabel(disease.status)}
           </span>
         </div>
 
         {disease.description && (
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Descrição</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Descrição
+            </p>
             <p className="text-sm text-slate-700">{disease.description}</p>
           </div>
         )}
 
         {disease.observations && (
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Observação</p>
-            <p className="text-sm text-slate-700 leading-relaxed">{disease.observations}</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Observação
+            </p>
+            <p className="text-sm text-slate-700 leading-relaxed">
+              {disease.observations}
+            </p>
           </div>
         )}
 
         {disease.diagnosisDate && (
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Data do Diagnóstico</p>
-            <p className="text-sm text-slate-700">{new Date(disease.diagnosisDate).toLocaleDateString("pt-BR")}</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Data do Diagnóstico
+            </p>
+            <p className="text-sm text-slate-700">
+              {new Date(disease.diagnosisDate).toLocaleDateString("pt-BR")}
+            </p>
           </div>
         )}
 
         {disease.treatmentStartDate && (
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Início do Tratamento</p>
-            <p className="text-sm text-slate-700">{new Date(disease.treatmentStartDate).toLocaleDateString("pt-BR")}</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Início do Tratamento
+            </p>
+            <p className="text-sm text-slate-700">
+              {new Date(disease.treatmentStartDate).toLocaleDateString("pt-BR")}
+            </p>
           </div>
         )}
 
         {disease.treatmentEndDate && (
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Fim do Tratamento</p>
-            <p className="text-sm text-slate-700">{new Date(disease.treatmentEndDate).toLocaleDateString("pt-BR")}</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Fim do Tratamento
+            </p>
+            <p className="text-sm text-slate-700">
+              {new Date(disease.treatmentEndDate).toLocaleDateString("pt-BR")}
+            </p>
           </div>
         )}
       </div>
@@ -2318,9 +2604,12 @@ const SEVERITY_OPTIONS = [
 
 function getSeverityStyle(severity: string): string {
   switch (severity) {
-    case "severe": return "bg-red-100 text-red-700";
-    case "moderate": return "bg-amber-100 text-amber-700";
-    default: return "bg-green-100 text-green-700";
+    case "severe":
+      return "bg-red-100 text-red-700";
+    case "moderate":
+      return "bg-amber-100 text-amber-700";
+    default:
+      return "bg-green-100 text-green-700";
   }
 }
 
@@ -2337,19 +2626,30 @@ function AllergiesSection({ patientId }: { patientId: string }) {
     try {
       const data = await api(`/patients/${patientId}/allergies`);
       setAllergies(Array.isArray(data) ? data : []);
-    } catch { setAllergies([]); }
-    finally { setLoading(false); }
+    } catch {
+      setAllergies([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  useState(() => { loadAllergies(); });
+  useState(() => {
+    loadAllergies();
+  });
 
-  if (loading) return <div className="text-center py-8 text-slate-400">Carregando...</div>;
+  if (loading)
+    return <div className="text-center py-8 text-slate-400">Carregando...</div>;
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h3 className="font-bold text-xl font-display tracking-tight">Alergias</h3>
-        <button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none">
+        <h3 className="font-bold text-xl font-display tracking-tight">
+          Alergias
+        </h3>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none"
+        >
           <Plus className="w-3.5 h-3.5" />
           Adicionar Alergia
         </button>
@@ -2363,12 +2663,23 @@ function AllergiesSection({ patientId }: { patientId: string }) {
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {allergies.map((allergy) => (
-            <div key={allergy.id} className="bg-white rounded-2xl p-6 flex items-center gap-6 border border-slate-100 shadow-sm">
+            <div
+              key={allergy.id}
+              className="bg-white rounded-2xl p-6 flex items-center gap-6 border border-slate-100 shadow-sm"
+            >
               <div className="flex-grow min-w-0">
-                <h4 className="font-bold text-lg text-slate-900">{allergy.name}</h4>
-                {allergy.reaction && <p className="text-xs text-slate-500 mt-1">{allergy.reaction}</p>}
+                <h4 className="font-bold text-lg text-slate-900">
+                  {allergy.name}
+                </h4>
+                {allergy.reaction && (
+                  <p className="text-xs text-slate-500 mt-1">
+                    {allergy.reaction}
+                  </p>
+                )}
               </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 ${getSeverityStyle(allergy.severity)}`}>
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 ${getSeverityStyle(allergy.severity)}`}
+              >
                 {getSeverityLabel(allergy.severity)}
               </span>
             </div>
@@ -2376,14 +2687,35 @@ function AllergiesSection({ patientId }: { patientId: string }) {
         </div>
       )}
 
-      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} label="Novo Registro" title="Adicionar Alergia" maxWidth="max-w-2xl">
-        <AllergyForm patientId={patientId} onClose={() => setShowCreateModal(false)} onSaved={() => { loadAllergies(); setShowCreateModal(false); }} />
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        label="Novo Registro"
+        title="Adicionar Alergia"
+        maxWidth="max-w-2xl"
+      >
+        <AllergyForm
+          patientId={patientId}
+          onClose={() => setShowCreateModal(false)}
+          onSaved={() => {
+            loadAllergies();
+            setShowCreateModal(false);
+          }}
+        />
       </Modal>
     </div>
   );
 }
 
-function AllergyForm({ patientId, onClose, onSaved }: { patientId: string; onClose: () => void; onSaved: () => void }) {
+function AllergyForm({
+  patientId,
+  onClose,
+  onSaved,
+}: {
+  patientId: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const [name, setName] = useState("");
   const [severity, setSeverity] = useState("moderate");
   const [reaction, setReaction] = useState("");
@@ -2395,22 +2727,64 @@ function AllergyForm({ patientId, onClose, onSaved }: { patientId: string; onClo
     if (!name.trim()) return;
     setSaving(true);
     try {
-      await api(`/patients/${patientId}/allergies`, { method: "POST", body: { name: name.trim(), severity, reaction: reaction.trim() || undefined, notes: notes.trim() || undefined } });
+      await api(`/patients/${patientId}/allergies`, {
+        method: "POST",
+        body: {
+          name: name.trim(),
+          severity,
+          reaction: reaction.trim() || undefined,
+          notes: notes.trim() || undefined,
+        },
+      });
       onSaved();
-    } catch (err) { console.error(err); }
-    finally { setSaving(false); }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
-      <TextInput label="Nome da Alergia" name="allergy-name" value={name} onChange={setName} placeholder="Ex: Penicilina, Ácaros" />
+      <TextInput
+        label="Nome da Alergia"
+        name="allergy-name"
+        value={name}
+        onChange={setName}
+        placeholder="Ex: Penicilina, Ácaros"
+      />
       <div className="space-y-1.5">
-        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Severidade</label>
-        <CustomSelect name="allergy-severity" value={severity} onChange={setSeverity} options={SEVERITY_OPTIONS} placeholder="Selecione" />
+        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+          Severidade
+        </label>
+        <CustomSelect
+          name="allergy-severity"
+          value={severity}
+          onChange={setSeverity}
+          options={SEVERITY_OPTIONS}
+          placeholder="Selecione"
+        />
       </div>
-      <TextInput label="Reação" name="allergy-reaction" value={reaction} onChange={setReaction} placeholder="Ex: Urticária, inchaço facial" />
-      <Textarea label="Observações" name="allergy-notes" value={notes} onChange={setNotes} placeholder="Notas adicionais" rows={2} />
-      <FormActions onCancel={onClose} submitLabel="Adicionar" loading={saving} />
+      <TextInput
+        label="Reação"
+        name="allergy-reaction"
+        value={reaction}
+        onChange={setReaction}
+        placeholder="Ex: Urticária, inchaço facial"
+      />
+      <Textarea
+        label="Observações"
+        name="allergy-notes"
+        value={notes}
+        onChange={setNotes}
+        placeholder="Notas adicionais"
+        rows={2}
+      />
+      <FormActions
+        onCancel={onClose}
+        submitLabel="Adicionar"
+        loading={saving}
+      />
     </form>
   );
 }
@@ -2438,7 +2812,13 @@ interface DependentItem {
   responsibles: { id: string; name: string }[];
 }
 
-function DependentsSection({ patientId, onSelectDependent }: { patientId: string; onSelectDependent: (id: string) => void }) {
+function DependentsSection({
+  patientId,
+  onSelectDependent,
+}: {
+  patientId: string;
+  onSelectDependent: (id: string) => void;
+}) {
   const [dependents, setDependents] = useState<DependentItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -2446,13 +2826,19 @@ function DependentsSection({ patientId, onSelectDependent }: { patientId: string
     try {
       const data = await api(`/patients/${patientId}/dependents`);
       setDependents(Array.isArray(data) ? data : []);
-    } catch { setDependents([]); }
-    finally { setLoading(false); }
+    } catch {
+      setDependents([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  useState(() => { loadDependents(); });
+  useState(() => {
+    loadDependents();
+  });
 
-  if (loading) return <div className="text-center py-8 text-slate-400">Carregando...</div>;
+  if (loading)
+    return <div className="text-center py-8 text-slate-400">Carregando...</div>;
 
   function calculateAge(birthDate: string) {
     const today = new Date();
@@ -2466,7 +2852,9 @@ function DependentsSection({ patientId, onSelectDependent }: { patientId: string
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h3 className="font-bold text-xl font-display tracking-tight">Dependentes</h3>
+        <h3 className="font-bold text-xl font-display tracking-tight">
+          Dependentes
+        </h3>
       </div>
 
       {dependents.length === 0 ? (
@@ -2483,20 +2871,28 @@ function DependentsSection({ patientId, onSelectDependent }: { patientId: string
               className="bg-white rounded-2xl p-6 flex items-center gap-5 border border-slate-100 shadow-sm hover:border-primary/30 hover:shadow-md transition-all cursor-pointer"
             >
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <span className="text-primary font-bold text-lg">{dep.name.charAt(0)}</span>
+                <span className="text-primary font-bold text-lg">
+                  {dep.name.charAt(0)}
+                </span>
               </div>
               <div className="flex-grow min-w-0">
                 <h4 className="font-bold text-lg text-slate-900">{dep.name}</h4>
                 <p className="text-xs text-slate-500 mt-1">
                   {dep.birthDate && `${calculateAge(dep.birthDate)} anos`}
-                  {dep.gender && ` • ${dep.gender === 'male' ? 'Masculino' : dep.gender === 'female' ? 'Feminino' : dep.gender}`}
+                  {dep.gender &&
+                    ` • ${dep.gender === "male" ? "Masculino" : dep.gender === "female" ? "Feminino" : dep.gender}`}
                 </p>
                 {dep.responsibles.length > 0 && (
                   <div className="flex items-center gap-1 mt-2">
-                    <span className="text-[10px] text-slate-400 uppercase font-semibold">Responsáveis:</span>
+                    <span className="text-[10px] text-slate-400 uppercase font-semibold">
+                      Responsáveis:
+                    </span>
                     <div className="flex gap-1 flex-wrap">
                       {dep.responsibles.map((r) => (
-                        <span key={r.id} className="text-xs text-primary font-semibold bg-primary/5 px-2 py-0.5 rounded-full">
+                        <span
+                          key={r.id}
+                          className="text-xs text-primary font-semibold bg-primary/5 px-2 py-0.5 rounded-full"
+                        >
                           {r.name}
                         </span>
                       ))}
@@ -2522,19 +2918,30 @@ function VaccinesSection({ patientId }: { patientId: string }) {
     try {
       const data = await api(`/patients/${patientId}/vaccines`);
       setVaccines(Array.isArray(data) ? data : []);
-    } catch { setVaccines([]); }
-    finally { setLoading(false); }
+    } catch {
+      setVaccines([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  useState(() => { loadVaccines(); });
+  useState(() => {
+    loadVaccines();
+  });
 
-  if (loading) return <div className="text-center py-8 text-slate-400">Carregando...</div>;
+  if (loading)
+    return <div className="text-center py-8 text-slate-400">Carregando...</div>;
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h3 className="font-bold text-xl font-display tracking-tight">Vacinas</h3>
-        <button onClick={() => setShowCreateModal(true)} className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none">
+        <h3 className="font-bold text-xl font-display tracking-tight">
+          Vacinas
+        </h3>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none"
+        >
           <Plus className="w-3.5 h-3.5" />
           Adicionar Vacina
         </button>
@@ -2548,18 +2955,25 @@ function VaccinesSection({ patientId }: { patientId: string }) {
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {vaccines.map((vaccine) => (
-            <div key={vaccine.id} className="bg-white rounded-2xl p-6 flex items-center gap-6 border border-slate-100 shadow-sm">
+            <div
+              key={vaccine.id}
+              className="bg-white rounded-2xl p-6 flex items-center gap-6 border border-slate-100 shadow-sm"
+            >
               <div className="flex-grow min-w-0">
-                <h4 className="font-bold text-lg text-slate-900">{vaccine.name}</h4>
+                <h4 className="font-bold text-lg text-slate-900">
+                  {vaccine.name}
+                </h4>
                 <p className="text-xs text-slate-500 mt-1">
                   {vaccine.dose && `Dose: ${vaccine.dose}`}
-                  {vaccine.applicationDate && ` • ${new Date(vaccine.applicationDate).toLocaleDateString("pt-BR")}`}
+                  {vaccine.applicationDate &&
+                    ` • ${new Date(vaccine.applicationDate).toLocaleDateString("pt-BR")}`}
                   {vaccine.laboratory && ` • ${vaccine.laboratory}`}
                 </p>
               </div>
               {vaccine.nextDoseDate && (
                 <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-primary shrink-0">
-                  Próx: {new Date(vaccine.nextDoseDate).toLocaleDateString("pt-BR")}
+                  Próx:{" "}
+                  {new Date(vaccine.nextDoseDate).toLocaleDateString("pt-BR")}
                 </span>
               )}
             </div>
@@ -2567,14 +2981,35 @@ function VaccinesSection({ patientId }: { patientId: string }) {
         </div>
       )}
 
-      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} label="Novo Registro" title="Adicionar Vacina" maxWidth="max-w-2xl">
-        <VaccineForm patientId={patientId} onClose={() => setShowCreateModal(false)} onSaved={() => { loadVaccines(); setShowCreateModal(false); }} />
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        label="Novo Registro"
+        title="Adicionar Vacina"
+        maxWidth="max-w-2xl"
+      >
+        <VaccineForm
+          patientId={patientId}
+          onClose={() => setShowCreateModal(false)}
+          onSaved={() => {
+            loadVaccines();
+            setShowCreateModal(false);
+          }}
+        />
       </Modal>
     </div>
   );
 }
 
-function VaccineForm({ patientId, onClose, onSaved }: { patientId: string; onClose: () => void; onSaved: () => void }) {
+function VaccineForm({
+  patientId,
+  onClose,
+  onSaved,
+}: {
+  patientId: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const [name, setName] = useState("");
   const [dose, setDose] = useState("");
   const [applicationDate, setApplicationDate] = useState("");
@@ -2588,23 +3023,75 @@ function VaccineForm({ patientId, onClose, onSaved }: { patientId: string; onClo
     if (!name.trim()) return;
     setSaving(true);
     try {
-      await api(`/patients/${patientId}/vaccines`, { method: "POST", body: { name: name.trim(), dose: dose.trim() || undefined, applicationDate: applicationDate || undefined, nextDoseDate: nextDoseDate || undefined, laboratory: laboratory.trim() || undefined, notes: notes.trim() || undefined } });
+      await api(`/patients/${patientId}/vaccines`, {
+        method: "POST",
+        body: {
+          name: name.trim(),
+          dose: dose.trim() || undefined,
+          applicationDate: applicationDate || undefined,
+          nextDoseDate: nextDoseDate || undefined,
+          laboratory: laboratory.trim() || undefined,
+          notes: notes.trim() || undefined,
+        },
+      });
       onSaved();
-    } catch (err) { console.error(err); }
-    finally { setSaving(false); }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
-      <TextInput label="Nome da Vacina" name="vaccine-name" value={name} onChange={setName} placeholder="Ex: COVID-19 Pfizer, Gripe" />
-      <TextInput label="Dose" name="vaccine-dose" value={dose} onChange={setDose} placeholder="Ex: 1ª dose, 2ª dose, reforço" />
+      <TextInput
+        label="Nome da Vacina"
+        name="vaccine-name"
+        value={name}
+        onChange={setName}
+        placeholder="Ex: COVID-19 Pfizer, Gripe"
+      />
+      <TextInput
+        label="Dose"
+        name="vaccine-dose"
+        value={dose}
+        onChange={setDose}
+        placeholder="Ex: 1ª dose, 2ª dose, reforço"
+      />
       <div className="grid grid-cols-2 gap-6">
-        <DateInput label="Data de Aplicação" name="vaccine-app-date" value={applicationDate} onChange={setApplicationDate} />
-        <DateInput label="Próxima Dose" name="vaccine-next-date" value={nextDoseDate} onChange={setNextDoseDate} />
+        <DateInput
+          label="Data de Aplicação"
+          name="vaccine-app-date"
+          value={applicationDate}
+          onChange={setApplicationDate}
+        />
+        <DateInput
+          label="Próxima Dose"
+          name="vaccine-next-date"
+          value={nextDoseDate}
+          onChange={setNextDoseDate}
+        />
       </div>
-      <TextInput label="Laboratório" name="vaccine-lab" value={laboratory} onChange={setLaboratory} placeholder="Ex: Pfizer, AstraZeneca" />
-      <Textarea label="Observações" name="vaccine-notes" value={notes} onChange={setNotes} placeholder="Notas adicionais" rows={2} />
-      <FormActions onCancel={onClose} submitLabel="Adicionar" loading={saving} />
+      <TextInput
+        label="Laboratório"
+        name="vaccine-lab"
+        value={laboratory}
+        onChange={setLaboratory}
+        placeholder="Ex: Pfizer, AstraZeneca"
+      />
+      <Textarea
+        label="Observações"
+        name="vaccine-notes"
+        value={notes}
+        onChange={setNotes}
+        placeholder="Notas adicionais"
+        rows={2}
+      />
+      <FormActions
+        onCancel={onClose}
+        submitLabel="Adicionar"
+        loading={saving}
+      />
     </form>
   );
 }
@@ -2616,12 +3103,20 @@ export default function PatientDetail() {
   const { id } = useParams<{ id: string }>();
   const { patient, loading, error, refetch } = usePatientDetail(id);
   const [activeTab, setActiveTab] = useState<
-    "consultas" | "medicamentos" | "exames" | "doencas" | "alergias" | "vacinas" | "dependentes"
+    | "consultas"
+    | "medicamentos"
+    | "exames"
+    | "doencas"
+    | "alergias"
+    | "vacinas"
+    | "dependentes"
   >("consultas");
   const [showConsultaModal, setShowConsultaModal] = useState(false);
   const [showMedicamentoModal, setShowMedicamentoModal] = useState(false);
   const [showDocumentoModal, setShowDocumentoModal] = useState(false);
-  const [editingConsulta, setEditingConsulta] = useState<Appointment | null>(null);
+  const [editingConsulta, setEditingConsulta] = useState<Appointment | null>(
+    null,
+  );
   const [showEditPatientModal, setShowEditPatientModal] = useState(false);
   const { user } = useAuth();
 
@@ -2674,13 +3169,21 @@ export default function PatientDetail() {
             className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent"
           >
             <ArrowLeft size={20} />
-            <span>{isDependent ? 'Voltar para responsável' : 'Voltar para Pacientes'}</span>
+            <span>
+              {isDependent
+                ? "Voltar para responsável"
+                : "Voltar para Pacientes"}
+            </span>
           </button>
 
           {/* Patient Hero */}
           <PatientHeroFromAPI
             patient={patient}
-            onEdit={patient.isShadow && patient.createdByDoctorId === user?.userId ? () => setShowEditPatientModal(true) : undefined}
+            onEdit={
+              patient.isShadow && patient.createdByDoctorId === user?.userId
+                ? () => setShowEditPatientModal(true)
+                : undefined
+            }
           />
 
           {/* Tabs Navigation */}
@@ -2752,7 +3255,7 @@ export default function PatientDetail() {
                   : "text-gray-500 hover:text-gray-800"
               }`}
               onClick={() => setActiveTab("dependentes")}
-              style={isDependent ? { display: 'none' } : undefined}
+              style={isDependent ? { display: "none" } : undefined}
             >
               Dependentes
             </button>
@@ -2765,12 +3268,19 @@ export default function PatientDetail() {
                 <h3 className="font-bold text-xl font-display tracking-tight">
                   Histórico de Consultas
                 </h3>
-                <button data-testid="btn-nova-consulta" onClick={() => setShowConsultaModal(true)} className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none">
+                <button
+                  data-testid="btn-nova-consulta"
+                  onClick={() => setShowConsultaModal(true)}
+                  className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none"
+                >
                   <Plus className="w-3.5 h-3.5" />
                   Nova Consulta
                 </button>
               </div>
-              <AppointmentsSection appointments={patient.appointments} onSelect={setEditingConsulta} />
+              <AppointmentsSection
+                appointments={patient.appointments}
+                onSelect={setEditingConsulta}
+              />
             </div>
           )}
           {activeTab === "medicamentos" && (
@@ -2779,7 +3289,10 @@ export default function PatientDetail() {
                 <h3 className="font-bold text-xl font-display tracking-tight">
                   Prescrições Ativas
                 </h3>
-                <button onClick={() => setShowMedicamentoModal(true)} className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none">
+                <button
+                  onClick={() => setShowMedicamentoModal(true)}
+                  className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none"
+                >
                   <Plus className="w-3.5 h-3.5" />
                   Adicionar Medicamento
                 </button>
@@ -2793,12 +3306,19 @@ export default function PatientDetail() {
                 <h3 className="font-bold text-xl font-display tracking-tight">
                   Exames Recentes
                 </h3>
-                <button onClick={() => setShowDocumentoModal(true)} className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none">
+                <button
+                  onClick={() => setShowDocumentoModal(true)}
+                  className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none"
+                >
                   <Plus className="w-3.5 h-3.5" />
                   Solicitar Exame
                 </button>
               </div>
-              <ExamsSection exams={patient.exams} patientId={patient.id} onRefresh={refetch} />
+              <ExamsSection
+                exams={patient.exams}
+                patientId={patient.id}
+                onRefresh={refetch}
+              />
             </div>
           )}
 
@@ -2815,7 +3335,10 @@ export default function PatientDetail() {
           )}
 
           {activeTab === "dependentes" && (
-            <DependentsSection patientId={patient.id} onSelectDependent={(depId) => navigate(`/patients/${depId}`)} />
+            <DependentsSection
+              patientId={patient.id}
+              onSelectDependent={(depId) => navigate(`/patients/${depId}`)}
+            />
           )}
 
           {/* Modals */}
@@ -2826,7 +3349,11 @@ export default function PatientDetail() {
             title="Nova Consulta"
             maxWidth="max-w-2xl"
           >
-            <ConsultaForm onClose={() => setShowConsultaModal(false)} patientId={patient.id} onSaved={refetch} />
+            <ConsultaForm
+              onClose={() => setShowConsultaModal(false)}
+              patientId={patient.id}
+              onSaved={refetch}
+            />
           </Modal>
 
           <Modal
@@ -2836,7 +3363,10 @@ export default function PatientDetail() {
             title="Prescrever Medicamento"
             maxWidth="max-w-2xl"
           >
-            <PrescriptionForm onClose={() => setShowMedicamentoModal(false)} patientName={patient.name} />
+            <PrescriptionForm
+              onClose={() => setShowMedicamentoModal(false)}
+              patientName={patient.name}
+            />
           </Modal>
 
           <Modal
@@ -2846,7 +3376,12 @@ export default function PatientDetail() {
             title="Solicitar Exame"
             maxWidth="max-w-2xl"
           >
-            <ExamRequestForm onClose={() => setShowDocumentoModal(false)} patientName={patient.name} patientId={patient.id} onSaved={refetch} />
+            <ExamRequestForm
+              onClose={() => setShowDocumentoModal(false)}
+              patientName={patient.name}
+              patientId={patient.id}
+              onSaved={refetch}
+            />
           </Modal>
 
           {/* Edit Consultation Modal */}
@@ -2862,7 +3397,10 @@ export default function PatientDetail() {
                 consultation={editingConsulta}
                 patientId={patient.id}
                 onClose={() => setEditingConsulta(null)}
-                onSaved={() => { refetch(); setEditingConsulta(null); }}
+                onSaved={() => {
+                  refetch();
+                  setEditingConsulta(null);
+                }}
               />
             )}
           </Modal>
@@ -2886,71 +3424,37 @@ export default function PatientDetail() {
     );
   }
 
-  // Fallback to mock data
+  // Error state — no mock fallback
 
   return (
     <MainLayout>
       <div className="space-y-8">
-        {/* Back Button */}
         <button
-          onClick={() => {
-            if (isDependent && responsibles.length > 0) {
-              navigate(`/patients/${responsibles[0].id}`);
-            } else {
-              navigate("/patients");
-            }
-          }}
+          onClick={() => navigate("/patients")}
           className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent"
         >
           <ArrowLeft size={20} />
-          <span>{isDependent ? 'Voltar para responsável' : 'Voltar para Pacientes'}</span>
+          <span>Voltar para Pacientes</span>
         </button>
 
-        {/* Patient Hero */}
-        <PatientHero patient={mockPatient} />
-
-        {/* Tabs Navigation */}
-        <div className="flex space-x-1 p-1 bg-white rounded-2xl w-fit shadow-sm border border-gray-100 mb-8">
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6">
+            <AlertTriangle className="w-8 h-8 text-red-500" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">
+            Não foi possível carregar os dados do paciente
+          </h3>
+          <p className="text-slate-500 text-sm max-w-md mb-6">
+            {error ||
+              "Ocorreu um erro ao buscar as informações. Verifique se você tem permissão para acessar este prontuário."}
+          </p>
           <button
-            className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
-              activeTab === "consultas"
-                ? "bg-primary/5 text-primary"
-                : "text-gray-500 hover:text-gray-800"
-            }`}
-            onClick={() => setActiveTab("consultas")}
+            onClick={() => refetch()}
+            className="bg-primary text-white px-6 py-3 rounded-xl font-semibold text-sm hover:bg-primary/90 transition-all cursor-pointer border-none"
           >
-            Consultas
-          </button>
-          <button
-            className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
-              activeTab === "medicamentos"
-                ? "bg-primary/5 text-primary"
-                : "text-gray-500 hover:text-gray-800"
-            }`}
-            onClick={() => setActiveTab("medicamentos")}
-          >
-            Medicamentos
-          </button>
-          <button
-            className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
-              activeTab === "exames"
-                ? "bg-primary/5 text-primary"
-                : "text-gray-500 hover:text-gray-800"
-            }`}
-            onClick={() => setActiveTab("exames")}
-          >
-            Exames & Receitas
+            Tentar novamente
           </button>
         </div>
-
-        {/* Tab Content */}
-        {activeTab === "consultas" && (
-          <ConsultationsTab consultations={mockConsultations} />
-        )}
-        {activeTab === "medicamentos" && (
-          <MedicationsTab medications={mockMedications} />
-        )}
-        {activeTab === "exames" && <DocumentsTab documents={mockDocuments} />}
       </div>
     </MainLayout>
   );

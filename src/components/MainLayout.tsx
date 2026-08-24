@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useState, useRef, useEffect } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { ICONS } from "../constants";
@@ -16,6 +16,8 @@ import {
   Landmark,
   BarChart3,
   FileBarChart,
+  User,
+  LogOut,
 } from "lucide-react";
 import { logout } from "../services/auth";
 import { useAuth } from "../contexts/AuthContext";
@@ -81,6 +83,23 @@ export function MainLayout({ children }: MainLayoutProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  const [avatarDropdown, setAvatarDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setAvatarDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   // Financial submenu: show when on /financial/* OR when user manually opened it
   const isOnFinancialPage = location.pathname.startsWith("/financial");
   const [financialMenuForced, setFinancialMenuForced] = useState(false);
@@ -102,7 +121,8 @@ export function MainLayout({ children }: MainLayoutProps) {
             className="w-10 h-10 rounded-xl"
           />
           <h2 className="text-xl font-black tracking-tight font-manrope">
-            <span className="text-slate-900">Pocket</span><span className="text-primary">Med</span>
+            <span className="text-slate-900">Pocket</span>
+            <span className="text-primary">Med</span>
           </h2>
         </div>
 
@@ -187,44 +207,9 @@ export function MainLayout({ children }: MainLayoutProps) {
                   </button>
                 </motion.div>
               )}
-
-              <div className="pt-6 pb-2 px-4">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/40">
-                  Pessoal
-                </p>
-              </div>
-
-              {personalItems.map((item, idx) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <motion.div key={idx} whileHover={{ x: 4 }}>
-                    <Link
-                      to={item.path}
-                      className={`flex items-center space-x-3 px-4 py-3 rounded-full transition-all duration-200 font-manrope text-sm font-semibold ${
-                        isActive
-                          ? "bg-white text-primary shadow-sm"
-                          : "text-slate-600 hover:text-primary hover:bg-slate-200"
-                      }`}
-                    >
-                      <item.icon size={18} />
-                      <span>{item.label}</span>
-                    </Link>
-                  </motion.div>
-                );
-              })}
             </>
           )}
         </nav>
-
-        <div className="mt-auto border-t border-slate-200/50 pt-4">
-          <button
-            onClick={() => logout()}
-            className="flex items-center space-x-3 px-4 py-3 text-error hover:bg-error-container/20 transition-all rounded-full font-manrope text-sm font-semibold cursor-pointer w-full border-none bg-transparent"
-          >
-            <ICONS.Logout size={18} />
-            <span>Sair</span>
-          </button>
-        </div>
       </aside>
 
       {/* Main Content */}
@@ -254,27 +239,56 @@ export function MainLayout({ children }: MainLayoutProps) {
 
             <div className="h-8 w-px bg-slate-200 mx-1"></div>
 
-            <div
-              onClick={() => navigate("/account")}
-              className="flex items-center gap-3 cursor-pointer group"
-            >
-              <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold text-slate-900 group-hover:text-primary transition-colors">
-                  {user?.name || user?.email || "Usuário"}
-                </p>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                  {user?.role === "admin" ? "Administrador" : "Médico"}
-                </p>
+            <div className="relative" ref={dropdownRef}>
+              <div
+                onClick={() => setAvatarDropdown(!avatarDropdown)}
+                className="flex items-center gap-3 cursor-pointer group"
+              >
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs font-bold text-slate-900 group-hover:text-primary transition-colors">
+                    {user?.name || user?.email || "Usuário"}
+                  </p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                    {user?.role === "admin" ? "Administrador" : "Médico"}
+                  </p>
+                </div>
+                {user?.profileImage ? (
+                  <img
+                    alt="Profile"
+                    className="w-9 h-9 rounded-full object-cover ring-2 ring-primary/10 group-hover:ring-primary transition-all"
+                    src={user.profileImage}
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-primary/10 ring-2 ring-primary/10 group-hover:ring-primary transition-all flex items-center justify-center text-primary font-bold text-xs">
+                    {(user?.name || user?.email || "U").charAt(0).toUpperCase()}
+                  </div>
+                )}
               </div>
-              {user?.profileImage ? (
-                <img
-                  alt="Profile"
-                  className="w-9 h-9 rounded-full object-cover ring-2 ring-primary/10 group-hover:ring-primary transition-all"
-                  src={user.profileImage}
-                />
-              ) : (
-                <div className="w-9 h-9 rounded-full bg-primary/10 ring-2 ring-primary/10 group-hover:ring-primary transition-all flex items-center justify-center text-primary font-bold text-xs">
-                  {(user?.name || user?.email || "U").charAt(0).toUpperCase()}
+
+              {/* Dropdown Menu */}
+              {avatarDropdown && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-50">
+                  <button
+                    onClick={() => {
+                      setAvatarDropdown(false);
+                      navigate("/account");
+                    }}
+                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors cursor-pointer border-none bg-transparent font-medium"
+                  >
+                    <User size={16} />
+                    Minha Conta
+                  </button>
+                  <div className="h-px bg-slate-100 mx-3 my-1"></div>
+                  <button
+                    onClick={() => {
+                      setAvatarDropdown(false);
+                      logout();
+                    }}
+                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer border-none bg-transparent font-medium"
+                  >
+                    <LogOut size={16} />
+                    Sair
+                  </button>
                 </div>
               )}
             </div>

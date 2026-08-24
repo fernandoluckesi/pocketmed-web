@@ -1027,6 +1027,7 @@ function MyPatientsContent({
 }) {
   const { patients, loading, error, refetch } = useMyPatients();
   const [searchFilter, setSearchFilter] = useState("");
+  const [view, setView] = useState<"grid" | "list">("grid");
 
   // Expose refetch to parent via ref
   useEffect(() => {
@@ -1103,83 +1104,154 @@ function MyPatientsContent({
           </div>
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Buscar por nome ou email..."
-            value={searchFilter}
-            onChange={(e) => setSearchFilter(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 focus:border-primary"
-          />
+        <div className="flex items-center justify-between gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Buscar por nome ou email..."
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 focus:border-primary"
+            />
+          </div>
+          <div className="flex gap-2 bg-white p-1 rounded-xl shadow-sm border border-gray-100">
+            <button
+              onClick={() => setView("grid")}
+              className={`p-2 rounded-lg transition-all cursor-pointer border-none ${view === "grid" ? "bg-primary text-white shadow-md" : "text-gray-400 hover:text-primary bg-transparent"}`}
+            >
+              <LayoutGrid className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setView("list")}
+              className={`p-2 rounded-lg transition-all cursor-pointer border-none ${view === "list" ? "bg-primary text-white shadow-md" : "text-gray-400 hover:text-primary bg-transparent"}`}
+            >
+              <List className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredPatients.map((patient, idx) => (
-            <motion.div
-              key={patient.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.08 }}
-              whileHover={{ y: -6 }}
-              className="group"
-            >
-              <Link
-                to={`/patients/${patient.id}`}
-                className="block bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all no-underline text-inherit"
+        <div
+          className={
+            view === "grid"
+              ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+              : "space-y-4"
+          }
+        >
+          {filteredPatients.map((patient, idx) =>
+            view === "grid" ? (
+              <motion.div
+                key={patient.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.08 }}
+                whileHover={{ y: -6 }}
+                className="group"
               >
-                <div className="flex items-start gap-4 mb-5">
-                  <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
-                    {patient.profileImage ? (
-                      <img
-                        src={patient.profileImage}
-                        alt={patient.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold text-lg">
-                        {patient.name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h5 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors font-display truncate">
-                      {patient.name}
-                    </h5>
-                    <p className="text-gray-500 text-sm font-medium">
-                      {patient.email || patient.phone || ""}
-                    </p>
-                  </div>
-                  <div className="shrink-0">
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${patient.isShadow ? "bg-blue-50 text-blue-700" : "bg-green-100 text-green-700"}`}
-                    >
-                      <CheckCircle size={12} />
-                      {patient.isShadow ? "Local" : "Ativo"}
-                      {patient.isShadow && (
-                        <span className="relative group/tip cursor-help">
-                          <Info size={12} className="text-blue-500" />
-                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-slate-900 text-white text-[10px] font-normal normal-case rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 text-center leading-relaxed shadow-lg">
-                            Este paciente está cadastrado somente para
-                            visualização deste médico. Para compartilhar com
-                            outros profissionais, o paciente deve baixar o
-                            aplicativo PocketMed no celular.
-                          </span>
-                        </span>
+                <Link
+                  to={`/patients/${patient.id}`}
+                  className="block bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all no-underline text-inherit"
+                >
+                  <div className="flex items-start gap-4 mb-5">
+                    <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
+                      {patient.profileImage ? (
+                        <img
+                          src={patient.profileImage}
+                          alt={patient.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold text-lg">
+                          {patient.name.charAt(0).toUpperCase()}
+                        </div>
                       )}
-                    </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h5 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors font-display truncate">
+                        {patient.name}
+                      </h5>
+                      <p className="text-gray-500 text-sm font-medium">
+                        {patient.email || patient.phone || ""}
+                      </p>
+                    </div>
+                    <div className="shrink-0">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${patient.isShadow ? "bg-blue-50 text-blue-700" : "bg-green-100 text-green-700"}`}
+                      >
+                        <CheckCircle size={12} />
+                        {patient.isShadow ? "Local" : "Ativo"}
+                        {patient.isShadow && (
+                          <span className="relative group/tip cursor-help">
+                            <Info size={12} className="text-blue-500" />
+                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-slate-900 text-white text-[10px] font-normal normal-case rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 text-center leading-relaxed shadow-lg">
+                              Este paciente está cadastrado somente para
+                              visualização deste médico. Para compartilhar com
+                              outros profissionais, o paciente deve baixar o
+                              aplicativo PocketMed no celular.
+                            </span>
+                          </span>
+                        )}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-gray-400">
-                    Ver prontuário completo
-                  </span>
-                  <ArrowRight className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-              </Link>
-            </motion.div>
-          ))}
+                  <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-gray-400">
+                      Ver prontuário completo
+                    </span>
+                    <ArrowRight className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </Link>
+              </motion.div>
+            ) : (
+              <motion.div
+                key={patient.id}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                whileHover={{ y: -2 }}
+              >
+                <Link
+                  to={`/patients/${patient.id}`}
+                  className="block bg-white p-5 rounded-2xl border border-slate-100 hover:border-primary/20 hover:shadow-xl hover:shadow-slate-200/50 transition-all no-underline text-inherit"
+                >
+                  <div className="flex items-center justify-between gap-6">
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                      <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 border-slate-100">
+                        {patient.profileImage ? (
+                          <img
+                            src={patient.profileImage}
+                            alt={patient.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold text-lg">
+                            {patient.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <h5 className="font-bold text-base leading-tight hover:text-primary transition-colors font-display truncate">
+                          {patient.name}
+                        </h5>
+                        <p className="text-gray-400 text-sm font-medium truncate">
+                          {patient.email || patient.phone || ""}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${patient.isShadow ? "bg-blue-50 text-blue-700" : "bg-green-100 text-green-700"}`}
+                      >
+                        <CheckCircle size={12} />
+                        {patient.isShadow ? "Local" : "Ativo"}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            ),
+          )}
         </div>
       </section>
     );
