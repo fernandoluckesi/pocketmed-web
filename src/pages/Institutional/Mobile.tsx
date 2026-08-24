@@ -25,17 +25,17 @@ export default function InstitutionalMobile() {
 
       {/* Hero */}
       <section className="relative overflow-hidden bg-white">
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-0">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-primary mb-4 sm:mb-6 transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-primary mb-1 mt-2 transition-colors"
           >
             <ArrowLeft size={16} />
             Voltar para o início
           </Link>
-          <div className="grid md:grid-cols-2 gap-10 md:gap-12 items-center">
+          <div className="grid md:grid-cols-2 gap-16 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold mb-5 sm:mb-6">
+              <div className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold mb-8">
                 <Smartphone size={16} />
                 Aplicativo Mobile
               </div>
@@ -59,11 +59,11 @@ export default function InstitutionalMobile() {
                 </span>
               </div>
             </div>
-            <div className="flex justify-center">
+            <div className="hidden md:flex justify-center">
               <img
                 src={mobileImg}
                 alt="PocketMed App"
-                className="w-[260px] sm:w-[300px] drop-shadow-2xl"
+                className="w-[300px] drop-shadow-2xl"
               />
             </div>
           </div>

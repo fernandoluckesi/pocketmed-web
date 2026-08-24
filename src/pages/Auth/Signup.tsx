@@ -12,12 +12,15 @@ import {
   Phone,
   Camera,
   CreditCard,
+  MapPin,
+  Loader2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useAuth } from "../../contexts/AuthContext";
 import { ApiError } from "../../services/api";
+import { fetchCep } from "../../services/cep";
 import { Snackbar } from "../../components/Snackbar";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 import { PasswordStrengthIndicator } from "../../components/PasswordStrengthIndicator";
@@ -180,6 +183,24 @@ const clinicSchema = Yup.object({
       if (!val) return false;
       return val.replace(/\D/g, "").length === 14;
     }),
+  // Address fields
+  cep: Yup.string()
+    .required("CEP é obrigatório")
+    .test("cep-format", "CEP deve ter 8 dígitos", (val) => {
+      if (!val) return false;
+      return val.replace(/\D/g, "").length === 8;
+    }),
+  street: Yup.string().required("Endereço é obrigatório"),
+  number: Yup.string().when("noNumber", {
+    is: true,
+    then: (schema) => schema.notRequired(),
+    otherwise: (schema) => schema.required("Número é obrigatório"),
+  }),
+  complement: Yup.string().notRequired(),
+  neighborhood: Yup.string().required("Bairro é obrigatório"),
+  city: Yup.string().required("Cidade é obrigatória"),
+  state: Yup.string().required("Estado é obrigatório"),
+  noNumber: Yup.boolean(),
   // Responsible doctor data
   name: Yup.string().required("Nome do responsável é obrigatório"),
   crmState: Yup.string().required("Selecione o estado do CRM"),
@@ -227,6 +248,14 @@ function formatCNPJ(value: string): string {
   return masked;
 }
 
+function formatCEP(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  if (digits.length > 5) {
+    return digits.slice(0, 5) + "-" + digits.slice(5);
+  }
+  return digits;
+}
+
 function ClinicSignupForm({
   onBack,
   navigate,
@@ -240,12 +269,24 @@ function ClinicSignupForm({
 }) {
   const { registerDoctor } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [legalModal, setLegalModal] = useState<"privacy" | "terms" | "security" | null>(null);
+  const [legalModal, setLegalModal] = useState<
+    "privacy" | "terms" | "security" | null
+  >(null);
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepMessage, setCepMessage] = useState<string | null>(null);
 
   const formik = useFormik({
     initialValues: {
       clinicName: "",
       cnpj: "",
+      cep: "",
+      street: "",
+      number: "",
+      complement: "",
+      neighborhood: "",
+      city: "",
+      state: "",
+      noNumber: false,
       name: "",
       crmState: "SP",
       crm: "",
@@ -274,6 +315,14 @@ function ClinicSignupForm({
           crm: `${values.crm}/${values.crmState}`,
           clinicName: values.clinicName,
           cnpj: values.cnpj.replace(/\D/g, ""),
+          cep: values.cep.replace(/\D/g, ""),
+          street: values.street,
+          number: values.noNumber ? undefined : values.number,
+          complement: values.complement || undefined,
+          neighborhood: values.neighborhood,
+          city: values.city,
+          state: values.state,
+          noNumber: values.noNumber,
         });
         // If we're still here, email verification is needed
         onVerificationNeeded(values.email);
@@ -303,6 +352,39 @@ function ClinicSignupForm({
       }
     },
   });
+
+  // CEP auto-fill: trigger when CEP reaches 8 digits
+  const cepRequestRef = useRef(0);
+  useEffect(() => {
+    const digits = formik.values.cep.replace(/\D/g, "");
+    if (digits.length !== 8) {
+      return;
+    }
+
+    const requestId = ++cepRequestRef.current;
+    setCepLoading(true);
+    setCepMessage(null);
+
+    fetchCep(digits).then((result) => {
+      // Skip stale responses
+      if (requestId !== cepRequestRef.current) return;
+
+      setCepLoading(false);
+      if (result.success) {
+        formik.setFieldValue("street", result.data.street);
+        formik.setFieldValue("neighborhood", result.data.neighborhood);
+        formik.setFieldValue("city", result.data.city);
+        formik.setFieldValue("state", result.data.state);
+        setCepMessage(null);
+      } else if (result.error === "not_found") {
+        setCepMessage("CEP não encontrado. Preencha o endereço manualmente.");
+      } else {
+        setCepMessage(
+          "Não foi possível consultar o CEP. Preencha o endereço manualmente.",
+        );
+      }
+    });
+  }, [formik.values.cep]);
 
   const fieldError = (field: keyof typeof formik.values) =>
     formik.touched[field] && formik.errors[field] ? formik.errors[field] : null;
@@ -373,6 +455,186 @@ function ClinicSignupForm({
             </div>
             {fieldError("cnpj") && (
               <p className="text-xs text-red-500 mt-1">{fieldError("cnpj")}</p>
+            )}
+          </div>
+        </div>
+
+        {/* === Seção: Endereço da Clínica === */}
+        <div className="space-y-4">
+          <div className="border-b border-slate-200 pb-3">
+            <h3 className="text-base font-bold text-slate-900">
+              Endereço da Clínica
+            </h3>
+            <p className="text-[10px] text-slate-400 mt-0.5">
+              Localização da instituição
+            </p>
+          </div>
+
+          {/* CEP */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-500 block">
+              CEP
+            </label>
+            <div className="relative group">
+              {cepLoading ? (
+                <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary animate-spin" />
+              ) : (
+                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+              )}
+              <input
+                className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("cep") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
+                placeholder="00000-000"
+                type="text"
+                inputMode="numeric"
+                maxLength={9}
+                name="cep"
+                value={formik.values.cep}
+                onChange={(e) =>
+                  formik.setFieldValue("cep", formatCEP(e.target.value))
+                }
+                onBlur={formik.handleBlur}
+              />
+            </div>
+            {fieldError("cep") && (
+              <p className="text-xs text-red-500 mt-1">{fieldError("cep")}</p>
+            )}
+            {cepMessage && (
+              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-1">
+                {cepMessage}
+              </p>
+            )}
+          </div>
+
+          {/* Street (full width) */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-500 block">
+              Endereço
+            </label>
+            <input
+              className={`w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("street") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
+              placeholder="Rua, Avenida, etc."
+              type="text"
+              {...formik.getFieldProps("street")}
+            />
+            {fieldError("street") && (
+              <p className="text-xs text-red-500 mt-1">
+                {fieldError("street")}
+              </p>
+            )}
+          </div>
+
+          {/* Number + "Sem Número" checkbox (side by side) */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 block">
+                Número
+              </label>
+              <input
+                className={`w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("number") ? "border-red-400" : "border-slate-200 focus:border-primary"} ${formik.values.noNumber ? "opacity-50 cursor-not-allowed" : ""}`}
+                placeholder="123"
+                type="text"
+                name="number"
+                value={formik.values.number}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                disabled={formik.values.noNumber}
+              />
+              {fieldError("number") && (
+                <p className="text-xs text-red-500 mt-1">
+                  {fieldError("number")}
+                </p>
+              )}
+            </div>
+            <div className="flex items-end pb-1">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  name="noNumber"
+                  checked={formik.values.noNumber}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    formik.setFieldValue("noNumber", checked);
+                    if (checked) {
+                      formik.setFieldValue("number", "");
+                    }
+                  }}
+                  className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary/30"
+                />
+                <span className="text-xs font-medium text-slate-600">
+                  Sem Número
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {/* Complement (full width) */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-500 block">
+              Complemento
+            </label>
+            <input
+              className="w-full bg-slate-50 border border-slate-200 focus:border-primary rounded-xl py-3.5 px-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10"
+              placeholder="Sala 101, Bloco A, etc."
+              type="text"
+              {...formik.getFieldProps("complement")}
+            />
+          </div>
+
+          {/* Neighborhood (full width) */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-500 block">
+              Bairro
+            </label>
+            <input
+              className={`w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("neighborhood") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
+              placeholder="Centro"
+              type="text"
+              {...formik.getFieldProps("neighborhood")}
+            />
+            {fieldError("neighborhood") && (
+              <p className="text-xs text-red-500 mt-1">
+                {fieldError("neighborhood")}
+              </p>
+            )}
+          </div>
+
+          {/* City (full width) */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-500 block">
+              Cidade
+            </label>
+            <input
+              className={`w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("city") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
+              placeholder="São Paulo"
+              type="text"
+              {...formik.getFieldProps("city")}
+            />
+            {fieldError("city") && (
+              <p className="text-xs text-red-500 mt-1">{fieldError("city")}</p>
+            )}
+          </div>
+
+          {/* State (select dropdown) */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-500 block">
+              Estado
+            </label>
+            <select
+              className={`w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-slate-900 text-sm outline-none transition-all focus:ring-2 focus:ring-primary/10 appearance-none cursor-pointer ${fieldError("state") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
+              name="state"
+              value={formik.values.state}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+            >
+              <option value="">Selecione o estado</option>
+              {UF_LIST.map((uf) => (
+                <option key={uf} value={uf}>
+                  {uf}
+                </option>
+              ))}
+            </select>
+            {fieldError("state") && (
+              <p className="text-xs text-red-500 mt-1">{fieldError("state")}</p>
             )}
           </div>
         </div>
@@ -685,10 +947,18 @@ function ClinicSignupForm({
         </p>
       </footer>
 
-      <LegalModal open={legalModal === "privacy"} onClose={() => setLegalModal(null)} title="Política de Privacidade">
+      <LegalModal
+        open={legalModal === "privacy"}
+        onClose={() => setLegalModal(null)}
+        title="Política de Privacidade"
+      >
         <PrivacyPolicyContent />
       </LegalModal>
-      <LegalModal open={legalModal === "terms"} onClose={() => setLegalModal(null)} title="Termos de Serviço">
+      <LegalModal
+        open={legalModal === "terms"}
+        onClose={() => setLegalModal(null)}
+        title="Termos de Serviço"
+      >
         <TermsOfServiceContent />
       </LegalModal>
     </>
@@ -933,7 +1203,7 @@ export default function Signup() {
       </div>
 
       {/* Right Side: Form */}
-      <main className="w-full lg:w-1/2 min-h-screen flex flex-col items-center p-6 sm:p-12 md:p-16 lg:p-24 bg-white relative z-10 overflow-y-auto">
+      <main className="w-full lg:w-1/2 min-h-screen flex flex-col items-center p-6 bg-white relative z-10 overflow-y-auto">
         <div className="w-full max-w-md space-y-8 my-auto">
           {/* Header */}
           <header className="text-center space-y-4">

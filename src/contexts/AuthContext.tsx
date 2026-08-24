@@ -32,6 +32,14 @@ interface RegisterDoctorPayload {
   rqe?: string;
   clinicName?: string;
   cnpj?: string;
+  cep?: string;
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  noNumber?: boolean;
   profileImage?: File;
 }
 

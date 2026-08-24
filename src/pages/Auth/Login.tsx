@@ -23,7 +23,9 @@ export default function Login() {
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [snackbar, setSnackbar] = useState({ visible: false, message: "" });
-  const [legalModal, setLegalModal] = useState<"privacy" | "terms" | "security" | null>(null);
+  const [legalModal, setLegalModal] = useState<
+    "privacy" | "terms" | "security" | null
+  >(null);
 
   const formik = useFormik({
     initialValues: {
@@ -77,7 +79,7 @@ export default function Login() {
       </div>
 
       {/* Right Side: Form */}
-      <main className="w-full lg:w-1/2 min-h-screen flex flex-col items-center p-6 sm:p-12 md:p-16 lg:p-24 bg-white relative z-10 overflow-y-auto">
+      <main className="w-full lg:w-1/2 min-h-screen flex flex-col items-center p-6 bg-white relative z-10 overflow-y-auto">
         <div className="w-full max-w-md space-y-8 my-auto">
           {/* Header */}
           <header className="text-center space-y-4">
@@ -88,7 +90,8 @@ export default function Login() {
                 className="w-[72px] h-[72px] rounded-xl"
               />
               <h1 className="text-4xl font-display font-extrabold tracking-tight">
-                <span className="text-slate-900">Pocket</span><span className="text-primary">Med</span>
+                <span className="text-slate-900">Pocket</span>
+                <span className="text-primary">Med</span>
               </h1>
             </div>
             <div className="space-y-2">
@@ -221,14 +224,30 @@ export default function Login() {
         {/* Bottom footer */}
         <div className="mt-auto pt-8 pb-6 text-center lg:text-left space-y-2 w-full max-w-md">
           <div className="flex items-center gap-3 justify-center lg:justify-start text-[10px] font-semibold uppercase tracking-wider text-slate-400 whitespace-nowrap">
-            <button onClick={() => setLegalModal("privacy")} className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400">Politicas de Privacidade</button>
+            <button
+              onClick={() => setLegalModal("privacy")}
+              className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400"
+            >
+              Politicas de Privacidade
+            </button>
             <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-            <button onClick={() => setLegalModal("terms")} className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400">Termos de Servico</button>
+            <button
+              onClick={() => setLegalModal("terms")}
+              className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400"
+            >
+              Termos de Servico
+            </button>
             <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-            <button onClick={() => setLegalModal("security")} className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400">Padroes de Seguranca</button>
+            <button
+              onClick={() => setLegalModal("security")}
+              className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400"
+            >
+              Padroes de Seguranca
+            </button>
           </div>
           <p className="text-[10px] text-slate-400">
-            © {new Date().getFullYear()} PocketMed Clinical Systems. Todos os direitos reservados.
+            © {new Date().getFullYear()} PocketMed Clinical Systems. Todos os
+            direitos reservados.
           </p>
         </div>
 
@@ -241,13 +260,25 @@ export default function Login() {
         onClose={() => setSnackbar({ visible: false, message: "" })}
       />
 
-      <LegalModal open={legalModal === "privacy"} onClose={() => setLegalModal(null)} title="Politica de Privacidade">
+      <LegalModal
+        open={legalModal === "privacy"}
+        onClose={() => setLegalModal(null)}
+        title="Politica de Privacidade"
+      >
         <PrivacyPolicyContent />
       </LegalModal>
-      <LegalModal open={legalModal === "terms"} onClose={() => setLegalModal(null)} title="Termos de Servico">
+      <LegalModal
+        open={legalModal === "terms"}
+        onClose={() => setLegalModal(null)}
+        title="Termos de Servico"
+      >
         <TermsOfServiceContent />
       </LegalModal>
-      <LegalModal open={legalModal === "security"} onClose={() => setLegalModal(null)} title="Padroes de Seguranca">
+      <LegalModal
+        open={legalModal === "security"}
+        onClose={() => setLegalModal(null)}
+        title="Padroes de Seguranca"
+      >
         <SecurityStandardsContent />
       </LegalModal>
     </div>
