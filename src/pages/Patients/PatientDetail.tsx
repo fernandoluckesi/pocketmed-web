@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { MainLayout } from "../../components/MainLayout";
+import { Button } from "../../components/ui/Button";
 import { usePatientDetail } from "../../hooks/usePatients";
 import type { PatientFromAPI, Appointment } from "../../hooks/usePatients";
 import { Skeleton } from "../../components/Skeleton";
@@ -771,10 +772,13 @@ function ConsultationsTab({
         <h3 className="font-bold text-xl font-display tracking-tight">
           Histórico de Consultas
         </h3>
-        <button className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none">
-          <Plus className="w-3.5 h-3.5" />
+        <Button
+          variant="primary"
+          size="sm"
+          icon={<Plus className="w-3.5 h-3.5" />}
+        >
           Nova Consulta
-        </button>
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-4">
@@ -842,10 +846,13 @@ function MedicationsTab({ medications }: { medications: Medication[] }) {
         <h3 className="font-bold text-xl font-display tracking-tight">
           Prescrições Ativas
         </h3>
-        <button className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none">
-          <Plus className="w-3.5 h-3.5" />
+        <Button
+          variant="primary"
+          size="sm"
+          icon={<Plus className="w-3.5 h-3.5" />}
+        >
           Adicionar Medicamento
-        </button>
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -909,10 +916,13 @@ function DocumentsTab({ documents }: { documents: MedicalDocument[] }) {
         <h3 className="font-bold text-xl font-display tracking-tight">
           Documentos & Laudos
         </h3>
-        <button className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none">
-          <Plus className="w-3.5 h-3.5" />
+        <Button
+          variant="primary"
+          size="sm"
+          icon={<Plus className="w-3.5 h-3.5" />}
+        >
           Adicionar Documento
-        </button>
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -2058,18 +2068,21 @@ function ConsultaDetailView({
 
       {/* Resend button for rejected consultations */}
       {isOwner && isRejected && (
-        <button
+        <Button
           type="button"
           onClick={handleResend}
           disabled={resending || cooldown > 0}
-          className="w-full py-3 bg-primary text-white rounded-full font-bold hover:opacity-90 transition-all cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed"
+          variant="primary"
+          size="md"
+          fullWidth
+          className="rounded-full"
         >
           {resending
             ? "Reenviando..."
             : cooldown > 0
               ? `Aguarde ${Math.floor(cooldown / 60)}:${(cooldown % 60).toString().padStart(2, "0")}`
               : "Reenviar Consulta"}
-        </button>
+        </Button>
       )}
 
       {/* Close button */}
@@ -2263,13 +2276,14 @@ function DiseasesSection({
         <h3 className="font-bold text-xl font-display tracking-tight">
           Condições e Doenças
         </h3>
-        <button
+        <Button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none"
+          variant="primary"
+          size="sm"
+          icon={<Plus className="w-3.5 h-3.5" />}
         >
-          <Plus className="w-3.5 h-3.5" />
           Adicionar Doença
-        </button>
+        </Button>
       </div>
 
       {diseases.length === 0 ? (
@@ -2646,13 +2660,14 @@ function AllergiesSection({ patientId }: { patientId: string }) {
         <h3 className="font-bold text-xl font-display tracking-tight">
           Alergias
         </h3>
-        <button
+        <Button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none"
+          variant="primary"
+          size="sm"
+          icon={<Plus className="w-3.5 h-3.5" />}
         >
-          <Plus className="w-3.5 h-3.5" />
           Adicionar Alergia
-        </button>
+        </Button>
       </div>
 
       {allergies.length === 0 ? (
@@ -2938,13 +2953,14 @@ function VaccinesSection({ patientId }: { patientId: string }) {
         <h3 className="font-bold text-xl font-display tracking-tight">
           Vacinas
         </h3>
-        <button
+        <Button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none"
+          variant="primary"
+          size="sm"
+          icon={<Plus className="w-3.5 h-3.5" />}
         >
-          <Plus className="w-3.5 h-3.5" />
           Adicionar Vacina
-        </button>
+        </Button>
       </div>
 
       {vaccines.length === 0 ? (
@@ -3268,14 +3284,15 @@ export default function PatientDetail() {
                 <h3 className="font-bold text-xl font-display tracking-tight">
                   Histórico de Consultas
                 </h3>
-                <button
+                <Button
                   data-testid="btn-nova-consulta"
                   onClick={() => setShowConsultaModal(true)}
-                  className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none"
+                  variant="primary"
+                  size="sm"
+                  icon={<Plus className="w-3.5 h-3.5" />}
                 >
-                  <Plus className="w-3.5 h-3.5" />
                   Nova Consulta
-                </button>
+                </Button>
               </div>
               <AppointmentsSection
                 appointments={patient.appointments}
@@ -3289,13 +3306,14 @@ export default function PatientDetail() {
                 <h3 className="font-bold text-xl font-display tracking-tight">
                   Prescrições Ativas
                 </h3>
-                <button
+                <Button
                   onClick={() => setShowMedicamentoModal(true)}
-                  className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none"
+                  variant="primary"
+                  size="sm"
+                  icon={<Plus className="w-3.5 h-3.5" />}
                 >
-                  <Plus className="w-3.5 h-3.5" />
                   Adicionar Medicamento
-                </button>
+                </Button>
               </div>
               <MedicationsSection medications={patient.medications} />
             </div>
@@ -3306,13 +3324,14 @@ export default function PatientDetail() {
                 <h3 className="font-bold text-xl font-display tracking-tight">
                   Exames Recentes
                 </h3>
-                <button
+                <Button
                   onClick={() => setShowDocumentoModal(true)}
-                  className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-semibold text-xs hover:opacity-90 transition-all shadow-sm cursor-pointer border-none"
+                  variant="primary"
+                  size="sm"
+                  icon={<Plus className="w-3.5 h-3.5" />}
                 >
-                  <Plus className="w-3.5 h-3.5" />
                   Solicitar Exame
-                </button>
+                </Button>
               </div>
               <ExamsSection
                 exams={patient.exams}
@@ -3448,12 +3467,9 @@ export default function PatientDetail() {
             {error ||
               "Ocorreu um erro ao buscar as informações. Verifique se você tem permissão para acessar este prontuário."}
           </p>
-          <button
-            onClick={() => refetch()}
-            className="bg-primary text-white px-6 py-3 rounded-xl font-semibold text-sm hover:bg-primary/90 transition-all cursor-pointer border-none"
-          >
+          <Button onClick={() => refetch()} variant="primary" size="md">
             Tentar novamente
-          </button>
+          </Button>
         </div>
       </div>
     </MainLayout>

@@ -23,6 +23,7 @@ import { Link } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { MainLayout } from "../../components/MainLayout";
+import { Button } from "../../components/ui/Button";
 import {
   useMyPatients,
   useSearchPatients,
@@ -76,10 +77,13 @@ function SearchHero({
             className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-gray-900 text-sm placeholder:text-gray-400 outline-none focus:border-primary focus:ring-1 focus:ring-primary/10 transition-all"
           />
         </div>
-        <button className="bg-primary text-white px-6 py-3 rounded-xl font-semibold text-sm hover:bg-primary/90 transition-all active:scale-95 flex items-center justify-center gap-2">
-          <Search className="w-4 h-4" />
+        <Button
+          variant="primary"
+          size="md"
+          icon={<Search className="w-4 h-4" />}
+        >
           Pesquisar
-        </button>
+        </Button>
       </div>
     </motion.section>
   );
@@ -150,12 +154,16 @@ function APIPatientCard({
             Aguardando Resposta
           </div>
         ) : (
-          <button
+          <Button
             onClick={() => onRequestAccess(patient)}
-            className="w-full py-4 bg-gray-50 hover:bg-primary hover:text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2 active:scale-95 text-gray-700"
+            variant="ghost"
+            size="md"
+            iconRight={<ArrowRight className="w-5 h-5" />}
+            fullWidth
+            className="py-4 rounded-2xl text-gray-700 bg-gray-50 hover:bg-primary hover:text-white"
           >
-            Solicitar Acesso <ArrowRight className="w-5 h-5" />
-          </button>
+            Solicitar Acesso
+          </Button>
         )}
       </div>
     </motion.div>
@@ -228,13 +236,17 @@ function APIPatientListRow({
             Aguardando Resposta
           </div>
         ) : (
-          <button
+          <Button
             onClick={() => onRequestAccess(patient)}
-            className="w-full md:w-auto px-6 py-3 bg-blue-50 text-primary hover:bg-primary hover:text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 active:scale-95 group/btn"
+            variant="ghost"
+            size="md"
+            iconRight={
+              <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+            }
+            className="w-full md:w-auto bg-blue-50 text-primary hover:bg-primary hover:text-white rounded-xl"
           >
             Solicitar Acesso
-            <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-          </button>
+          </Button>
         )}
       </div>
     </motion.div>
@@ -758,31 +770,29 @@ function AddPatientModal({
 
             {/* Buttons */}
             <div className="pt-4 flex gap-4">
-              <button
+              <Button
                 type="button"
                 onClick={handleClose}
                 disabled={loading}
-                className="flex-1 bg-slate-100 py-4 rounded-full font-bold text-slate-700 hover:bg-slate-200 transition-colors disabled:opacity-50"
+                variant="secondary"
+                size="lg"
+                fullWidth
+                className="rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 shadow-none"
               >
                 Cancelar
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
                 disabled={loading}
-                className="flex-1 bg-primary py-4 rounded-full font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary-container transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
+                loading={loading}
+                variant="primary"
+                size="lg"
+                fullWidth
+                icon={!loading ? <UserPlus className="w-5 h-5" /> : undefined}
+                className="rounded-full"
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Cadastrando...
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="w-5 h-5" />
-                    Confirmar Cadastro
-                  </>
-                )}
-              </button>
+                {loading ? "Cadastrando..." : "Confirmar Cadastro"}
+              </Button>
             </div>
           </form>
         )}
@@ -1312,13 +1322,14 @@ export default function Patients() {
                   Pesquise e gerencie sua base de pacientes global.
                 </p>
               </div>
-              <button
+              <Button
                 onClick={() => setIsModalOpen(true)}
-                className="bg-primary text-white px-8 py-3.5 rounded-2xl font-bold text-sm hover:bg-primary-container transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-primary/20"
+                variant="primary"
+                size="md"
+                icon={<Plus className="w-5 h-5" />}
               >
-                <Plus className="w-5 h-5" />
                 Adicionar Paciente
-              </button>
+              </Button>
             </div>
 
             <div className="flex space-x-1 p-1 bg-white rounded-2xl w-fit shadow-sm border border-gray-100">

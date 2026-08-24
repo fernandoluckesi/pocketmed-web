@@ -4,6 +4,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { motion } from "motion/react";
 import { MainLayout } from "../../components/MainLayout";
+import { Button } from "../../components/ui/Button";
 import { useAuth } from "../../contexts/AuthContext";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 import { PasswordStrengthIndicator } from "../../components/PasswordStrengthIndicator";
@@ -25,14 +26,16 @@ const profileSchema = Yup.object({
 });
 
 const passwordSchema = Yup.object({
-  oldPassword: Yup.string()
-    .required("Senha atual é obrigatória"),
+  oldPassword: Yup.string().required("Senha atual é obrigatória"),
   newPassword: Yup.string()
     .min(8, "Mínimo 8 caracteres")
     .matches(/[A-Z]/, "Deve conter letra maiúscula")
     .matches(/[a-z]/, "Deve conter letra minúscula")
     .matches(/\d/, "Deve conter um número")
-    .matches(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, "Deve conter caractere especial")
+    .matches(
+      /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/,
+      "Deve conter caractere especial",
+    )
     .required("Nova senha é obrigatória"),
   confirmPassword: Yup.string()
     .oneOf([Yup.ref("newPassword")], "Senhas não conferem")
@@ -61,13 +64,19 @@ export default function Account() {
     setDeleteSending(true);
     try {
       const token = localStorage.getItem("pocketmed_token");
-      await api.post("/auth/request-account-deletion", {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.post(
+        "/auth/request-account-deletion",
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       setDeleteStep("code");
       setDeleteCode("");
     } catch {
-      dialog.showError("Erro ao enviar código de verificação. Tente novamente.");
+      dialog.showError(
+        "Erro ao enviar código de verificação. Tente novamente.",
+      );
     } finally {
       setDeleteSending(false);
     }
@@ -134,7 +143,8 @@ export default function Account() {
       try {
         const formData = new FormData();
         if (values.name) formData.append("name", values.name);
-        if (values.phone) formData.append("phone", values.phone.replace(/\D/g, ""));
+        if (values.phone)
+          formData.append("phone", values.phone.replace(/\D/g, ""));
         if (values.gender) formData.append("gender", values.gender);
         if (values.birthDate) formData.append("birthDate", values.birthDate);
         if (values.specialty) formData.append("specialty", values.specialty);
@@ -262,7 +272,9 @@ export default function Account() {
                 />
               </div>
               <div>
-                <p className="font-bold text-slate-900">{user?.name || user?.email}</p>
+                <p className="font-bold text-slate-900">
+                  {user?.name || user?.email}
+                </p>
                 <p className="text-sm text-slate-500">
                   Clique na imagem para alterar sua foto de perfil
                 </p>
@@ -316,13 +328,18 @@ export default function Account() {
                   <CustomSelect
                     name="gender"
                     value={profileFormik.values.gender}
-                    onChange={(val) => profileFormik.setFieldValue("gender", val)}
+                    onChange={(val) =>
+                      profileFormik.setFieldValue("gender", val)
+                    }
                     placeholder="Selecione"
                     options={[
                       { value: "Masculino", label: "Masculino" },
                       { value: "Feminino", label: "Feminino" },
                       { value: "Outro", label: "Outro" },
-                      { value: "Prefiro não informar", label: "Prefiro não informar" },
+                      {
+                        value: "Prefiro não informar",
+                        label: "Prefiro não informar",
+                      },
                     ]}
                   />
                 </div>
@@ -346,11 +363,16 @@ export default function Account() {
                     name="cpf"
                     value={profileFormik.values.cpf}
                     onChange={(e) => {
-                      const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                      const digits = e.target.value
+                        .replace(/\D/g, "")
+                        .slice(0, 11);
                       let masked = digits;
-                      if (digits.length > 3) masked = digits.slice(0, 3) + "." + digits.slice(3);
-                      if (digits.length > 6) masked = masked.slice(0, 7) + "." + digits.slice(6);
-                      if (digits.length > 9) masked = masked.slice(0, 11) + "-" + digits.slice(9);
+                      if (digits.length > 3)
+                        masked = digits.slice(0, 3) + "." + digits.slice(3);
+                      if (digits.length > 6)
+                        masked = masked.slice(0, 7) + "." + digits.slice(6);
+                      if (digits.length > 9)
+                        masked = masked.slice(0, 11) + "-" + digits.slice(9);
                       profileFormik.setFieldValue("cpf", masked);
                     }}
                     className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
@@ -366,10 +388,66 @@ export default function Account() {
                   <CustomSelect
                     name="specialty"
                     value={profileFormik.values.specialty}
-                    onChange={(val) => profileFormik.setFieldValue("specialty", val)}
+                    onChange={(val) =>
+                      profileFormik.setFieldValue("specialty", val)
+                    }
                     placeholder="Selecione a especialidade"
                     options={[
-                      "Nenhuma","Acupuntura","Alergia e Imunologia","Anestesiologia","Angiologia","Cancerologia","Cardiologia","Cirurgia Cardiovascular","Cirurgia da Mão","Cirurgia de Cabeça e Pescoço","Cirurgia do Aparelho Digestivo","Cirurgia Geral","Cirurgia Pediátrica","Cirurgia Plástica","Cirurgia Torácica","Cirurgia Vascular","Clínica Médica","Clínica Geral","Coloproctologia","Dermatologia","Endocrinologia e Metabologia","Endoscopia","Gastroenterologia","Genética Médica","Geriatria","Ginecologia e Obstetrícia","Hematologia e Hemoterapia","Homeopatia","Infectologia","Mastologia","Medicina de Emergência","Medicina de Família e Comunidade","Medicina do Trabalho","Medicina Esportiva","Medicina Física e Reabilitação","Medicina Intensiva","Medicina Legal e Perícia Médica","Medicina Nuclear","Medicina Preventiva e Social","Nefrologia","Neurocirurgia","Neurologia","Nutrologia","Oftalmologia","Ortopedia e Traumatologia","Otorrinolaringologia","Patologia","Patologia Clínica/Medicina Laboratorial","Pediatria","Pneumologia","Psiquiatria","Radiologia e Diagnóstico por Imagem","Radioterapia","Reumatologia","Urologia"
+                      "Nenhuma",
+                      "Acupuntura",
+                      "Alergia e Imunologia",
+                      "Anestesiologia",
+                      "Angiologia",
+                      "Cancerologia",
+                      "Cardiologia",
+                      "Cirurgia Cardiovascular",
+                      "Cirurgia da Mão",
+                      "Cirurgia de Cabeça e Pescoço",
+                      "Cirurgia do Aparelho Digestivo",
+                      "Cirurgia Geral",
+                      "Cirurgia Pediátrica",
+                      "Cirurgia Plástica",
+                      "Cirurgia Torácica",
+                      "Cirurgia Vascular",
+                      "Clínica Médica",
+                      "Clínica Geral",
+                      "Coloproctologia",
+                      "Dermatologia",
+                      "Endocrinologia e Metabologia",
+                      "Endoscopia",
+                      "Gastroenterologia",
+                      "Genética Médica",
+                      "Geriatria",
+                      "Ginecologia e Obstetrícia",
+                      "Hematologia e Hemoterapia",
+                      "Homeopatia",
+                      "Infectologia",
+                      "Mastologia",
+                      "Medicina de Emergência",
+                      "Medicina de Família e Comunidade",
+                      "Medicina do Trabalho",
+                      "Medicina Esportiva",
+                      "Medicina Física e Reabilitação",
+                      "Medicina Intensiva",
+                      "Medicina Legal e Perícia Médica",
+                      "Medicina Nuclear",
+                      "Medicina Preventiva e Social",
+                      "Nefrologia",
+                      "Neurocirurgia",
+                      "Neurologia",
+                      "Nutrologia",
+                      "Oftalmologia",
+                      "Ortopedia e Traumatologia",
+                      "Otorrinolaringologia",
+                      "Patologia",
+                      "Patologia Clínica/Medicina Laboratorial",
+                      "Pediatria",
+                      "Pneumologia",
+                      "Psiquiatria",
+                      "Radiologia e Diagnóstico por Imagem",
+                      "Radioterapia",
+                      "Reumatologia",
+                      "Urologia",
                     ].map((s) => ({ value: s, label: s }))}
                   />
                 </div>
@@ -398,18 +476,17 @@ export default function Account() {
                   />
                 </div>
               </div>
-              <button
+              <Button
                 type="submit"
                 disabled={saving}
-                className="bg-primary text-white px-8 py-3.5 rounded-full font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-primary-container transition-all active:scale-95 disabled:opacity-60"
+                loading={saving}
+                variant="primary"
+                size="md"
+                icon={!saving ? <Save size={18} /> : undefined}
+                className="rounded-full"
               >
-                {saving ? (
-                  <Loader2 size={18} className="animate-spin" />
-                ) : (
-                  <Save size={18} />
-                )}
                 {saving ? "Salvando..." : "Salvar Alterações"}
-              </button>
+              </Button>
             </form>
           </div>
         )}
@@ -417,143 +494,160 @@ export default function Account() {
         {/* Security Tab */}
         {activeTab === "security" && (
           <>
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 space-y-6 max-w-lg">
-            <div>
-              <h2 className="text-xl font-bold font-display text-slate-900">
-                Alterar Senha
-              </h2>
-              <p className="text-sm text-slate-500 mt-1">
-                Atualize sua senha para manter sua conta segura.
-              </p>
-            </div>
-            <form onSubmit={passwordFormik.handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-on-surface-variant ml-1">
-                  Senha Atual
-                </label>
-                <input
-                  type="password"
-                  name="oldPassword"
-                  onChange={passwordFormik.handleChange}
-                  onBlur={passwordFormik.handleBlur}
-                  value={passwordFormik.values.oldPassword}
-                  className={`w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none ${passwordFormik.touched.oldPassword && passwordFormik.errors.oldPassword ? "ring-2 ring-red-300" : ""}`}
-                  placeholder="••••••••"
-                />
-                {passwordFormik.touched.oldPassword &&
-                  passwordFormik.errors.oldPassword && (
-                    <p className="text-red-500 text-xs ml-1">
-                      {passwordFormik.errors.oldPassword}
-                    </p>
-                  )}
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-on-surface-variant ml-1">
-                  Nova Senha
-                </label>
-                <input
-                  type="password"
-                  name="newPassword"
-                  onChange={passwordFormik.handleChange}
-                  onBlur={passwordFormik.handleBlur}
-                  value={passwordFormik.values.newPassword}
-                  className={`w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none ${passwordFormik.touched.newPassword && passwordFormik.errors.newPassword ? "ring-2 ring-red-300" : ""}`}
-                  placeholder="••••••••"
-                />
-                {passwordFormik.touched.newPassword &&
-                  passwordFormik.errors.newPassword && (
-                    <p className="text-red-500 text-xs ml-1">
-                      {passwordFormik.errors.newPassword}
-                    </p>
-                  )}
-                <PasswordStrengthIndicator password={passwordFormik.values.newPassword} />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-on-surface-variant ml-1">
-                  Confirmar Nova Senha
-                </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  onChange={passwordFormik.handleChange}
-                  onBlur={passwordFormik.handleBlur}
-                  value={passwordFormik.values.confirmPassword}
-                  className={`w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none ${passwordFormik.touched.confirmPassword && passwordFormik.errors.confirmPassword ? "ring-2 ring-red-300" : ""}`}
-                  placeholder="••••••••"
-                />
-                {passwordFormik.touched.confirmPassword &&
-                  passwordFormik.errors.confirmPassword && (
-                    <p className="text-red-500 text-xs ml-1">
-                      {passwordFormik.errors.confirmPassword}
-                    </p>
-                  )}
-              </div>
-              <button
-                type="submit"
-                disabled={saving}
-                className="bg-primary text-white px-8 py-3.5 rounded-full font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-primary-container transition-all active:scale-95 disabled:opacity-60"
-              >
-                {saving ? (
-                  <Loader2 size={18} className="animate-spin" />
-                ) : (
-                  <Lock size={18} />
-                )}
-                {saving ? "Alterando..." : "Alterar Senha"}
-              </button>
-            </form>
-          </div>
-
-          {/* Delete Account */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-red-100 max-w-lg mt-6">
-            <h3 className="text-lg font-bold text-red-600 mb-2">Excluir conta</h3>
-            <p className="text-sm text-slate-500 mb-4">
-              Esta ação é irreversível. Todos os seus dados serão removidos permanentemente.
-            </p>
-
-            {!deleteStep && (
-              <button
-                type="button"
-                onClick={handleRequestDeletion}
-                disabled={deleteSending}
-                className="bg-red-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-red-700 transition-all cursor-pointer border-none disabled:opacity-60"
-              >
-                {deleteSending ? "Enviando código..." : "Excluir minha conta"}
-              </button>
-            )}
-
-            {deleteStep === "code" && (
-              <div className="space-y-4">
-                <p className="text-sm text-slate-700">
-                  Um código de verificação foi enviado para o seu e-mail. Insira-o abaixo para confirmar a exclusão.
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 space-y-6 max-w-lg">
+              <div>
+                <h2 className="text-xl font-bold font-display text-slate-900">
+                  Alterar Senha
+                </h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  Atualize sua senha para manter sua conta segura.
                 </p>
-                <input
-                  type="text"
-                  maxLength={6}
-                  value={deleteCode}
-                  onChange={(e) => setDeleteCode(e.target.value.replace(/\D/g, ""))}
-                  placeholder="000000"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 px-4 text-slate-900 text-center tracking-[0.5em] font-mono text-lg outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400"
-                />
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={handleConfirmDeletion}
-                    disabled={deleting || deleteCode.length !== 6}
-                    className="bg-red-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-red-700 transition-all cursor-pointer border-none disabled:opacity-60"
-                  >
-                    {deleting ? "Excluindo..." : "Confirmar exclusão"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setDeleteStep(null); setDeleteCode(""); }}
-                    className="bg-slate-100 text-slate-600 px-6 py-3 rounded-xl font-semibold hover:bg-slate-200 transition-all cursor-pointer border-none"
-                  >
-                    Cancelar
-                  </button>
-                </div>
               </div>
-            )}
-          </div>
+              <form
+                onSubmit={passwordFormik.handleSubmit}
+                className="space-y-5"
+              >
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-on-surface-variant ml-1">
+                    Senha Atual
+                  </label>
+                  <input
+                    type="password"
+                    name="oldPassword"
+                    onChange={passwordFormik.handleChange}
+                    onBlur={passwordFormik.handleBlur}
+                    value={passwordFormik.values.oldPassword}
+                    className={`w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none ${passwordFormik.touched.oldPassword && passwordFormik.errors.oldPassword ? "ring-2 ring-red-300" : ""}`}
+                    placeholder="••••••••"
+                  />
+                  {passwordFormik.touched.oldPassword &&
+                    passwordFormik.errors.oldPassword && (
+                      <p className="text-red-500 text-xs ml-1">
+                        {passwordFormik.errors.oldPassword}
+                      </p>
+                    )}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-on-surface-variant ml-1">
+                    Nova Senha
+                  </label>
+                  <input
+                    type="password"
+                    name="newPassword"
+                    onChange={passwordFormik.handleChange}
+                    onBlur={passwordFormik.handleBlur}
+                    value={passwordFormik.values.newPassword}
+                    className={`w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none ${passwordFormik.touched.newPassword && passwordFormik.errors.newPassword ? "ring-2 ring-red-300" : ""}`}
+                    placeholder="••••••••"
+                  />
+                  {passwordFormik.touched.newPassword &&
+                    passwordFormik.errors.newPassword && (
+                      <p className="text-red-500 text-xs ml-1">
+                        {passwordFormik.errors.newPassword}
+                      </p>
+                    )}
+                  <PasswordStrengthIndicator
+                    password={passwordFormik.values.newPassword}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-on-surface-variant ml-1">
+                    Confirmar Nova Senha
+                  </label>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    onChange={passwordFormik.handleChange}
+                    onBlur={passwordFormik.handleBlur}
+                    value={passwordFormik.values.confirmPassword}
+                    className={`w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none ${passwordFormik.touched.confirmPassword && passwordFormik.errors.confirmPassword ? "ring-2 ring-red-300" : ""}`}
+                    placeholder="••••••••"
+                  />
+                  {passwordFormik.touched.confirmPassword &&
+                    passwordFormik.errors.confirmPassword && (
+                      <p className="text-red-500 text-xs ml-1">
+                        {passwordFormik.errors.confirmPassword}
+                      </p>
+                    )}
+                </div>
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  loading={saving}
+                  variant="primary"
+                  size="md"
+                  icon={!saving ? <Lock size={18} /> : undefined}
+                  className="rounded-full"
+                >
+                  {saving ? "Alterando..." : "Alterar Senha"}
+                </Button>
+              </form>
+            </div>
+
+            {/* Delete Account */}
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-red-100 max-w-lg mt-6">
+              <h3 className="text-lg font-bold text-red-600 mb-2">
+                Excluir conta
+              </h3>
+              <p className="text-sm text-slate-500 mb-4">
+                Esta ação é irreversível. Todos os seus dados serão removidos
+                permanentemente.
+              </p>
+
+              {!deleteStep && (
+                <Button
+                  type="button"
+                  onClick={handleRequestDeletion}
+                  disabled={deleteSending}
+                  variant="danger"
+                  size="md"
+                >
+                  {deleteSending ? "Enviando código..." : "Excluir minha conta"}
+                </Button>
+              )}
+
+              {deleteStep === "code" && (
+                <div className="space-y-4">
+                  <p className="text-sm text-slate-700">
+                    Um código de verificação foi enviado para o seu e-mail.
+                    Insira-o abaixo para confirmar a exclusão.
+                  </p>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={deleteCode}
+                    onChange={(e) =>
+                      setDeleteCode(e.target.value.replace(/\D/g, ""))
+                    }
+                    placeholder="000000"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 px-4 text-slate-900 text-center tracking-[0.5em] font-mono text-lg outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400"
+                  />
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      onClick={handleConfirmDeletion}
+                      disabled={deleting || deleteCode.length !== 6}
+                      variant="danger"
+                      size="md"
+                    >
+                      {deleting ? "Excluindo..." : "Confirmar exclusão"}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setDeleteStep(null);
+                        setDeleteCode("");
+                      }}
+                      variant="secondary"
+                      size="md"
+                      className="bg-slate-100 text-slate-600 hover:bg-slate-200 shadow-none"
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </>
         )}
 

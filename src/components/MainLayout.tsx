@@ -18,9 +18,11 @@ import {
   FileBarChart,
   User,
   LogOut,
+  ChevronDown,
 } from "lucide-react";
 import { logout } from "../services/auth";
 import { useAuth } from "../contexts/AuthContext";
+import { Button } from "../components/ui/Button";
 import iconLogo from "../assets/images/icon.png";
 
 const navItems = [
@@ -263,6 +265,9 @@ export function MainLayout({ children }: MainLayoutProps) {
                     {(user?.name || user?.email || "U").charAt(0).toUpperCase()}
                   </div>
                 )}
+                <ChevronDown
+                  className={`w-4 h-4 text-slate-400 transition-transform ${avatarDropdown ? "rotate-180" : ""}`}
+                />
               </div>
 
               {/* Dropdown Menu */}
@@ -312,12 +317,14 @@ export function MainLayout({ children }: MainLayoutProps) {
                   funcionalidades da plataforma.
                 </p>
               </div>
-              <button
+              <Button
                 onClick={() => navigate("/verification")}
-                className="shrink-0 bg-amber-600 text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-amber-700 transition-colors cursor-pointer border-none"
+                variant="primary"
+                size="sm"
+                className="shrink-0 bg-amber-600 hover:bg-amber-700 shadow-none"
               >
                 Completar Verificação
-              </button>
+              </Button>
             </div>
           )}
           {children}

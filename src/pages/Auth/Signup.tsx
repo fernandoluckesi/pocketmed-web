@@ -22,6 +22,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { ApiError } from "../../services/api";
 import { fetchCep } from "../../services/cep";
 import { Snackbar } from "../../components/Snackbar";
+import { Button } from "../../components/ui/Button";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 import { PasswordStrengthIndicator } from "../../components/PasswordStrengthIndicator";
 import iconLogo from "../../assets/images/icon.png";
@@ -925,13 +926,17 @@ function ClinicSignupForm({
         </div>
 
         {/* Submit */}
-        <button
-          className="w-full py-4 bg-gradient-to-r from-primary to-[#2b5aed] text-white font-semibold rounded-xl shadow-md shadow-primary/10 hover:shadow-primary/20 active:scale-[0.99] transition-all text-sm cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed"
+        <Button
           type="submit"
           disabled={formik.isSubmitting}
+          loading={formik.isSubmitting}
+          variant="primary"
+          size="lg"
+          fullWidth
+          className="bg-gradient-to-r from-primary to-[#2b5aed] shadow-md shadow-primary/10 hover:shadow-primary/20"
         >
           {formik.isSubmitting ? "Criando conta..." : "Cadastrar Clínica"}
-        </button>
+        </Button>
       </form>
 
       <footer className="pt-6 border-t border-slate-100 text-center space-y-4">
@@ -1754,13 +1759,17 @@ export default function Signup() {
                 </div>
 
                 {/* Submit */}
-                <button
-                  className="w-full mt-4 py-4 bg-gradient-to-r from-primary to-[#2b5aed] text-white font-semibold rounded-xl shadow-md shadow-primary/10 hover:shadow-primary/20 active:scale-[0.99] transition-all text-sm cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed"
+                <Button
                   type="submit"
                   disabled={formik.isSubmitting}
+                  loading={formik.isSubmitting}
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  className="mt-4 bg-gradient-to-r from-primary to-[#2b5aed] shadow-md shadow-primary/10 hover:shadow-primary/20"
                 >
                   {formik.isSubmitting ? "Criando conta..." : "Criar Conta"}
-                </button>
+                </Button>
               </form>
 
               <footer className="pt-6 border-t border-slate-100 text-center lg:text-left space-y-4">
