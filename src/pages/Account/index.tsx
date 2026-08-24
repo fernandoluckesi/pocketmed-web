@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Camera, Save, Lock, CreditCard, Loader2 } from "lucide-react";
+import { Camera, Save, Lock, CreditCard } from "lucide-react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { motion } from "motion/react";
