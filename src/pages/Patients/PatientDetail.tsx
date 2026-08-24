@@ -3,18 +3,14 @@ import {
   Calendar,
   User,
   Users,
-  Droplet,
   AlertTriangle,
   Activity,
   Stethoscope,
   MapPin,
   FileText,
-  Trash2,
   Plus,
   Edit,
-  Share2,
   ArrowLeft,
-  Check,
   ChevronRight,
   Loader2,
   Mail,
@@ -49,50 +45,6 @@ import {
 import { api } from "../../services/api";
 
 // --- Types ---
-
-interface Patient {
-  id: string;
-  name: string;
-  birthDate: string;
-  age: number;
-  bloodType: string;
-  contact: string;
-  allergies: string[];
-  imageUrl: string;
-  verified: boolean;
-}
-
-interface Consultation {
-  id: string;
-  patientId: string;
-  dateDay: string;
-  dateMonth: string;
-  title: string;
-  doctorName: string;
-  specialty: string;
-  locationOrTime: string;
-  status: "Concluído" | "Agendado" | "Cancelado";
-}
-
-interface Medication {
-  id: string;
-  patientId: string;
-  name: string;
-  dosage: string;
-  frequency: string;
-  type: "Contínuo" | "Suplemento" | "Temporário";
-  nextDose: string;
-  stockInfo?: string;
-}
-
-interface MedicalDocument {
-  id: string;
-  patientId: string;
-  title: string;
-  date: string;
-  source: string;
-  type: "Exame" | "Laudo" | "Receita";
-}
 
 // --- Components ---
 
@@ -664,16 +616,6 @@ function ExamResultModal({
       </div>
     </div>
   );
-}
-
-function ConsultationsTab(_props: { consultations: Consultation[] }) {
-  return null;
-}
-function MedicationsTab(_props: { medications: Medication[] }) {
-  return null;
-}
-function DocumentsTab(_props: { documents: MedicalDocument[] }) {
-  return null;
 }
 
 // --- Exam Request Form ---
