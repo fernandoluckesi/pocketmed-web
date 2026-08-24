@@ -1,9 +1,11 @@
+import { useDialog } from "../../components/ui/Dialog";
 import { useState, useEffect, useCallback } from "react";
 import { Network, Plus } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
 import { financialApi, type CostCenter } from "../../services/financial";
 
 export default function Costs() {
+  const dialog = useDialog();
   const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -48,7 +50,7 @@ export default function Costs() {
       setShowAdd(false);
       loadData();
     } catch {
-      alert("Erro ao criar centro de custo. Verifique se o código já existe.");
+      dialog.showError("Erro ao criar centro de custo. Verifique se o código já existe.");
     }
   };
 

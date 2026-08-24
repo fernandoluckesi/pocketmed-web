@@ -18,6 +18,7 @@ import {
 import { motion } from "motion/react";
 import { MainLayout } from "../../components/MainLayout";
 import { Tooltip } from "../../components/ui/Tooltip";
+import { useDialog } from "../../components/ui/Dialog";
 import { api } from "../../services/api";
 
 // --- Types ---
@@ -149,6 +150,7 @@ function MembersSection({
   onRemove,
   onEdit,
   onResendCode,
+  resendCooldown,
 }: {
   members: Member[];
   total: number;
@@ -162,6 +164,7 @@ function MembersSection({
   onRemove: (membershipId: string) => void;
   onEdit: (member: Member) => void;
   onResendCode: (membershipId: string) => void;
+  resendCooldown: number;
 }) {
   const getInitials = (name: string) =>
     name
@@ -296,10 +299,11 @@ function MembersSection({
                       {member.role !== "admin" && (
                         <div className="flex items-center justify-end gap-1">
                           {member.isShadow && (
-                            <Tooltip label="Reenviar código de ativação">
+                            <Tooltip label={resendCooldown > 0 ? `Aguarde ${resendCooldown}s` : "Reenviar código"}>
                               <button
                                 onClick={() => onResendCode(member.id)}
-                                className="p-2 rounded-lg hover:bg-blue-50 text-slate-500 hover:text-blue-600 transition-all cursor-pointer border-none bg-transparent"
+                                disabled={resendCooldown > 0}
+                                className="p-2 rounded-lg hover:bg-blue-50 text-slate-500 hover:text-blue-600 transition-all cursor-pointer border-none bg-transparent disabled:opacity-40 disabled:cursor-not-allowed"
                               >
                                 <Send size={16} />
                               </button>
@@ -477,6 +481,7 @@ function SidePanel({ overview }: { overview: Overview | null }) {
 // --- Main Page ---
 
 export default function ClinicalManagement() {
+  const dialog = useDialog();
   const [overview, setOverview] = useState<Overview | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [patients, setPatients] = useState<LinkedPatient[]>([]);
@@ -620,12 +625,22 @@ export default function ClinicalManagement() {
     setShowAddModal(true);
   };
 
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
   const handleResendCode = async (membershipId: string) => {
+    if (resendCooldown > 0) return;
     try {
       await api(`/secretaries/${membershipId}/resend-code`, { method: "POST" });
-      alert("Código reenviado com sucesso!");
+      dialog.showSuccess("Código reenviado com sucesso!");
+      setResendCooldown(120);
     } catch {
-      alert("Erro ao reenviar código.");
+      dialog.showError("Erro ao reenviar código.");
     }
   };
 
@@ -738,6 +753,7 @@ export default function ClinicalManagement() {
           onRemove={handleRemove}
           onEdit={handleEdit}
           onResendCode={handleResendCode}
+          resendCooldown={resendCooldown}
         />
 
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">

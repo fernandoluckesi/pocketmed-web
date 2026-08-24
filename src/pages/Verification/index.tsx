@@ -1,3 +1,4 @@
+import { useDialog } from "../../components/ui/Dialog";
 import { useState, useRef } from "react";
 import { FileUp, CheckCircle, X, ShieldAlert, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -32,6 +33,7 @@ const DOCUMENTS = [
 ];
 
 export default function Verification() {
+  const dialog = useDialog();
   const navigate = useNavigate();
   const [docs, setDocs] = useState<Record<string, DocState>>({
     CIM: { file: null, status: "NOT_UPLOADED" },
@@ -56,9 +58,9 @@ export default function Verification() {
 
   const uploadedCount = Object.values(docs).filter((d) => d.file !== null).length;
 
-  const handleSubmitAll = () => {
+  const handleSubmitAll = async () => {
     // TODO: integrate with API POST /doctors/documents/:type
-    alert("Documentos enviados para análise. Você será notificado quando a verificação for concluída.");
+    await dialog.showSuccess("Documentos enviados para análise. Você será notificado quando a verificação for concluída.");
     navigate("/dashboard");
   };
 

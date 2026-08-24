@@ -1,3 +1,4 @@
+import { useDialog } from "../../components/ui/Dialog";
 import { useState, useEffect, useCallback } from "react";
 import {
   Plus,
@@ -14,6 +15,7 @@ import { MainLayout } from "../../components/MainLayout";
 import { financialApi, type Convenio } from "../../services/financial";
 
 export default function Insurance() {
+  const dialog = useDialog();
   const [convenios, setConvenios] = useState<Convenio[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -82,7 +84,7 @@ export default function Insurance() {
       setShowModal(false);
       loadData();
     } catch {
-      alert("Erro ao salvar convênio. Verifique se o código ANS já existe.");
+      dialog.showError("Erro ao salvar convênio. Verifique se o código ANS já existe.");
     }
   };
 
@@ -96,12 +98,12 @@ export default function Insurance() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir este convênio?")) return;
+    const confirmed = await dialog.showConfirm("Tem certeza que deseja excluir este convênio?"); if (!confirmed) return;
     try {
       await financialApi.deleteConvenio(id);
       loadData();
     } catch {
-      alert("Não é possível excluir convênio com receitas vinculadas.");
+      dialog.showError("Não é possível excluir convênio com receitas vinculadas.");
     }
   };
 

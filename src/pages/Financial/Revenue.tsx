@@ -1,3 +1,4 @@
+import { useDialog } from "../../components/ui/Dialog";
 import { useState, useEffect, useCallback } from "react";
 import { Plus, Search, Trash2 } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
@@ -7,6 +8,7 @@ import {
 } from "../../services/financial";
 
 export default function Revenue() {
+  const dialog = useDialog();
   const [showAddForm, setShowAddForm] = useState(false);
   const [revenues, setRevenues] = useState<RevenueType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,7 +70,7 @@ export default function Revenue() {
       await financialApi.deleteRevenue(id);
       loadRevenues();
     } catch {
-      alert("Apenas receitas pendentes podem ser excluídas.");
+      dialog.showError("Apenas receitas pendentes podem ser excluídas.");
     }
   };
 

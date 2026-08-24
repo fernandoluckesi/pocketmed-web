@@ -7,6 +7,7 @@ import { MainLayout } from "../../components/MainLayout";
 import { useAuth } from "../../contexts/AuthContext";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 import { PasswordStrengthIndicator } from "../../components/PasswordStrengthIndicator";
+import { useDialog } from "../../components/ui/Dialog";
 import { Link } from "react-router-dom";
 import api from "../../config/api";
 
@@ -40,6 +41,7 @@ const passwordSchema = Yup.object({
 
 export default function Account() {
   const { user } = useAuth();
+  const dialog = useDialog();
   const [activeTab, setActiveTab] = useState<
     "profile" | "security" | "subscription"
   >("profile");
@@ -65,7 +67,7 @@ export default function Account() {
       setDeleteStep("code");
       setDeleteCode("");
     } catch {
-      alert("Erro ao enviar código de verificação. Tente novamente.");
+      dialog.showError("Erro ao enviar código de verificação. Tente novamente.");
     } finally {
       setDeleteSending(false);
     }
@@ -80,18 +82,18 @@ export default function Account() {
         headers: { Authorization: `Bearer ${token}` },
         data: { verificationCode: deleteCode },
       });
-      alert("Conta excluída com sucesso.");
+      await dialog.showSuccess("Conta excluída com sucesso.");
       localStorage.removeItem("pocketmed_token");
       window.location.href = "/login";
     } catch (err: any) {
       const msg = err?.response?.data?.message || "";
       if (msg.includes("expired")) {
-        alert("Código expirado. Solicite um novo código.");
+        dialog.showError("Código expirado. Solicite um novo código.");
         setDeleteStep(null);
       } else if (msg.includes("Invalid")) {
-        alert("Código inválido. Verifique e tente novamente.");
+        dialog.showError("Código inválido. Verifique e tente novamente.");
       } else {
-        alert("Erro ao excluir conta. Tente novamente.");
+        dialog.showError("Erro ao excluir conta. Tente novamente.");
       }
     } finally {
       setDeleting(false);

@@ -1,3 +1,4 @@
+import { useDialog } from "../../components/ui/Dialog";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   TrendingUp,
@@ -18,6 +19,7 @@ import {
 } from "../../services/financial";
 
 export default function Expenses() {
+  const dialog = useDialog();
   const [expenses, setExpenses] = useState<ExpenseType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -95,7 +97,7 @@ export default function Expenses() {
       await financialApi.deleteExpense(id);
       loadData();
     } catch {
-      alert("Apenas despesas pendentes podem ser excluídas.");
+      dialog.showError("Apenas despesas pendentes podem ser excluídas.");
     }
   };
 
