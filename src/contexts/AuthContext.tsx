@@ -138,6 +138,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function registerDoctor(payload: RegisterDoctorPayload) {
     const { profileImage, ...data } = payload;
 
+    // Determine endpoint: clinic registration vs individual doctor
+    const isClinicRegistration = !!data.clinicName;
+    const endpoint = isClinicRegistration
+      ? "/clinics"
+      : "/auth/register/doctor";
+
     let response;
     if (profileImage) {
       const formData = new FormData();
@@ -147,11 +153,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       });
       formData.append("profileImage", profileImage);
-      response = await api.post("/auth/register/doctor", formData, {
+      response = await api.post(endpoint, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
     } else {
-      response = await api.post("/auth/register/doctor", data);
+      response = await api.post(endpoint, data);
     }
 
     const { token: access_token, user: userData } = response.data;
