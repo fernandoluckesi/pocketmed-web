@@ -269,7 +269,7 @@ export default function InstitutionalPlatform() {
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 max-w-4xl mx-auto">
             {[
-              "LGPD Compliant",
+              "Conformidade LGPD",
               "Criptografia SSL/TLS",
               "Auditoria de Operacoes",
               "Controle de Permissoes",

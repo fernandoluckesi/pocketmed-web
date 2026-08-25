@@ -24,10 +24,15 @@ import { useNavigate } from "react-router-dom";
 const verifiedItems = [
   "Board Certified Neurologist",
   "Active CRM (CFM Validated)",
-  "HIPAA Compliant Provider",
+  "Profissional em Conformidade com a LGPD",
 ];
 
-const interests = ["Memory Care", "Epilepsy", "Sleep Disorders", "Neurogenetics"];
+const interests = [
+  "Memory Care",
+  "Epilepsy",
+  "Sleep Disorders",
+  "Neurogenetics",
+];
 
 const education = [
   {
@@ -137,15 +142,26 @@ function ProfileDetails() {
         <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
           <FileText size={22} />
         </div>
-        <h2 className="text-2xl font-display font-extrabold">Perfil Profissional</h2>
+        <h2 className="text-2xl font-display font-extrabold">
+          Perfil Profissional
+        </h2>
       </div>
 
       <div className="space-y-6 text-on-surface-variant leading-relaxed text-lg italic">
         <p>
-          Especialista em distúrbios cognitivos e doenças neurodegenerativas com mais de 12 anos de experiência clínica. Dra. Juliana é reconhecida por sua abordagem integrativa no cuidado ao paciente, combinando tratamentos farmacológicos de ponta com intervenções no estilo de vida.
+          Especialista em distúrbios cognitivos e doenças neurodegenerativas com
+          mais de 12 anos de experiência clínica. Dra. Juliana é reconhecida por
+          sua abordagem integrativa no cuidado ao paciente, combinando
+          tratamentos farmacológicos de ponta com intervenções no estilo de
+          vida.
         </p>
         <p className="not-italic opacity-90">
-          Atualmente Pesquisadora Líder no Instituto do Cérebro do Rio de Janeiro, ela é autora de mais de 40 artigos revisados por pares focados na detecção precoce de Alzheimer. Sua prática é construída sobre uma base de precisão clínica e comunicação empática, garantindo que tanto pacientes quanto suas famílias sejam apoiados em jornadas neurológicas complexas.
+          Atualmente Pesquisadora Líder no Instituto do Cérebro do Rio de
+          Janeiro, ela é autora de mais de 40 artigos revisados por pares
+          focados na detecção precoce de Alzheimer. Sua prática é construída
+          sobre uma base de precisão clínica e comunicação empática, garantindo
+          que tanto pacientes quanto suas famílias sejam apoiados em jornadas
+          neurológicas complexas.
         </p>
       </div>
 
@@ -154,13 +170,17 @@ function ProfileDetails() {
           <p className="text-[10px] uppercase font-black text-on-surface-variant/50 tracking-[0.2em] mb-2">
             Experiência
           </p>
-          <p className="text-3xl font-display font-extrabold text-on-surface">14+ Anos</p>
+          <p className="text-3xl font-display font-extrabold text-on-surface">
+            14+ Anos
+          </p>
         </div>
         <div>
           <p className="text-[10px] uppercase font-black text-on-surface-variant/50 tracking-[0.2em] mb-2">
             Publicações
           </p>
-          <p className="text-3xl font-display font-extrabold text-on-surface">42 Artigos Científicos</p>
+          <p className="text-3xl font-display font-extrabold text-on-surface">
+            42 Artigos Científicos
+          </p>
         </div>
       </div>
     </motion.section>
@@ -234,7 +254,9 @@ function EducationSectionComponent() {
         <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
           <GraduationCap size={22} />
         </div>
-        <h2 className="text-2xl font-display font-extrabold">Educação & Formação Clínica</h2>
+        <h2 className="text-2xl font-display font-extrabold">
+          Educação & Formação Clínica
+        </h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-10 gap-x-8">
@@ -250,8 +272,12 @@ function EducationSectionComponent() {
               <item.icon size={24} className="text-primary" />
             </div>
             <div>
-              <p className="font-display font-bold text-on-surface text-base mb-1">{item.title}</p>
-              <p className="text-sm text-on-surface-variant font-medium mb-2">{item.school}</p>
+              <p className="font-display font-bold text-on-surface text-base mb-1">
+                {item.title}
+              </p>
+              <p className="text-sm text-on-surface-variant font-medium mb-2">
+                {item.school}
+              </p>
               <p className="text-[10px] uppercase font-bold text-on-surface-variant/40 tracking-widest leading-none">
                 {item.years}
               </p>
@@ -282,7 +308,8 @@ function InviteBanner() {
             Interessado em trabalhar com Dra. Juliana?
           </h3>
           <p className="text-on-surface-variant font-medium opacity-80 max-w-lg">
-            Envie um convite para que ela possa atender pacientes e compartilhar relatórios dentro do PocketMed.
+            Envie um convite para que ela possa atender pacientes e compartilhar
+            relatórios dentro do PocketMed.
           </p>
         </div>
       </div>
