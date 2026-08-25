@@ -217,18 +217,17 @@ export default function Account() {
         </div>
 
         {/* Tabs */}
-        <div className="flex bg-slate-100 p-1.5 rounded-full w-fit">
+        <div className="flex space-x-1 p-1 bg-white rounded-2xl w-fit shadow-sm border border-gray-100">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-6 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 transition-all ${
+              className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
                 activeTab === tab.id
-                  ? "bg-white text-primary shadow-sm"
-                  : "text-slate-500 hover:text-slate-900"
+                  ? "bg-primary/5 text-primary"
+                  : "text-gray-500 hover:text-gray-800 bg-transparent"
               }`}
             >
-              <tab.icon size={16} />
               {tab.label}
             </button>
           ))}
@@ -483,7 +482,6 @@ export default function Account() {
                 variant="primary"
                 size="md"
                 icon={!saving ? <Save size={18} /> : undefined}
-                className="rounded-full"
               >
                 {saving ? "Salvando..." : "Salvar Alterações"}
               </Button>
@@ -577,7 +575,6 @@ export default function Account() {
                   variant="primary"
                   size="md"
                   icon={!saving ? <Lock size={18} /> : undefined}
-                  className="rounded-full"
                 >
                   {saving ? "Alterando..." : "Alterar Senha"}
                 </Button>
@@ -686,7 +683,7 @@ export default function Account() {
               </div>
               <Link
                 to="/plans"
-                className="mt-6 inline-flex items-center gap-2 bg-primary text-white px-8 py-3.5 rounded-full font-bold shadow-lg shadow-primary/20 hover:bg-primary-container transition-all active:scale-95"
+                className="mt-6 inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all active:scale-[0.98]"
               >
                 <CreditCard size={18} />
                 Ver Planos Disponíveis

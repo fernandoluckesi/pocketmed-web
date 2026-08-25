@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Sparkles, Shield, Zap, Heart } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  Shield,
+  Zap,
+  Heart,
+} from "lucide-react";
 
 const banners = [
   {
@@ -7,42 +15,51 @@ const banners = [
     icon: Sparkles,
     title: "Prontuário Integrado",
     subtitle: "O prontuário do paciente onde ele estiver",
-    description: "Acesse o histórico completo do paciente em qualquer dispositivo. Consultas, exames, medicamentos e laudos — tudo sincronizado em tempo real entre médicos, clínicas e o próprio paciente.",
+    description:
+      "Acesse o histórico completo do paciente em qualquer dispositivo. Consultas, exames, medicamentos e laudos — tudo sincronizado em tempo real entre médicos, clínicas e o próprio paciente.",
     cta: "Explorar",
+    path: "/patients",
   },
   {
     id: 2,
     icon: Zap,
     title: "Agendamento de Consultas",
     subtitle: "Pacientes agendam direto pelo app",
-    description: "Seus pacientes visualizam horários disponíveis e agendam consultas sem precisar ligar. Confirmação automática, lembretes e reagendamento com um toque.",
+    description:
+      "Seus pacientes visualizam horários disponíveis e agendam consultas sem precisar ligar. Confirmação automática, lembretes e reagendamento com um toque.",
     cta: "Ver Agenda",
+    path: "/schedule",
   },
   {
     id: 3,
     icon: Shield,
     title: "Gestão de Clínica",
     subtitle: "Controle total da sua equipe médica",
-    description: "Gerencie médicos, secretários(as) e permissões de acesso. Convide profissionais, defina papéis e acompanhe a produtividade da clínica em um painel centralizado.",
+    description:
+      "Gerencie médicos, secretários(as) e permissões de acesso. Convide profissionais, defina papéis e acompanhe a produtividade da clínica em um painel centralizado.",
     cta: "Gerenciar",
+    path: "/clinical-management",
   },
   {
     id: 4,
     icon: Heart,
     title: "Agenda Prática",
     subtitle: "Sua rotina clínica organizada visualmente",
-    description: "Visualize consultas do dia, semana ou mês. Filtre por tipo de atendimento, veja conflitos de horário e otimize seu tempo entre pacientes presenciais e telemedicina.",
+    description:
+      "Visualize consultas do dia, semana ou mês. Filtre por tipo de atendimento, veja conflitos de horário e otimize seu tempo entre pacientes presenciais e telemedicina.",
     cta: "Abrir Agenda",
+    path: "/schedule",
   },
 ];
 
 export function PromoBanner() {
   const [current, setCurrent] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % banners.length);
-    }, 6000);
+    }, 12000);
     return () => clearInterval(timer);
   }, []);
 
@@ -61,7 +78,9 @@ export function PromoBanner() {
             <Icon className="w-7 h-7 text-white" />
           </div>
           <div className="space-y-2">
-            <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest">{banner.title}</span>
+            <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest">
+              {banner.title}
+            </span>
             <h3 className="text-xl font-display font-extrabold text-white tracking-tight">
               {banner.subtitle}
             </h3>
@@ -71,7 +90,10 @@ export function PromoBanner() {
           </div>
         </div>
 
-        <button className="shrink-0 bg-white text-primary px-6 py-3 rounded-xl font-bold text-sm hover:bg-on-primary transition-all active:scale-95 shadow-lg shadow-primary/20">
+        <button
+          onClick={() => navigate(banner.path)}
+          className="shrink-0 bg-white text-primary px-6 py-3 rounded-xl font-bold text-sm hover:bg-on-primary transition-all active:scale-95 shadow-lg shadow-primary/20 cursor-pointer border-none"
+        >
           {banner.cta}
         </button>
       </div>
@@ -91,7 +113,9 @@ export function PromoBanner() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => setCurrent((current - 1 + banners.length) % banners.length)}
+            onClick={() =>
+              setCurrent((current - 1 + banners.length) % banners.length)
+            }
             className="p-1.5 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors border-none cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" />

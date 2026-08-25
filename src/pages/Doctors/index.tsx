@@ -1,21 +1,16 @@
 import { useState, useEffect, useMemo } from "react";
 import {
   PlusCircle,
-  LayoutGrid,
   CalendarRange,
-  Award,
-  Baby,
-  Brain,
-  Microscope,
-  Bone,
-  Search,
   BadgeCheck,
   Loader2,
   UserX,
+  ArrowRight,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { MainLayout } from "../../components/MainLayout";
+import { SearchWithViewToggle } from "../../components/ui/SearchWithViewToggle";
 import api from "../../config/api";
 
 // --- Types ---
@@ -33,16 +28,6 @@ interface Doctor {
 }
 
 // --- Helper Components ---
-
-function SpecialtyIcon({ specialty }: { specialty: string }) {
-  const s = specialty.toLowerCase();
-  if (s.includes("cardiologia")) return <Award size={14} />;
-  if (s.includes("pediatria")) return <Baby size={14} />;
-  if (s.includes("neurologia")) return <Brain size={14} />;
-  if (s.includes("oncologia")) return <Microscope size={14} />;
-  if (s.includes("ortopedia")) return <Bone size={14} />;
-  return <Award size={14} />;
-}
 
 function DoctorCard({
   doctor,
@@ -81,7 +66,8 @@ function DoctorCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -5, boxShadow: "0 12px 32px rgba(25, 28, 30, 0.08)" }}
-      className="bg-white rounded-[2rem] p-8 transition-all flex flex-col space-y-6 shadow-sm border border-slate-100"
+      onClick={() => navigate(`/doctors/${doctor.id}`)}
+      className="bg-white rounded-[2rem] p-8 transition-all flex flex-col space-y-6 shadow-sm border border-slate-100 cursor-pointer group"
     >
       <div className="flex justify-between items-start">
         <div className="relative">
@@ -93,7 +79,11 @@ function DoctorCard({
             />
           ) : (
             <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-2xl">
-              {doctor.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+              {doctor.name
+                .split(" ")
+                .map((n) => n[0])
+                .slice(0, 2)
+                .join("")}
             </div>
           )}
           <span className="absolute bottom-0 right-0 w-6 h-6 bg-green-500 border-4 border-white rounded-full"></span>
@@ -104,31 +94,76 @@ function DoctorCard({
         </span>
       </div>
 
-      <div className="space-y-1">
-        <h3 className="text-xl font-display font-bold text-slate-900">
+      <div className="space-y-1 min-w-0">
+        <h3 className="text-xl font-display font-bold text-slate-900 truncate">
           {doctor.name}
         </h3>
-        <p className="text-primary text-sm font-semibold flex items-center gap-1">
-          <SpecialtyIcon specialty={doctor.specialty} />
-          {doctor.specialty} • CRM {doctor.crm}
-        </p>
+        <p className="text-primary text-sm font-semibold">{doctor.specialty}</p>
+        <p className="text-slate-400 text-xs font-medium">CRM: {doctor.crm}</p>
       </div>
 
-      <div className="flex gap-3">
-        <button
-          onClick={() => navigate(`/doctors/${doctor.id}`)}
-          className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-2xl font-bold hover:bg-slate-200 transition-colors cursor-pointer border-none"
-        >
-          Ver Perfil
-        </button>
-        <button
-          onClick={() => navigate(`/doctors/${doctor.id}`)}
-          className="flex-1 bg-primary text-white py-3 rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform cursor-pointer border-none"
-        >
-          <CalendarRange size={16} />
-          Ver Agenda
-        </button>
+      <div className="pt-4 border-t border-gray-100 flex items-center justify-between mt-auto">
+        <span className="text-xs font-semibold text-gray-400">
+          Ver perfil completo
+        </span>
+        <ArrowRight className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
+    </motion.div>
+  );
+}
+
+// --- List Row View ---
+
+function DoctorListRow({ doctor }: { doctor: Doctor }) {
+  const navigate = useNavigate();
+
+  return (
+    <motion.div
+      whileHover={{ y: -2 }}
+      onClick={() => navigate(`/doctors/${doctor.id}`)}
+      className="bg-white p-5 rounded-2xl border border-slate-100 hover:border-primary/20 hover:shadow-xl hover:shadow-slate-200/50 transition-all flex items-center justify-between gap-6 cursor-pointer"
+    >
+      <div className="flex items-center gap-4 flex-1 min-w-0">
+        <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 border-slate-100">
+          {doctor.profileImage ? (
+            <img
+              src={doctor.profileImage}
+              alt={doctor.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold text-lg">
+              {doctor.name.charAt(0).toUpperCase()}
+            </div>
+          )}
+        </div>
+        <div className="min-w-0">
+          <h5 className="font-bold text-base leading-tight text-slate-900 truncate">
+            {doctor.name}
+          </h5>
+          <p className="text-slate-400 text-sm font-medium truncate">
+            {doctor.specialty}
+          </p>
+        </div>
+      </div>
+
+      <div className="hidden md:flex items-center gap-6 text-sm text-slate-500">
+        <span className="flex items-center gap-1.5">
+          <BadgeCheck size={14} className="text-primary" />
+          {doctor.crm}
+        </span>
+        <span>{doctor.email}</span>
+      </div>
+
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          navigate(`/doctors/${doctor.id}`);
+        }}
+        className="shrink-0 px-5 py-2.5 bg-primary/5 text-primary rounded-xl font-semibold text-sm hover:bg-primary hover:text-white transition-all cursor-pointer border-none"
+      >
+        Ver Perfil
+      </button>
     </motion.div>
   );
 }
@@ -140,6 +175,7 @@ export default function Doctors() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [view, setView] = useState<"grid" | "list">("grid");
 
   useEffect(() => {
     fetchDoctors();
@@ -211,25 +247,19 @@ export default function Doctors() {
         {/* Search + Filters */}
         <div className="space-y-4">
           {/* Search Bar */}
-          <div className="flex items-center gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-              <input
-                type="text"
-                placeholder="Buscar por nome, especialidade ou CRM..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-2xl py-4 pl-12 pr-4 text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-              />
-            </div>
-            <button className="p-4 bg-white rounded-2xl text-slate-500 hover:text-primary transition-colors shadow-sm cursor-pointer border border-slate-200">
-              <LayoutGrid size={20} />
-            </button>
-          </div>
+          <SearchWithViewToggle
+            placeholder="Buscar por nome, especialidade ou CRM..."
+            value={searchTerm}
+            onChange={setSearchTerm}
+            view={view}
+            onViewChange={setView}
+          />
 
           {/* Quick Filters */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-bold text-slate-500 mr-2">Filtros rápidos:</span>
+            <span className="text-sm font-bold text-slate-500 mr-2">
+              Filtros rápidos:
+            </span>
             <button
               onClick={() => setActiveFilter(null)}
               className={`rounded-full px-5 py-2 text-sm font-medium transition-colors border-none cursor-pointer ${
@@ -243,7 +273,9 @@ export default function Doctors() {
             {specialties.map((spec) => (
               <button
                 key={spec}
-                onClick={() => setActiveFilter(activeFilter === spec ? null : spec)}
+                onClick={() =>
+                  setActiveFilter(activeFilter === spec ? null : spec)
+                }
                 className={`rounded-full px-5 py-2 text-sm font-medium transition-colors border-none cursor-pointer ${
                   activeFilter === spec
                     ? "bg-primary text-white"
@@ -264,7 +296,9 @@ export default function Doctors() {
         ) : filteredDoctors.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
             <UserX size={48} className="mb-4" />
-            <p className="text-lg font-semibold text-slate-600">Nenhum médico encontrado</p>
+            <p className="text-lg font-semibold text-slate-600">
+              Nenhum médico encontrado
+            </p>
             <p className="text-sm text-slate-400 mt-1">
               {searchTerm || activeFilter
                 ? "Tente ajustar os filtros de busca"
@@ -275,17 +309,38 @@ export default function Doctors() {
           <>
             {/* Results count */}
             <p className="text-sm text-slate-500">
-              Exibindo <span className="font-bold text-slate-700">{filteredDoctors.length}</span>{" "}
+              Exibindo{" "}
+              <span className="font-bold text-slate-700">
+                {filteredDoctors.length}
+              </span>{" "}
               {filteredDoctors.length === 1 ? "médico" : "médicos"}
-              {activeFilter && <span> em <span className="font-semibold text-primary">{activeFilter}</span></span>}
+              {activeFilter && (
+                <span>
+                  {" "}
+                  em{" "}
+                  <span className="font-semibold text-primary">
+                    {activeFilter}
+                  </span>
+                </span>
+              )}
             </p>
 
-            {/* Doctor Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredDoctors.map((doctor) => (
-                <DoctorCard key={doctor.id} doctor={doctor} />
-              ))}
-              <DoctorCard isAddCard />
+            {/* Doctor Cards */}
+            <div
+              className={
+                view === "grid"
+                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                  : "space-y-4"
+              }
+            >
+              {filteredDoctors.map((doctor) =>
+                view === "grid" ? (
+                  <DoctorCard key={doctor.id} doctor={doctor} />
+                ) : (
+                  <DoctorListRow key={doctor.id} doctor={doctor} />
+                ),
+              )}
+              {view === "grid" && <DoctorCard isAddCard />}
             </div>
 
             {/* Stats Footer */}

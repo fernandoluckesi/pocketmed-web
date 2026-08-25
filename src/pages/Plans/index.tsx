@@ -33,7 +33,7 @@ const PLANS: Plan[] = [
   {
     id: "pro",
     name: "Profissional",
-    price: "R$ 89",
+    price: "R$ 99",
     period: "/mês",
     description:
       "Para médicos que precisam de mais recursos e pacientes ilimitados.",
@@ -151,11 +151,14 @@ function PlanCard({ plan, index }: { plan: Plan; index: number }) {
       </div>
 
       <button
-        className={`mt-8 w-full py-4 rounded-full font-bold text-sm transition-all active:scale-95 ${
-          plan.highlighted
-            ? "bg-white text-primary hover:bg-white/90 shadow-lg"
-            : "bg-primary text-white hover:bg-primary-container shadow-lg shadow-primary/20"
+        className={`mt-8 w-full py-4 rounded-2xl font-bold text-sm transition-all active:scale-[0.98] cursor-pointer border-none ${
+          plan.id === "free"
+            ? "bg-slate-100 text-slate-500 cursor-default shadow-none"
+            : plan.highlighted
+              ? "bg-white text-primary hover:bg-white/90 shadow-lg"
+              : "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
         }`}
+        disabled={plan.id === "free"}
       >
         {plan.id === "free" ? "Plano Atual" : "Assinar Agora"}
       </button>
@@ -172,18 +175,18 @@ export default function Plans() {
         animate={{ opacity: 1, y: 0 }}
       >
         {/* Header */}
-        <div className="text-center max-w-2xl mx-auto">
+        <div className="text-center max-w-2xl mx-auto mt-10 mb-16">
           <h1 className="text-4xl font-display font-extrabold text-slate-900 tracking-tight">
             Escolha seu Plano
           </h1>
-          <p className="text-slate-500 font-medium mt-3 text-lg">
+          <p className="text-slate-500 font-medium mt-3 text-md">
             Selecione o plano ideal para sua prática médica. Todos incluem
             acesso à plataforma PocketMed com atualizações gratuitas.
           </p>
         </div>
 
         {/* Plans Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
           {PLANS.map((plan, index) => (
             <PlanCard key={plan.id} plan={plan} index={index} />
           ))}
@@ -199,7 +202,7 @@ export default function Plans() {
             momento sem multa. Precisa de um plano personalizado para sua
             instituição?
           </p>
-          <button className="mt-6 bg-slate-900 text-white px-8 py-3.5 rounded-full font-bold hover:bg-slate-800 transition-all active:scale-95">
+          <button className="mt-6 bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-bold text-sm hover:bg-slate-800 transition-all active:scale-[0.98] cursor-pointer border-none">
             Falar com Vendas
           </button>
         </div>

@@ -4,7 +4,6 @@ import { motion } from "motion/react";
 import { ICONS } from "../constants";
 import {
   Search,
-  Bell,
   ShieldAlert,
   DollarSign,
   ArrowLeft,
@@ -23,6 +22,7 @@ import {
 import { logout } from "../services/auth";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "../components/ui/Button";
+import { NotificationsDropdown } from "./NotificationsDropdown";
 import iconLogo from "../assets/images/icon.png";
 
 const navItems = [
@@ -228,10 +228,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             </div>
 
             <div className="flex gap-1">
-              <button className="p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors relative">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
-              </button>
+              <NotificationsDropdown />
             </div>
 
             <div className="h-8 w-px bg-slate-200 mx-1"></div>

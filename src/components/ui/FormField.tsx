@@ -1,7 +1,14 @@
 import type { ReactNode } from "react";
+import { Button } from "./Button";
 
 // --- Base Label ---
-function Label({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
+function Label({
+  children,
+  htmlFor,
+}: {
+  children: ReactNode;
+  htmlFor?: string;
+}) {
   return (
     <label
       htmlFor={htmlFor}
@@ -21,7 +28,9 @@ function ErrorMessage({ message }: { message?: string | null }) {
 // --- Input Wrapper (icon support) ---
 function inputClasses(error?: boolean) {
   return `w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${
-    error ? "border-red-400 focus:border-red-400" : "border-slate-200 focus:border-primary"
+    error
+      ? "border-red-400 focus:border-red-400"
+      : "border-slate-200 focus:border-primary"
   }`;
 }
 
@@ -316,26 +325,28 @@ export function FormActions({
 }: FormActionsProps) {
   return (
     <div className="pt-4 flex gap-4">
-      <button
+      <Button
         type="button"
         onClick={onCancel}
         disabled={loading}
-        className="flex-1 bg-slate-100 py-4 rounded-full font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer border-none disabled:opacity-50"
+        variant="secondary"
+        size="md"
+        fullWidth
+        className="shadow-none bg-slate-100 text-slate-700 hover:bg-slate-200"
       >
         {cancelLabel}
-      </button>
-      <button
+      </Button>
+      <Button
         type="submit"
         disabled={loading}
-        className="flex-1 bg-primary py-4 rounded-full font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary-container transition-colors flex items-center justify-center gap-2 cursor-pointer border-none disabled:opacity-70"
+        loading={loading}
+        variant="primary"
+        size="md"
+        fullWidth
+        icon={!loading ? icon : undefined}
       >
-        {loading ? loadingLabel : (
-          <>
-            {icon}
-            {submitLabel}
-          </>
-        )}
-      </button>
+        {loading ? loadingLabel : submitLabel}
+      </Button>
     </div>
   );
 }

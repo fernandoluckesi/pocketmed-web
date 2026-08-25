@@ -23,6 +23,7 @@ import { Link } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { MainLayout } from "../../components/MainLayout";
+import { SearchWithViewToggle } from "../../components/ui/SearchWithViewToggle";
 import { Button } from "../../components/ui/Button";
 import {
   useMyPatients,
@@ -1114,32 +1115,13 @@ function MyPatientsContent({
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Buscar por nome ou email..."
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 focus:border-primary"
-            />
-          </div>
-          <div className="flex gap-2 bg-white p-1 rounded-xl shadow-sm border border-gray-100">
-            <button
-              onClick={() => setView("grid")}
-              className={`p-2 rounded-lg transition-all cursor-pointer border-none ${view === "grid" ? "bg-primary text-white shadow-md" : "text-gray-400 hover:text-primary bg-transparent"}`}
-            >
-              <LayoutGrid className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setView("list")}
-              className={`p-2 rounded-lg transition-all cursor-pointer border-none ${view === "list" ? "bg-primary text-white shadow-md" : "text-gray-400 hover:text-primary bg-transparent"}`}
-            >
-              <List className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+        <SearchWithViewToggle
+          placeholder="Buscar por nome ou email..."
+          value={searchFilter}
+          onChange={setSearchFilter}
+          view={view}
+          onViewChange={setView}
+        />
 
         <div
           className={

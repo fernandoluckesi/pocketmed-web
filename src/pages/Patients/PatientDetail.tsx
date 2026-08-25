@@ -234,13 +234,17 @@ function AppointmentsSection({
           <div
             key={apt.id}
             onClick={() => onSelect(apt)}
-            className={`group bg-white hover:bg-slate-50 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-6 transition-all duration-300 border border-slate-100 shadow-sm cursor-pointer ${
-              apt.status === "scheduled" || apt.status === "approved"
-                ? "border-l-4 border-l-primary"
-                : ""
+            className={`group bg-white hover:bg-slate-50 rounded-2xl p-4 flex flex-col md:flex-row items-center gap-4 transition-all duration-300 border border-slate-100 shadow-sm cursor-pointer border-l-4 ${
+              apt.status === "completed"
+                ? "border-l-green-500"
+                : apt.status === "cancelled" || apt.status === "rejected"
+                  ? "border-l-red-500"
+                  : apt.status === "pending_approval"
+                    ? "border-l-amber-500"
+                    : "border-l-primary"
             }`}
           >
-            <div className="flex flex-col items-center justify-center bg-white w-20 h-20 rounded-2xl shadow-sm border border-slate-100 flex-shrink-0">
+            <div className="flex flex-col items-center justify-center flex-shrink-0 w-14">
               <span className="text-xl font-black text-primary">{day}</span>
               <span className="text-[10px] font-bold text-slate-500 uppercase">
                 {month}
@@ -319,7 +323,9 @@ function MedicationsSection({
       {medications.map((med) => (
         <div
           key={med.id}
-          className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-start gap-4"
+          className={`bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-start gap-4 border-l-4 ${
+            med.active ? "border-l-green-500" : "border-l-slate-300"
+          }`}
         >
           <div
             className={`p-3 rounded-xl flex-shrink-0 ${
@@ -430,7 +436,9 @@ function ExamsSection({
           return (
             <div
               key={group.key}
-              className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm"
+              className={`bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm border-l-4 ${
+                completed ? "border-l-green-500" : "border-l-amber-500"
+              }`}
             >
               {/* Accordion Header */}
               <button
@@ -1953,7 +1961,13 @@ function DiseasesSection({
             <div
               key={disease.id}
               onClick={() => setViewingDisease(disease)}
-              className="group bg-white hover:bg-slate-50 rounded-2xl p-6 flex items-center gap-6 transition-all border border-slate-100 shadow-sm cursor-pointer"
+              className={`group bg-white hover:bg-slate-50 rounded-2xl p-6 flex items-center gap-6 transition-all border border-slate-100 shadow-sm cursor-pointer border-l-4 ${
+                disease.status === "resolved"
+                  ? "border-l-green-500"
+                  : disease.status === "in_treatment"
+                    ? "border-l-amber-500"
+                    : "border-l-red-500"
+              }`}
             >
               <div className="flex-grow min-w-0">
                 <h4 className="font-bold text-lg text-slate-900">
@@ -2997,24 +3011,26 @@ export default function PatientDetail() {
             </div>
           )}
 
-          {activeTab === "doencas" && (
+          <div style={{ display: activeTab === "doencas" ? "block" : "none" }}>
             <DiseasesSection patientId={patient.id} onRefresh={refetch} />
-          )}
+          </div>
 
-          {activeTab === "alergias" && (
+          <div style={{ display: activeTab === "alergias" ? "block" : "none" }}>
             <AllergiesSection patientId={patient.id} />
-          )}
+          </div>
 
-          {activeTab === "vacinas" && (
+          <div style={{ display: activeTab === "vacinas" ? "block" : "none" }}>
             <VaccinesSection patientId={patient.id} />
-          )}
+          </div>
 
-          {activeTab === "dependentes" && (
+          <div
+            style={{ display: activeTab === "dependentes" ? "block" : "none" }}
+          >
             <DependentsSection
               patientId={patient.id}
               onSelectDependent={(depId) => navigate(`/patients/${depId}`)}
             />
-          )}
+          </div>
 
           {/* Modals */}
           <Modal
