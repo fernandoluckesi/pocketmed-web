@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   Smartphone,
@@ -13,6 +13,8 @@ import {
   BarChart3,
   Bell,
   Star,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import iconLogo from "../assets/images/icon.png";
 import mobileImg from "../assets/images/mobile.png";
@@ -24,6 +26,121 @@ import {
 } from "./Institutional/LegalModal";
 
 type ModalType = "privacy" | "terms" | "security" | null;
+
+// --- Testimonials Carousel ---
+
+const testimonials = [
+  {
+    quote:
+      "O PocketMed transformou a forma como gerencio minha clínica. Tudo integrado, seguro e acessível.",
+    name: "Dr. Fernando Luckesi",
+    specialty: "Clínica Geral",
+  },
+  {
+    quote:
+      "Consegui reduzir em 40% o tempo de atendimento com o prontuário digital. Meus pacientes adoram o app.",
+    name: "Dra. Camila Ferreira",
+    specialty: "Cardiologia",
+  },
+  {
+    quote:
+      "A gestão financeira integrada me deu uma visão completa da clínica que eu nunca tive antes.",
+    name: "Dr. Rafael Souza",
+    specialty: "Dermatologia",
+  },
+  {
+    quote:
+      "Meus pacientes se sentem mais seguros sabendo que controlam quem acessa seus dados. Confiança é tudo.",
+    name: "Dra. Juliana Martins",
+    specialty: "Pediatria",
+  },
+  {
+    quote:
+      "O agendamento online e as notificações push reduziram as faltas em 60%. Resultado incrível.",
+    name: "Dr. Marcos Almeida",
+    specialty: "Neurologia",
+  },
+];
+
+function TestimonialsCarousel() {
+  const [current, setCurrent] = useState(0);
+
+  const next = useCallback(() => {
+    setCurrent((prev) => (prev + 1) % testimonials.length);
+  }, []);
+
+  const prev = useCallback(() => {
+    setCurrent(
+      (prev) => (prev - 1 + testimonials.length) % testimonials.length,
+    );
+  }, []);
+
+  // Auto-advance every 6 seconds
+  useEffect(() => {
+    const timer = setInterval(next, 6000);
+    return () => clearInterval(timer);
+  }, [next]);
+
+  const t = testimonials[current];
+
+  return (
+    <div className="bg-gradient-to-r from-primary to-blue-700 rounded-3xl p-12  text-white text-center relative overflow-hidden">
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=60 height=60 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.05%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]" />
+
+      <div className="relative z-10">
+        {/* Stars */}
+        <div className="flex justify-center gap-1 mb-6">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Star key={i} size={24} className="text-amber-300 fill-amber-300" />
+          ))}
+        </div>
+
+        {/* Quote — fixed height container */}
+        <blockquote className="text-2xl md:text-1xl font-bold leading-snug mb-8 max-w-4xl mx-auto h-[6rem] md:h-[4.5rem] flex items-center justify-center">
+          <span>"{t.quote}"</span>
+        </blockquote>
+
+        {/* Author */}
+        <div className="mb-8">
+          <p className="text-white font-bold text-base">{t.name}</p>
+          <p className="text-blue-200 text-sm">{t.specialty}</p>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={prev}
+            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer border-none text-white"
+          >
+            <ChevronLeft size={20} />
+          </button>
+
+          {/* Dots */}
+          <div className="flex gap-2">
+            {testimonials.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setCurrent(idx)}
+                className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer border-none ${
+                  idx === current
+                    ? "bg-white scale-125"
+                    : "bg-white/30 hover:bg-white/50"
+                }`}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={next}
+            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer border-none text-white"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function LandingPage() {
   const [activeModal, setActiveModal] = useState<ModalType>(null);
@@ -48,7 +165,7 @@ export default function LandingPage() {
               to="/institutional/mobile"
               className="text-sm font-medium text-slate-600 hover:text-primary transition-colors"
             >
-              App Mobile
+              Para Pacientes
             </Link>
             <Link
               to="/institutional/platform"
@@ -147,7 +264,7 @@ export default function LandingPage() {
       </section>
 
       {/* Para Quem */}
-      <section className="max-w-6xl mx-auto px-6 py-24">
+      <section className="max-w-6xl mx-auto px-6 py-16">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">
             Uma plataforma, dois mundos
@@ -168,7 +285,7 @@ export default function LandingPage() {
             </h3>
             <p className="text-slate-600 mb-6 leading-relaxed">
               Acesse seu prontuário completo pelo celular. Consultas, exames,
-              medicamentos, vacinas e alergias — tudo organizado e seguro.
+              medicamentos, vacinas e alergias. Tudo organizado e seguro.
             </p>
             <ul className="space-y-3 mb-8">
               {[
@@ -259,7 +376,7 @@ export default function LandingPage() {
               {
                 icon: Users,
                 title: "Controle de Acesso",
-                desc: "Voce decide quem ve seu prontuário. Concessao e revogação instantânea.",
+                desc: "Você decide quem vê seu prontuário. Concessão e revogação instantâneas.",
               },
               {
                 icon: Calendar,
@@ -269,7 +386,7 @@ export default function LandingPage() {
               {
                 icon: Pill,
                 title: "Gestão de Medicamentos",
-                desc: "Histórico completo de prescrições com dosagens e duracao.",
+                desc: "Histórico completo de prescrições com dosagens e duração.",
               },
               {
                 icon: BarChart3,
@@ -297,29 +414,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Depoimento / Trust */}
+      {/* Depoimentos — Carrossel */}
       <section className="max-w-6xl mx-auto px-6 py-24">
-        <div className="bg-gradient-to-r from-primary to-blue-700 rounded-3xl p-12 md:p-16 text-white text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=60 height=60 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.05%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]" />
-          <div className="relative z-10">
-            <div className="flex justify-center gap-1 mb-6">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Star
-                  key={i}
-                  size={24}
-                  className="text-amber-300 fill-amber-300"
-                />
-              ))}
-            </div>
-            <blockquote className="text-2xl md:text-3xl font-bold leading-snug mb-8 max-w-3xl mx-auto">
-              "O PocketMed transformou a forma como gerencio minha clínica. Tudo
-              integrado, seguro e acessível."
-            </blockquote>
-            <p className="text-blue-200 font-medium">
-              Dr. Fernando Luckesi — Clínica Geral
-            </p>
-          </div>
-        </div>
+        <TestimonialsCarousel />
       </section>
 
       {/* CTA Final */}
@@ -384,26 +481,7 @@ export default function LandingPage() {
                 Pocket<span className="text-primary">Med</span>
               </span>
             </div>
-            <div className="flex items-center gap-6 text-sm text-slate-500">
-              <Link
-                to="/institutional"
-                className="hover:text-primary transition-colors"
-              >
-                Sobre
-              </Link>
-              <Link
-                to="/institutional/mobile"
-                className="hover:text-primary transition-colors"
-              >
-                App Mobile
-              </Link>
-              <Link
-                to="/institutional/platform"
-                className="hover:text-primary transition-colors"
-              >
-                Plataforma Web
-              </Link>
-            </div>
+
             <p className="text-sm text-slate-400">
               &copy; {new Date().getFullYear()} PocketMed Clínical Systems.
               Todos os direitos reservados.

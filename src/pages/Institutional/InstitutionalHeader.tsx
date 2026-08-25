@@ -14,7 +14,11 @@ export function InstitutionalHeader({ currentPage }: InstitutionalHeaderProps) {
     <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-lg border-b border-slate-100">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
-          <img src={iconLogo} alt="PocketMed" className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl" />
+          <img
+            src={iconLogo}
+            alt="PocketMed"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl"
+          />
           <span className="text-lg sm:text-xl font-extrabold text-slate-900">
             Pocket<span className="text-primary">Med</span>
           </span>
@@ -23,21 +27,33 @@ export function InstitutionalHeader({ currentPage }: InstitutionalHeaderProps) {
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-6">
           {currentPage !== "home" && (
-            <Link to="/" className="text-sm font-medium text-slate-600 hover:text-primary transition-colors">
+            <Link
+              to="/"
+              className="text-sm font-medium text-slate-600 hover:text-primary transition-colors"
+            >
               Início
             </Link>
           )}
           {currentPage !== "mobile" && (
-            <Link to="/institutional/mobile" className="text-sm font-medium text-slate-600 hover:text-primary transition-colors">
-              App Mobile
+            <Link
+              to="/institutional/mobile"
+              className="text-sm font-medium text-slate-600 hover:text-primary transition-colors"
+            >
+              Para Pacientes
             </Link>
           )}
           {currentPage !== "platform" && (
-            <Link to="/institutional/platform" className="text-sm font-medium text-slate-600 hover:text-primary transition-colors">
-              Plataforma Web
+            <Link
+              to="/institutional/platform"
+              className="text-sm font-medium text-slate-600 hover:text-primary transition-colors"
+            >
+              Para Médicos
             </Link>
           )}
-          <Link to="/login" className="bg-primary text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors">
+          <Link
+            to="/login"
+            className="bg-primary text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors"
+          >
             Acessar
           </Link>
         </nav>
@@ -47,7 +63,11 @@ export function InstitutionalHeader({ currentPage }: InstitutionalHeaderProps) {
           onClick={() => setMenuOpen(!menuOpen)}
           className="md:hidden p-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer border-none bg-transparent"
         >
-          {menuOpen ? <X size={24} className="text-slate-700" /> : <Menu size={24} className="text-slate-700" />}
+          {menuOpen ? (
+            <X size={24} className="text-slate-700" />
+          ) : (
+            <Menu size={24} className="text-slate-700" />
+          )}
         </button>
       </div>
 
@@ -69,7 +89,7 @@ export function InstitutionalHeader({ currentPage }: InstitutionalHeaderProps) {
               onClick={() => setMenuOpen(false)}
               className="block px-4 py-3 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
             >
-              App Mobile
+              Para Pacientes
             </Link>
           )}
           {currentPage !== "platform" && (
@@ -78,7 +98,7 @@ export function InstitutionalHeader({ currentPage }: InstitutionalHeaderProps) {
               onClick={() => setMenuOpen(false)}
               className="block px-4 py-3 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
             >
-              Plataforma Web
+              Para Médicos
             </Link>
           )}
           <div className="pt-2 flex gap-3">

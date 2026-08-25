@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import iconLogo from "../../assets/images/icon.png";
 import {
   LegalModal,
@@ -42,14 +41,16 @@ export function InstitutionalFooter() {
           {/* Main Footer */}
           <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:justify-between sm:text-left">
             <div className="flex items-center gap-2">
-              <img src={iconLogo} alt="PocketMed" className="w-8 h-8 rounded-lg" />
-              <span className="text-sm font-bold text-slate-700">Pocket<span className="text-primary">Med</span></span>
+              <img
+                src={iconLogo}
+                alt="PocketMed"
+                className="w-8 h-8 rounded-lg"
+              />
+              <span className="text-sm font-bold text-slate-700">
+                Pocket<span className="text-primary">Med</span>
+              </span>
             </div>
-            <div className="flex items-center gap-4 sm:gap-6 text-sm text-slate-500">
-              <Link to="/" className="hover:text-primary transition-colors">Início</Link>
-              <Link to="/institutional/mobile" className="hover:text-primary transition-colors">App Mobile</Link>
-              <Link to="/institutional/platform" className="hover:text-primary transition-colors">Plataforma</Link>
-            </div>
+
             <p className="text-xs sm:text-sm text-slate-400">
               &copy; {new Date().getFullYear()} PocketMed Clínical Systems.
             </p>

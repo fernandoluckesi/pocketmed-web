@@ -76,7 +76,7 @@ export default function InstitutionalMobile() {
           O que você pode fazer no app
         </h2>
         <p className="text-base sm:text-lg text-slate-600 text-center max-w-2xl mx-auto mb-12 sm:mb-16">
-          Todas as informações do seu prontuário médico organizadas e acessiveis
+          Todas as informações do seu prontuário médico organizadas e acessíveis
           a qualquer momento.
         </p>
 
@@ -85,22 +85,22 @@ export default function InstitutionalMobile() {
             {
               icon: Calendar,
               title: "Consultas",
-              desc: "Acompanhe todo o histórico de consultas, com detalhes do médico, diagnóstico e orientacoes recebidas.",
+              desc: "Acompanhe todo o histórico de consultas, com detalhes do médico, diagnóstico e orientações recebidas.",
             },
             {
               icon: FileText,
               title: "Exames",
-              desc: "Visualize resultados de exames laboratoriais e de imagem. Compartilhe com seu médico de confianca.",
+              desc: "Visualize resultados de exames laboratoriais e de imagem. Compartilhe com seu médico de confiança.",
             },
             {
               icon: Pill,
               title: "Medicamentos",
-              desc: "Controle todos os medicamentos prescritos, dosagens, horarios e durações do tratamento.",
+              desc: "Controle todos os medicamentos prescritos, dosagens, horários e durações do tratamento.",
             },
             {
               icon: Heart,
               title: "Vacinas e Alergias",
-              desc: "Mantenha atualizado seu cartao de vacinas e alergias conhecidas para atendimentos de emergência.",
+              desc: "Mantenha atualizado seu cartão de vacinas e alergias conhecidas para atendimentos de emergência.",
             },
             {
               icon: Bell,
@@ -110,7 +110,7 @@ export default function InstitutionalMobile() {
             {
               icon: Shield,
               title: "Controle de Acesso",
-              desc: "Voce decide quais médicos podem acessar seu prontuário. Aprovacao e revogação com um toque.",
+              desc: "Você decide quais médicos podem acessar seu prontuário. Aprovação e revogação com um toque.",
             },
           ].map((item) => (
             <div
@@ -226,15 +226,31 @@ export default function InstitutionalMobile() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
               href="#"
-              className="bg-white text-slate-900 px-8 py-4 rounded-2xl font-bold hover:scale-[1.02] transition-transform"
+              className="flex items-center gap-3 bg-white text-slate-900 px-6 py-3.5 rounded-2xl hover:scale-[1.02] transition-transform"
             >
-              Google Play
+              <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor">
+                <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.198l2.807 1.626a1 1 0 0 1 0 1.73l-2.808 1.626L15.206 12l2.492-2.491zM5.864 2.658L16.8 8.99l-2.3 2.3-8.636-8.632z" />
+              </svg>
+              <div className="text-left">
+                <p className="text-[10px] font-medium text-slate-500 leading-none">
+                  Disponível no
+                </p>
+                <p className="text-base font-bold leading-tight">Google Play</p>
+              </div>
             </a>
             <a
               href="#"
-              className="bg-white/10 text-white border border-white/30 px-8 py-4 rounded-2xl font-bold hover:bg-white/20 transition-colors"
+              className="flex items-center gap-3 bg-white text-slate-900 px-6 py-3.5 rounded-2xl hover:scale-[1.02] transition-transform"
             >
-              App Store (em breve)
+              <svg viewBox="0 0 24 24" className="w-7 h-7" fill="currentColor">
+                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+              </svg>
+              <div className="text-left">
+                <p className="text-[10px] font-medium text-slate-500 leading-none">
+                  Disponível na
+                </p>
+                <p className="text-base font-bold leading-tight">App Store</p>
+              </div>
             </a>
           </div>
         </div>

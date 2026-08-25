@@ -1010,7 +1010,7 @@ function ConsultaForm({
   const [sintomas, setSintomas] = useState("");
   const [finalizada, setFinalizada] = useState(false);
   const [diagnostico, setDiagnostico] = useState("");
-  const [orientacoes, setOrientacoes] = useState("");
+  const [orientações, setorientações] = useState("");
   const [saving, setSaving] = useState(false);
   const [addMedication, setAddMedication] = useState(false);
   const [addExam, setAddExam] = useState(false);
@@ -1082,7 +1082,7 @@ function ConsultaForm({
           date: dateTime,
           symptoms: sintomas || undefined,
           diagnosis: finalizada ? diagnostico || undefined : undefined,
-          prescription: finalizada ? orientacoes || undefined : undefined,
+          prescription: finalizada ? orientações || undefined : undefined,
           completed: finalizada,
         },
       });
@@ -1224,9 +1224,9 @@ function ConsultaForm({
           />
           <Textarea
             label="Orientações"
-            name="consulta-orientacoes"
-            value={orientacoes}
-            onChange={setOrientacoes}
+            name="consulta-orientações"
+            value={orientações}
+            onChange={setorientações}
             placeholder="Orientações e recomendações ao paciente"
             rows={3}
           />
@@ -1437,7 +1437,7 @@ function EditConsultaForm({
     consultation.status === "completed",
   );
   const [diagnostico, setDiagnostico] = useState(consultation.notes || "");
-  const [orientacoes, setOrientacoes] = useState(
+  const [orientações, setorientações] = useState(
     consultation.instructions || "",
   );
   const [saving, setSaving] = useState(false);
@@ -1453,7 +1453,7 @@ function EditConsultaForm({
           date: dateTime,
           symptoms: sintomas || undefined,
           diagnosis: finalizada ? diagnostico || undefined : undefined,
-          prescription: finalizada ? orientacoes || undefined : undefined,
+          prescription: finalizada ? orientações || undefined : undefined,
           completed: finalizada,
         },
       });
@@ -1525,9 +1525,9 @@ function EditConsultaForm({
           />
           <Textarea
             label="Orientações"
-            name="edit-consulta-orientacoes"
-            value={orientacoes}
-            onChange={setOrientacoes}
+            name="edit-consulta-orientações"
+            value={orientações}
+            onChange={setorientações}
             placeholder="Orientações e recomendações ao paciente"
             rows={3}
           />
