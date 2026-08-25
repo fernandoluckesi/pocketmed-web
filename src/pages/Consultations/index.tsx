@@ -5,13 +5,14 @@ import {
   PlusCircle,
   CalendarDays,
   SlidersHorizontal,
-  Eye,
   Edit3,
   Trash2,
+  X,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
+import { useDialog } from "../../components/ui/Dialog";
 import { api } from "../../services/api";
 
 // --- Types ---
@@ -31,42 +32,66 @@ interface Consultation {
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return dateStr;
-  const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  const months = [
+    "Jan",
+    "Fev",
+    "Mar",
+    "Abr",
+    "Mai",
+    "Jun",
+    "Jul",
+    "Ago",
+    "Set",
+    "Out",
+    "Nov",
+    "Dez",
+  ];
   return `${d.getDate().toString().padStart(2, "0")} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 function mapStatus(apt: any): "REALIZADA" | "AGENDADA" | "CANCELADA" {
   if (apt.isCompleted || apt.status === "completed") return "REALIZADA";
-  if (apt.status === "rejected" || apt.status === "cancelled") return "CANCELADA";
+  if (apt.status === "rejected" || apt.status === "cancelled")
+    return "CANCELADA";
   return "AGENDADA";
 }
 
 // --- Main Page ---
 export default function Consultations() {
-  const [statusFilter, setStatusFilter] = useState<"Todas" | "Agendadas" | "Realizadas" | "Canceladas">("Todas");
+  const dialog = useDialog();
+  const [statusFilter, setStatusFilter] = useState<
+    "Todas" | "Agendadas" | "Realizadas" | "Canceladas"
+  >("Todas");
   const [currentPage, setCurrentPage] = useState(1);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [_loading, setLoading] = useState(true);
+  const [selectedConsultation, setSelectedConsultation] =
+    useState<Consultation | null>(null);
   const itemsPerPage = 10;
 
   const loadConsultations = useCallback(async () => {
     try {
       const data = await api("/appointments");
-      const mapped: Consultation[] = (Array.isArray(data) ? data : []).map((apt: any) => {
-        const dt = new Date(apt.dateTime);
-        return {
-          id: apt.id,
-          patientName: apt.patient?.name || apt.patientName || "Paciente",
-          patientCpf: apt.patient?.phone || "",
-          patientAvatar: apt.patient?.profileImage || undefined,
-          date: apt.dateTime,
-          time: dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
-          doctorName: apt.doctorName || "—",
-          specialty: apt.doctorSpecialty || "—",
-          status: mapStatus(apt),
-        };
-      });
+      const mapped: Consultation[] = (Array.isArray(data) ? data : []).map(
+        (apt: any) => {
+          const dt = new Date(apt.dateTime);
+          return {
+            id: apt.id,
+            patientName: apt.patient?.name || apt.patientName || "Paciente",
+            patientCpf: apt.patient?.phone || "",
+            patientAvatar: apt.patient?.profileImage || undefined,
+            date: apt.dateTime,
+            time: dt.toLocaleTimeString("pt-BR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            doctorName: apt.doctorName || "—",
+            specialty: apt.doctorSpecialty || "—",
+            status: mapStatus(apt),
+          };
+        },
+      );
       setConsultations(mapped);
     } catch {
       setConsultations([]);
@@ -75,7 +100,23 @@ export default function Consultations() {
     }
   }, []);
 
-  useEffect(() => { loadConsultations(); }, [loadConsultations]);
+  useEffect(() => {
+    loadConsultations();
+  }, [loadConsultations]);
+
+  async function handleDeleteConsultation(id: string) {
+    const confirmed = await dialog.showConfirm(
+      "Tem certeza que deseja excluir esta consulta?",
+      "Excluir Consulta",
+    );
+    if (!confirmed) return;
+    try {
+      await api(`/appointments/${id}`, { method: "DELETE" });
+      setConsultations((prev) => prev.filter((c) => c.id !== id));
+    } catch {
+      dialog.showError("Erro ao excluir consulta. Tente novamente.");
+    }
+  }
 
   const filteredConsultations = consultations.filter((con) => {
     if (statusFilter === "Todas") return true;
@@ -87,7 +128,10 @@ export default function Consultations() {
   const totalItems = filteredConsultations.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedConsultations = filteredConsultations.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedConsultations = filteredConsultations.slice(
+    startIndex,
+    startIndex + itemsPerPage,
+  );
 
   return (
     <MainLayout>
@@ -121,10 +165,15 @@ export default function Consultations() {
               Filtrar por Status
             </label>
             <div className="flex p-1 bg-slate-200/55 rounded-xl border border-slate-200/20">
-              {(["Todas", "Agendadas", "Realizadas", "Canceladas"] as const).map((filter) => (
+              {(
+                ["Todas", "Agendadas", "Realizadas", "Canceladas"] as const
+              ).map((filter) => (
                 <button
                   key={filter}
-                  onClick={() => { setStatusFilter(filter); setCurrentPage(1); }}
+                  onClick={() => {
+                    setStatusFilter(filter);
+                    setCurrentPage(1);
+                  }}
                   className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer border-none ${
                     statusFilter === filter
                       ? "bg-white text-primary shadow-sm"
@@ -173,7 +222,9 @@ export default function Consultations() {
         {showAdvancedFilters && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/70 border border-slate-200/30 p-4 rounded-2xl">
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Especialidade</label>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                Especialidade
+              </label>
               <select className="w-full bg-white border border-slate-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-slate-700">
                 <option>Todas</option>
                 <option>Cardiologia</option>
@@ -184,7 +235,9 @@ export default function Consultations() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">Profissional</label>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
+                Profissional
+              </label>
               <select className="w-full bg-white border border-slate-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-slate-700">
                 <option>Todos</option>
                 <option>Dr. Ricardo Fontes</option>
@@ -215,34 +268,66 @@ export default function Consultations() {
                   <tr>
                     <td colSpan={6} className="text-center py-16">
                       <Calendar className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                      <p className="text-sm font-bold text-slate-800">Nenhuma consulta encontrada</p>
-                      <p className="text-xs text-slate-400 mt-1">Tente mudar o filtro de status.</p>
+                      <p className="text-sm font-bold text-slate-800">
+                        Nenhuma consulta encontrada
+                      </p>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Tente mudar o filtro de status.
+                      </p>
                     </td>
                   </tr>
                 ) : (
                   paginatedConsultations.map((con) => (
-                    <tr key={con.id} className="group hover:bg-slate-50/50 transition-colors">
+                    <tr
+                      key={con.id}
+                      className="group hover:bg-slate-50/50 transition-colors cursor-pointer"
+                      onClick={() => setSelectedConsultation(con)}
+                    >
                       <td className="px-8 py-4">
                         <div className="flex items-center gap-3">
                           {con.patientAvatar ? (
-                            <img alt={con.patientName} className="w-10 h-10 rounded-full object-cover border border-slate-100" src={con.patientAvatar} referrerPolicy="no-referrer" />
+                            <img
+                              alt={con.patientName}
+                              className="w-10 h-10 rounded-full object-cover border border-slate-100"
+                              src={con.patientAvatar}
+                              referrerPolicy="no-referrer"
+                            />
                           ) : (
                             <div className="w-10 h-10 bg-slate-100 border border-slate-200 text-slate-600 rounded-full flex items-center justify-center font-bold text-xs">
-                              {con.patientName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                              {con.patientName
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .slice(0, 2)
+                                .toUpperCase()}
                             </div>
                           )}
                           <div>
-                            <p className="text-sm font-bold text-slate-900">{con.patientName}</p>
-                            <p className="text-[11px] text-slate-500 font-mono mt-0.5">CPF: {con.patientCpf.replace(/(\d{3})\.(\d{3})\.(\d{3})-(\d{2})/, "$1.***.***-$4")}</p>
+                            <p className="text-sm font-bold text-slate-900">
+                              {con.patientName}
+                            </p>
+                            <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                              CPF:{" "}
+                              {con.patientCpf.replace(
+                                /(\d{3})\.(\d{3})\.(\d{3})-(\d{2})/,
+                                "$1.***.***-$4",
+                              )}
+                            </p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-sm font-bold text-slate-800">{formatDate(con.date)}</p>
-                        <p className="text-[11px] text-slate-400 font-bold mt-0.5">{con.time}</p>
+                        <p className="text-sm font-bold text-slate-800">
+                          {formatDate(con.date)}
+                        </p>
+                        <p className="text-[11px] text-slate-400 font-bold mt-0.5">
+                          {con.time}
+                        </p>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-sm font-semibold text-slate-800">{con.doctorName}</p>
+                        <p className="text-sm font-semibold text-slate-800">
+                          {con.doctorName}
+                        </p>
                       </td>
                       <td className="px-6 py-4">
                         <span className="px-2.5 py-1 bg-slate-100 border border-slate-200/20 text-on-surface-variant rounded-full text-[11px] font-bold">
@@ -270,14 +355,23 @@ export default function Consultations() {
                         )}
                       </td>
                       <td className="px-8 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button className="p-1.5 text-slate-400 hover:text-primary hover:bg-blue-50 rounded-lg transition-all cursor-pointer border-none bg-transparent">
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button className="p-1.5 text-slate-400 hover:text-primary hover:bg-blue-50 rounded-lg transition-all cursor-pointer border-none bg-transparent">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedConsultation(con);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-primary hover:bg-blue-50 rounded-lg transition-all cursor-pointer border-none bg-transparent"
+                          >
                             <Edit3 className="w-4 h-4" />
                           </button>
-                          <button className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer border-none bg-transparent">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteConsultation(con.id);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer border-none bg-transparent"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -292,7 +386,8 @@ export default function Consultations() {
           {/* Pagination */}
           <div className="bg-slate-50/60 px-8 py-4 flex items-center justify-between border-t border-slate-100">
             <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-              Mostrando {paginatedConsultations.length} de {totalItems} consultas
+              Mostrando {paginatedConsultations.length} de {totalItems}{" "}
+              consultas
             </p>
             <div className="flex items-center gap-2">
               <button
@@ -303,23 +398,27 @@ export default function Consultations() {
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <div className="flex gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
-                  <button
-                    key={pg}
-                    onClick={() => setCurrentPage(pg)}
-                    className={`w-8 h-8 rounded-lg text-xs font-bold flex items-center justify-center transition-all cursor-pointer border-none ${
-                      currentPage === pg
-                        ? "bg-primary text-white shadow-sm"
-                        : "text-slate-500 hover:bg-slate-200/50 bg-transparent"
-                    }`}
-                  >
-                    {pg}
-                  </button>
-                ))}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (pg) => (
+                    <button
+                      key={pg}
+                      onClick={() => setCurrentPage(pg)}
+                      className={`w-8 h-8 rounded-lg text-xs font-bold flex items-center justify-center transition-all cursor-pointer border-none ${
+                        currentPage === pg
+                          ? "bg-primary text-white shadow-sm"
+                          : "text-slate-500 hover:bg-slate-200/50 bg-transparent"
+                      }`}
+                    >
+                      {pg}
+                    </button>
+                  ),
+                )}
               </div>
               <button
                 disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(p + 1, totalPages))
+                }
                 className="p-1.5 text-slate-400 hover:text-primary transition-all disabled:opacity-30 cursor-pointer border-none bg-transparent"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -328,6 +427,109 @@ export default function Consultations() {
           </div>
         </div>
       </div>
+
+      {/* Consultation Detail Modal */}
+      {selectedConsultation && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm"
+          onClick={() => setSelectedConsultation(null)}
+        >
+          <div
+            className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-slate-100 flex justify-between items-start">
+              <div>
+                <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">
+                  Detalhes da Consulta
+                </p>
+                <h3 className="text-xl font-bold text-slate-900">
+                  {selectedConsultation.patientName}
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedConsultation(null)}
+                className="p-2 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors cursor-pointer border-none bg-transparent"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                    Data
+                  </p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {formatDate(selectedConsultation.date)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                    Horário
+                  </p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {selectedConsultation.time}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                    Profissional
+                  </p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {selectedConsultation.doctorName}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                    Especialidade
+                  </p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {selectedConsultation.specialty}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                  Status
+                </p>
+                <span
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest border ${
+                    selectedConsultation.status === "REALIZADA"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                      : selectedConsultation.status === "AGENDADA"
+                        ? "bg-blue-50 text-primary border-blue-100"
+                        : "bg-slate-100 text-slate-500 border-slate-200"
+                  }`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      selectedConsultation.status === "REALIZADA"
+                        ? "bg-emerald-600"
+                        : selectedConsultation.status === "AGENDADA"
+                          ? "bg-primary"
+                          : "bg-slate-400"
+                    }`}
+                  ></span>
+                  {selectedConsultation.status === "REALIZADA"
+                    ? "Realizada"
+                    : selectedConsultation.status === "AGENDADA"
+                      ? "Agendada"
+                      : "Cancelada"}
+                </span>
+              </div>
+            </div>
+            <div className="p-6 border-t border-slate-100 flex gap-3 justify-end">
+              <button
+                onClick={() => setSelectedConsultation(null)}
+                className="px-5 py-2.5 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-colors cursor-pointer border-none"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </MainLayout>
   );
 }
