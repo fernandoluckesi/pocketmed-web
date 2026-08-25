@@ -46,6 +46,19 @@ import { api } from "../../services/api";
 
 // --- Types ---
 
+// --- Helpers ---
+
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length === 11) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  }
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  return value;
+}
+
 // --- Components ---
 
 function PatientHeroFromAPI({
@@ -160,7 +173,9 @@ function PatientHeroFromAPI({
                 <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
                   Telefone
                 </p>
-                <p className="font-semibold text-sm">{patient.phone}</p>
+                <p className="font-semibold text-sm">
+                  {formatPhone(patient.phone)}
+                </p>
               </div>
             </div>
           )}
