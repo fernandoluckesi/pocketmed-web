@@ -499,9 +499,9 @@ function CalendarView({
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="bg-slate-100/50 rounded-[2.5rem] p-8 border border-white/80 backdrop-blur-md shadow-sm"
+      className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6"
     >
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-6">
           <h3 className="text-2xl font-display font-bold text-slate-900">
             {MONTH_NAMES[currentMonth]} {currentYear}
