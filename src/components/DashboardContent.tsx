@@ -32,7 +32,9 @@ interface Appointment {
 
 export const DashboardContent = () => {
   const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([]);
-  const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
+  const [upcomingAppointments, setUpcomingAppointments] = useState<
+    Appointment[]
+  >([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -49,15 +51,26 @@ export const DashboardContent = () => {
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      const todayList = appointments.filter((apt) => {
-        const d = new Date(apt.dateTime);
-        return d >= today && d < tomorrow;
-      }).sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+      const todayList = appointments
+        .filter((apt) => {
+          const d = new Date(apt.dateTime);
+          return d >= today && d < tomorrow;
+        })
+        .sort(
+          (a, b) =>
+            new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime(),
+        );
 
-      const futureList = appointments.filter((apt) => {
-        const d = new Date(apt.dateTime);
-        return d >= tomorrow;
-      }).sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime()).slice(0, 10);
+      const futureList = appointments
+        .filter((apt) => {
+          const d = new Date(apt.dateTime);
+          return d >= tomorrow;
+        })
+        .sort(
+          (a, b) =>
+            new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime(),
+        )
+        .slice(0, 10);
 
       setTodayAppointments(todayList);
       setUpcomingAppointments(futureList);
@@ -70,7 +83,8 @@ export const DashboardContent = () => {
 
   const completedToday = todayAppointments.filter((a) => a.isCompleted).length;
   const totalToday = todayAppointments.length;
-  const progressPercent = totalToday > 0 ? (completedToday / totalToday) * 100 : 0;
+  const progressPercent =
+    totalToday > 0 ? (completedToday / totalToday) * 100 : 0;
 
   function formatTime(dateTime: string): { time: string; period: string } {
     const d = new Date(dateTime);
@@ -82,22 +96,39 @@ export const DashboardContent = () => {
 
   function formatDateLabel(dateTime: string): string {
     const d = new Date(dateTime);
-    return d.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "short" });
+    return d.toLocaleDateString("pt-BR", {
+      weekday: "long",
+      day: "numeric",
+      month: "short",
+    });
   }
 
   function getInitials(name: string): string {
-    return name.split(" ").slice(0, 2).map((n) => n[0]).join("").toUpperCase();
+    return name
+      .split(" ")
+      .slice(0, 2)
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
   }
 
   // Group upcoming by date
-  const upcomingGrouped: { date: string; label: string; appointments: Appointment[] }[] = [];
+  const upcomingGrouped: {
+    date: string;
+    label: string;
+    appointments: Appointment[];
+  }[] = [];
   for (const apt of upcomingAppointments) {
     const dateKey = new Date(apt.dateTime).toISOString().split("T")[0];
     const existing = upcomingGrouped.find((g) => g.date === dateKey);
     if (existing) {
       existing.appointments.push(apt);
     } else {
-      upcomingGrouped.push({ date: dateKey, label: formatDateLabel(apt.dateTime), appointments: [apt] });
+      upcomingGrouped.push({
+        date: dateKey,
+        label: formatDateLabel(apt.dateTime),
+        appointments: [apt],
+      });
     }
   }
 
@@ -114,9 +145,9 @@ export const DashboardContent = () => {
         {/* Consultas de Hoje */}
         <motion.section
           variants={itemVariants}
-          className="bg-slate-50 rounded-xl p-1 shadow-sm border border-slate-100"
+          className="bg-slate-50 rounded-xl p-1 shadow-sm border border-slate-100 max-h-[520px] flex flex-col"
         >
-          <div className="p-6">
+          <div className="p-6 flex flex-col flex-1 min-h-0">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-extrabold text-on-surface tracking-tight font-manrope">
                 Consultas de Hoje
@@ -131,7 +162,10 @@ export const DashboardContent = () => {
                 {totalToday}
               </h3>
               <div className="h-1 bg-slate-100 rounded-full overflow-hidden mt-4">
-                <div className="bg-primary h-full" style={{ width: `${progressPercent}%` }}></div>
+                <div
+                  className="bg-primary h-full"
+                  style={{ width: `${progressPercent}%` }}
+                ></div>
               </div>
               <p className="text-[10px] text-on-surface-variant mt-2 font-medium">
                 {completedToday} concluídas de {totalToday} total
@@ -139,16 +173,23 @@ export const DashboardContent = () => {
             </div>
 
             {loading ? (
-              <div className="text-center py-8 text-slate-400 text-sm">Carregando...</div>
+              <div className="text-center py-8 text-slate-400 text-sm">
+                Carregando...
+              </div>
             ) : todayAppointments.length === 0 ? (
-              <div className="text-center py-8 text-slate-400 text-sm">Nenhuma consulta hoje</div>
+              <div className="text-center py-8 text-slate-400 text-sm">
+                Nenhuma consulta hoje
+              </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-3 overflow-y-auto flex-1 min-h-0">
                 {todayAppointments.map((apt) => {
                   const { time, period } = formatTime(apt.dateTime);
                   const now = new Date();
                   const aptTime = new Date(apt.dateTime);
-                  const isNow = !apt.isCompleted && Math.abs(aptTime.getTime() - now.getTime()) < 30 * 60 * 1000;
+                  const isNow =
+                    !apt.isCompleted &&
+                    Math.abs(aptTime.getTime() - now.getTime()) <
+                      30 * 60 * 1000;
                   const patientName = apt.patient?.name || "Paciente";
 
                   return (
@@ -164,14 +205,20 @@ export const DashboardContent = () => {
                         <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-8 bg-primary rounded-full"></div>
                       )}
                       <div className="w-16 flex-shrink-0 text-center border-r border-slate-100 mr-4">
-                        <p className="text-xs font-black text-primary">{time}</p>
+                        <p className="text-xs font-black text-primary">
+                          {time}
+                        </p>
                         <p className="text-[10px] text-on-surface-variant font-medium">
                           {isNow ? "NOW" : period}
                         </p>
                       </div>
                       <div className="flex-grow">
-                        <p className="text-sm font-bold text-on-surface">{patientName}</p>
-                        <p className="text-xs text-on-surface-variant">{apt.reason || "Consulta"}</p>
+                        <p className="text-sm font-bold text-on-surface">
+                          {patientName}
+                        </p>
+                        <p className="text-xs text-on-surface-variant">
+                          {apt.reason || "Consulta"}
+                        </p>
                       </div>
                       <div className="flex items-center space-x-3">
                         {apt.isCompleted && (
@@ -184,7 +231,10 @@ export const DashboardContent = () => {
                             Aguardando
                           </span>
                         )}
-                        <ICONS.ChevronRight size={14} className="text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <ICONS.ChevronRight
+                          size={14}
+                          className="text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                        />
                       </div>
                     </div>
                   );
@@ -197,7 +247,7 @@ export const DashboardContent = () => {
         {/* Próximas Consultas */}
         <motion.section
           variants={itemVariants}
-          className="bg-white rounded-xl p-6 shadow-sm border border-slate-100"
+          className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 max-h-[520px] flex flex-col"
         >
           <div className="flex justify-between items-center mb-8">
             <div>
@@ -211,11 +261,15 @@ export const DashboardContent = () => {
           </div>
 
           {loading ? (
-            <div className="text-center py-8 text-slate-400 text-sm">Carregando...</div>
+            <div className="text-center py-8 text-slate-400 text-sm">
+              Carregando...
+            </div>
           ) : upcomingGrouped.length === 0 ? (
-            <div className="text-center py-8 text-slate-400 text-sm">Nenhuma consulta agendada</div>
+            <div className="text-center py-8 text-slate-400 text-sm">
+              Nenhuma consulta agendada
+            </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-6 overflow-y-auto flex-1 min-h-0">
               {upcomingGrouped.map((group) => (
                 <div key={group.date}>
                   <p className="text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-[0.2em] mb-4">
@@ -228,7 +282,10 @@ export const DashboardContent = () => {
                       const initials = getInitials(patientName);
 
                       return (
-                        <div key={apt.id} className="flex items-start space-x-4">
+                        <div
+                          key={apt.id}
+                          className="flex items-start space-x-4"
+                        >
                           {apt.patient?.profileImage ? (
                             <img
                               alt={patientName}
@@ -241,10 +298,15 @@ export const DashboardContent = () => {
                             </div>
                           )}
                           <div className="flex-grow pt-0.5">
-                            <p className="text-sm font-bold text-on-surface">{patientName}</p>
+                            <p className="text-sm font-bold text-on-surface">
+                              {patientName}
+                            </p>
                             <div className="flex items-center text-[10px] text-on-surface-variant mt-1">
                               <ICONS.Clock size={12} className="mr-1" /> {time}
-                              <span className="mx-2 text-slate-300">•</span> {apt.reason || "Consulta"}
+                              <span className="mx-2 text-slate-300">
+                                •
+                              </span>{" "}
+                              {apt.reason || "Consulta"}
                             </div>
                           </div>
                         </div>

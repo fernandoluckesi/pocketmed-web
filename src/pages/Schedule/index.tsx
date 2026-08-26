@@ -11,6 +11,7 @@ import { motion } from "motion/react";
 import { NewAppointmentModal } from "../../components/NewAppointmentModal";
 import { AppointmentDetailModal } from "../../components/AppointmentDetailModal";
 import { MainLayout } from "../../components/MainLayout";
+import { Button } from "../../components/ui/Button";
 import { api } from "../../services/api";
 
 // --- API Data Hook ---
@@ -40,67 +41,122 @@ function useScheduleAppointments() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const todayAppointments = appointments.filter((a) => {
-    const d = new Date(a.dateTime);
-    return d >= today && d < tomorrow;
-  }).sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+  const todayAppointments = appointments
+    .filter((a) => {
+      const d = new Date(a.dateTime);
+      return d >= today && d < tomorrow;
+    })
+    .sort(
+      (a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime(),
+    );
 
-  const upcomingAppointments = appointments.filter((a) => {
-    return new Date(a.dateTime) >= tomorrow;
-  }).sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+  const upcomingAppointments = appointments
+    .filter((a) => {
+      return new Date(a.dateTime) >= tomorrow;
+    })
+    .sort(
+      (a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime(),
+    );
 
   const completedToday = todayAppointments.filter((a) => a.isCompleted).length;
 
-  return { appointments, todayAppointments, upcomingAppointments, completedToday, loading, refetch: load };
+  return {
+    appointments,
+    todayAppointments,
+    upcomingAppointments,
+    completedToday,
+    loading,
+    refetch: load,
+  };
 }
 
 // --- Types ---
 
-
 // --- Mock Data ---
 
-
 // --- Day View Data ---
-
 
 // --- Sidebar ---
 // --- Day View (Dynamic) ---
 
-function DayView({ selectedDate, setSelectedDate, appointments }: { selectedDate: Date; setSelectedDate: (d: Date) => void; appointments: APIAppointment[] }) {
-  const dayStart = new Date(selectedDate); dayStart.setHours(0, 0, 0, 0);
-  const dayEnd = new Date(selectedDate); dayEnd.setHours(23, 59, 59, 999);
+function DayView({
+  selectedDate,
+  setSelectedDate,
+  appointments,
+}: {
+  selectedDate: Date;
+  setSelectedDate: (d: Date) => void;
+  appointments: APIAppointment[];
+}) {
+  const dayStart = new Date(selectedDate);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(selectedDate);
+  dayEnd.setHours(23, 59, 59, 999);
 
-  const dayAppts = appointments.filter((a) => {
-    const d = new Date(a.dateTime);
-    return d >= dayStart && d <= dayEnd;
-  }).sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+  const dayAppts = appointments
+    .filter((a) => {
+      const d = new Date(a.dateTime);
+      return d >= dayStart && d <= dayEnd;
+    })
+    .sort(
+      (a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime(),
+    );
 
+  function prevDay() {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 1);
+    setSelectedDate(d);
+  }
+  function nextDay() {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + 1);
+    setSelectedDate(d);
+  }
+  function goToday() {
+    setSelectedDate(new Date());
+  }
 
-  function prevDay() { const d = new Date(selectedDate); d.setDate(d.getDate() - 1); setSelectedDate(d); }
-  function nextDay() { const d = new Date(selectedDate); d.setDate(d.getDate() + 1); setSelectedDate(d); }
-  function goToday() { setSelectedDate(new Date()); }
-
-  const dateLabel = selectedDate.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const dateLabel = selectedDate.toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   return (
     <div className="flex-1">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <p className="text-slate-500 font-medium capitalize">Agenda do Dia: {dateLabel}</p>
+          <p className="text-slate-500 font-medium">
+            Agenda do dia: {dateLabel}
+          </p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={prevDay} className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all cursor-pointer border-none">
+          <button
+            onClick={prevDay}
+            className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all cursor-pointer border-none"
+          >
             <ChevronLeft size={20} className="text-slate-600" />
           </button>
-          <button onClick={goToday} className="px-5 py-2 bg-slate-200/50 hover:bg-slate-200 rounded-lg font-bold text-sm text-slate-700 transition-all cursor-pointer border-none">Hoje</button>
-          <button onClick={nextDay} className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all cursor-pointer border-none">
+          <button
+            onClick={goToday}
+            className="px-5 py-2 bg-slate-200/50 hover:bg-slate-200 rounded-lg font-bold text-sm text-slate-700 transition-all cursor-pointer border-none"
+          >
+            Hoje
+          </button>
+          <button
+            onClick={nextDay}
+            className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all cursor-pointer border-none"
+          >
             <ChevronRight size={20} className="text-slate-600" />
           </button>
         </div>
@@ -116,20 +172,29 @@ function DayView({ selectedDate, setSelectedDate, appointments }: { selectedDate
           <div className="divide-y divide-slate-100">
             {dayAppts.map((apt) => {
               const d = new Date(apt.dateTime);
-              const time = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-              const patientName = apt.patient?.name || 'Paciente';
+              const time = `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+              const patientName = apt.patient?.name || "Paciente";
 
               return (
-                <div key={apt.id} className="flex items-center p-5 hover:bg-slate-50 transition-all group">
+                <div
+                  key={apt.id}
+                  className="flex items-center p-5 hover:bg-slate-50 transition-all group"
+                >
                   <div className="w-20 flex-shrink-0 text-center border-r border-slate-100 mr-5">
                     <p className="text-sm font-black text-primary">{time}</p>
                   </div>
                   <div className="flex-grow">
-                    <p className="text-sm font-bold text-slate-900">{patientName}</p>
-                    <p className="text-xs text-slate-500">{apt.reason || 'Consulta'}</p>
+                    <p className="text-sm font-bold text-slate-900">
+                      {patientName}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {apt.reason || "Consulta"}
+                    </p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${apt.isCompleted ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-primary'}`}>
-                    {apt.isCompleted ? 'Concluída' : 'Agendada'}
+                  <span
+                    className={`px-3 py-1 rounded-full text-[10px] font-bold ${apt.isCompleted ? "bg-green-100 text-green-700" : "bg-blue-100 text-primary"}`}
+                  >
+                    {apt.isCompleted ? "Concluída" : "Agendada"}
                   </span>
                 </div>
               );
@@ -143,10 +208,23 @@ function DayView({ selectedDate, setSelectedDate, appointments }: { selectedDate
 
 // --- Week View (Dynamic) ---
 
-function WeekView({ selectedDate, onDayClick, appointments }: { selectedDate: Date; onDayClick: (d: Date) => void; appointments: APIAppointment[] }) {
+function WeekView({
+  selectedDate,
+  onDayClick,
+  appointments,
+  onWeekChange,
+}: {
+  selectedDate: Date;
+  onDayClick: (d: Date) => void;
+  appointments: APIAppointment[];
+  onWeekChange: (d: Date) => void;
+}) {
   const startOfWeek = new Date(selectedDate);
   const dayOfWeek = startOfWeek.getDay();
   startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek + 1); // Monday
+
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(endOfWeek.getDate() + 6);
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(startOfWeek);
@@ -157,59 +235,124 @@ function WeekView({ selectedDate, onDayClick, appointments }: { selectedDate: Da
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  const prevWeek = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 7);
+    onWeekChange(d);
+  };
+
+  const nextWeek = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + 7);
+    onWeekChange(d);
+  };
+
+  const goThisWeek = () => {
+    onWeekChange(new Date());
+  };
+
+  const weekLabel = `${startOfWeek.getDate()} de ${startOfWeek.toLocaleDateString("pt-BR", { month: "long" })} — ${endOfWeek.getDate()} de ${endOfWeek.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}`;
+
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100">
-      <div className="grid grid-cols-7 border-b border-slate-100">
-        {weekDays.map((d, i) => {
-          const isToday = d.getTime() === today.getTime();
-          return (
-            <div
-              key={i}
-              onClick={() => onDayClick(d)}
-              className={`py-4 text-center cursor-pointer hover:bg-primary/5 transition-colors ${isToday ? 'bg-primary/5' : ''}`}
-            >
-              <p className="text-[10px] font-bold uppercase text-slate-400">
-                {d.toLocaleDateString('pt-BR', { weekday: 'short' })}
-              </p>
-              <p className={`text-lg font-bold mt-1 ${isToday ? 'text-primary' : 'text-slate-900'}`}>
-                {d.getDate()}
-              </p>
-            </div>
-          );
-        })}
+    <div className="flex-1">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <p className="text-slate-500 font-medium">Semana: {weekLabel}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={prevWeek}
+            className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all cursor-pointer border-none"
+          >
+            <ChevronLeft size={20} className="text-slate-600" />
+          </button>
+          <button
+            onClick={goThisWeek}
+            className="px-5 py-2 bg-slate-200/50 hover:bg-slate-200 rounded-lg font-bold text-sm text-slate-700 transition-all cursor-pointer border-none"
+          >
+            Semana atual
+          </button>
+          <button
+            onClick={nextWeek}
+            className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all cursor-pointer border-none"
+          >
+            <ChevronRight size={20} className="text-slate-600" />
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-7 min-h-[400px]">
-        {weekDays.map((day, i) => {
-          const dayStart = new Date(day); dayStart.setHours(0, 0, 0, 0);
-          const dayEnd = new Date(day); dayEnd.setHours(23, 59, 59);
-          const dayAppts = appointments.filter((a) => {
-            const ad = new Date(a.dateTime);
-            return ad >= dayStart && ad <= dayEnd;
-          }).sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100"
+      >
+        <div className="grid grid-cols-7 border-b border-slate-100">
+          {weekDays.map((d, i) => {
+            const isToday = d.getTime() === today.getTime();
+            return (
+              <div
+                key={i}
+                onClick={() => onDayClick(d)}
+                className={`py-4 text-center cursor-pointer hover:bg-primary/5 transition-colors ${isToday ? "bg-primary/5" : ""}`}
+              >
+                <p className="text-[10px] font-bold uppercase text-slate-400">
+                  {d.toLocaleDateString("pt-BR", { weekday: "short" })}
+                </p>
+                <p
+                  className={`text-lg font-bold mt-1 ${isToday ? "text-primary" : "text-slate-900"}`}
+                >
+                  {d.getDate()}
+                </p>
+              </div>
+            );
+          })}
+        </div>
 
-          return (
-            <div key={i} className="border-r border-slate-100 last:border-r-0 p-2 space-y-2">
-              {dayAppts.map((apt) => {
-                const ad = new Date(apt.dateTime);
-                const time = `${ad.getHours().toString().padStart(2, '0')}:${ad.getMinutes().toString().padStart(2, '0')}`;
-                return (
-                  <div
-                    key={apt.id}
-                    onClick={() => onDayClick(day)}
-                    className={`px-2 py-1.5 rounded-lg text-[10px] font-bold truncate cursor-pointer transition-all hover:shadow-sm ${
-                      apt.isCompleted ? 'bg-green-50 border-l-2 border-green-500 text-green-700' : 'bg-primary/5 border-l-2 border-primary text-primary'
-                    }`}
-                  >
-                    {time} {apt.patient?.name?.split(' ')[0] || ''}
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
-    </motion.div>
+        <div className="grid grid-cols-7 min-h-[400px]">
+          {weekDays.map((day, i) => {
+            const dayStart = new Date(day);
+            dayStart.setHours(0, 0, 0, 0);
+            const dayEnd = new Date(day);
+            dayEnd.setHours(23, 59, 59);
+            const dayAppts = appointments
+              .filter((a) => {
+                const ad = new Date(a.dateTime);
+                return ad >= dayStart && ad <= dayEnd;
+              })
+              .sort(
+                (a, b) =>
+                  new Date(a.dateTime).getTime() -
+                  new Date(b.dateTime).getTime(),
+              );
+
+            return (
+              <div
+                key={i}
+                className="border-r border-slate-100 last:border-r-0 p-2 space-y-2"
+              >
+                {dayAppts.map((apt) => {
+                  const ad = new Date(apt.dateTime);
+                  const time = `${ad.getHours().toString().padStart(2, "0")}:${ad.getMinutes().toString().padStart(2, "0")}`;
+                  return (
+                    <div
+                      key={apt.id}
+                      onClick={() => onDayClick(day)}
+                      className={`px-2 py-1.5 rounded-lg text-[10px] font-bold truncate cursor-pointer transition-all hover:shadow-sm ${
+                        apt.isCompleted
+                          ? "bg-green-50 border-l-2 border-green-500 text-green-700"
+                          : "bg-primary/5 border-l-2 border-primary text-primary"
+                      }`}
+                    >
+                      {time} {apt.patient?.name?.split(" ")[0] || ""}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </motion.div>
+    </div>
   );
 }
 
@@ -251,12 +394,32 @@ function StatCard({
 
 // --- Day View ---
 
-
 // --- Calendar View (Dynamic) ---
 
-const MONTH_NAMES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const MONTH_NAMES = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
 
-function CalendarView({ appointments, onAppointmentClick, onDayClick }: { appointments: APIAppointment[]; onAppointmentClick: (apt: any) => void; onDayClick?: (d: Date) => void }) {
+function CalendarView({
+  appointments,
+  onAppointmentClick,
+  onDayClick,
+}: {
+  appointments: APIAppointment[];
+  onAppointmentClick: (apt: any) => void;
+  onDayClick?: (d: Date) => void;
+}) {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
@@ -266,13 +429,17 @@ function CalendarView({ appointments, onAppointmentClick, onDayClick }: { appoin
   const todayYear = today.getFullYear();
 
   function prevMonth() {
-    if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(currentYear - 1); }
-    else setCurrentMonth(currentMonth - 1);
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(currentYear - 1);
+    } else setCurrentMonth(currentMonth - 1);
   }
 
   function nextMonth() {
-    if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(currentYear + 1); }
-    else setCurrentMonth(currentMonth + 1);
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(currentYear + 1);
+    } else setCurrentMonth(currentMonth + 1);
   }
 
   // Generate calendar days
@@ -280,33 +447,52 @@ function CalendarView({ appointments, onAppointmentClick, onDayClick }: { appoin
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
 
-  const calendarDays: { day: number; month: 'prev' | 'current' | 'next'; isToday: boolean }[] = [];
+  const calendarDays: {
+    day: number;
+    month: "prev" | "current" | "next";
+    isToday: boolean;
+  }[] = [];
 
   // Previous month days
   for (let i = firstDay - 1; i >= 0; i--) {
-    calendarDays.push({ day: daysInPrevMonth - i, month: 'prev', isToday: false });
+    calendarDays.push({
+      day: daysInPrevMonth - i,
+      month: "prev",
+      isToday: false,
+    });
   }
   // Current month days
   for (let i = 1; i <= daysInMonth; i++) {
-    calendarDays.push({ day: i, month: 'current', isToday: i === todayDay && currentMonth === todayMonth && currentYear === todayYear });
+    calendarDays.push({
+      day: i,
+      month: "current",
+      isToday:
+        i === todayDay &&
+        currentMonth === todayMonth &&
+        currentYear === todayYear,
+    });
   }
   // Next month days (fill to 42)
   const remaining = 42 - calendarDays.length;
   for (let i = 1; i <= remaining; i++) {
-    calendarDays.push({ day: i, month: 'next', isToday: false });
+    calendarDays.push({ day: i, month: "next", isToday: false });
   }
 
   // Map appointments to days
   function getAppointmentsForDay(day: number): APIAppointment[] {
     return appointments.filter((a) => {
       const d = new Date(a.dateTime);
-      return d.getDate() === day && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      return (
+        d.getDate() === day &&
+        d.getMonth() === currentMonth &&
+        d.getFullYear() === currentYear
+      );
     });
   }
 
   function formatTime(dateTime: string): string {
     const d = new Date(dateTime);
-    return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+    return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
   }
 
   return (
@@ -321,10 +507,16 @@ function CalendarView({ appointments, onAppointmentClick, onDayClick }: { appoin
             {MONTH_NAMES[currentMonth]} {currentYear}
           </h3>
           <div className="flex gap-2">
-            <button onClick={prevMonth} className="p-2 hover:bg-white rounded-full transition-all border border-transparent hover:border-slate-200 cursor-pointer">
+            <button
+              onClick={prevMonth}
+              className="p-2 hover:bg-white rounded-full transition-all border border-transparent hover:border-slate-200 cursor-pointer"
+            >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <button onClick={nextMonth} className="p-2 hover:bg-white rounded-full transition-all border border-transparent hover:border-slate-200 cursor-pointer">
+            <button
+              onClick={nextMonth}
+              className="p-2 hover:bg-white rounded-full transition-all border border-transparent hover:border-slate-200 cursor-pointer"
+            >
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
@@ -342,8 +534,11 @@ function CalendarView({ appointments, onAppointmentClick, onDayClick }: { appoin
 
       <div className="bg-white rounded-[2rem] overflow-hidden border border-slate-100 shadow-sm">
         <div className="grid grid-cols-7 border-b border-slate-100">
-          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((d) => (
-            <div key={d} className="py-4 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+          {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d) => (
+            <div
+              key={d}
+              className="py-4 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400"
+            >
               {d}
             </div>
           ))}
@@ -351,21 +546,27 @@ function CalendarView({ appointments, onAppointmentClick, onDayClick }: { appoin
 
         <div className="grid grid-cols-7">
           {calendarDays.map((item, idx) => {
-            const dayAppts = item.month === 'current' ? getAppointmentsForDay(item.day) : [];
+            const dayAppts =
+              item.month === "current" ? getAppointmentsForDay(item.day) : [];
             return (
               <div
                 key={idx}
-                onClick={() => item.month === 'current' && onDayClick?.(new Date(currentYear, currentMonth, item.day))}
+                onClick={() =>
+                  item.month === "current" &&
+                  onDayClick?.(new Date(currentYear, currentMonth, item.day))
+                }
                 className={`h-32 p-3 border-r border-b border-slate-100 last:border-r-0 relative transition-all cursor-pointer
-                  ${item.month !== 'current' ? 'bg-slate-50/50 opacity-40' : 'hover:bg-primary/[0.02]'}
-                  ${item.isToday ? 'bg-primary/[0.03]' : ''}`}
+                  ${item.month !== "current" ? "bg-slate-50/50 opacity-40" : "hover:bg-primary/[0.02]"}
+                  ${item.isToday ? "bg-primary/[0.03]" : ""}`}
               >
                 {item.isToday && (
                   <div className="absolute top-3 right-3">
                     <span className="w-2 h-2 bg-primary rounded-full animate-pulse inline-block" />
                   </div>
                 )}
-                <span className={`text-xs font-bold ${item.isToday ? 'text-primary' : 'text-slate-900'} ${item.month !== 'current' ? 'text-slate-400' : ''}`}>
+                <span
+                  className={`text-xs font-bold ${item.isToday ? "text-primary" : "text-slate-900"} ${item.month !== "current" ? "text-slate-400" : ""}`}
+                >
                   {item.day}
                 </span>
 
@@ -373,25 +574,32 @@ function CalendarView({ appointments, onAppointmentClick, onDayClick }: { appoin
                   {dayAppts.slice(0, 3).map((appt) => (
                     <div
                       key={appt.id}
-                      onClick={() => onAppointmentClick({
-                        id: appt.id,
-                        patientName: appt.patient?.name || 'Paciente',
-                        doctorName: appt.doctorName || '',
-                        type: appt.reason || 'Consulta',
-                        dateTime: new Date(appt.dateTime).toLocaleString('pt-BR'),
-                        status: appt.isCompleted ? 'Concluída' : 'Agendada',
-                      })}
+                      onClick={() =>
+                        onAppointmentClick({
+                          id: appt.id,
+                          patientName: appt.patient?.name || "Paciente",
+                          doctorName: appt.doctorName || "",
+                          type: appt.reason || "Consulta",
+                          dateTime: new Date(appt.dateTime).toLocaleString(
+                            "pt-BR",
+                          ),
+                          status: appt.isCompleted ? "Concluída" : "Agendada",
+                        })
+                      }
                       className={`px-2 py-1 rounded text-[9px] font-bold truncate cursor-pointer transition-all hover:shadow-sm ${
                         appt.isCompleted
-                          ? 'bg-green-50 border-l-2 border-green-500 text-green-700'
-                          : 'bg-primary/5 border-l-2 border-primary text-primary'
+                          ? "bg-green-50 border-l-2 border-green-500 text-green-700"
+                          : "bg-primary/5 border-l-2 border-primary text-primary"
                       }`}
                     >
-                      {formatTime(appt.dateTime)} {appt.patient?.name?.split(' ')[0] || ''}
+                      {formatTime(appt.dateTime)}{" "}
+                      {appt.patient?.name?.split(" ")[0] || ""}
                     </div>
                   ))}
                   {dayAppts.length > 3 && (
-                    <span className="text-[9px] text-slate-400 font-medium">+{dayAppts.length - 3} mais</span>
+                    <span className="text-[9px] text-slate-400 font-medium">
+                      +{dayAppts.length - 3} mais
+                    </span>
                   )}
                 </div>
               </div>
@@ -410,7 +618,12 @@ export default function Schedule() {
   const [showNewAppointment, setShowNewAppointment] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showAppointmentDetail, setShowAppointmentDetail] = useState(false);
-  const { todayAppointments, upcomingAppointments, completedToday, appointments: allAppointments } = useScheduleAppointments();
+  const {
+    todayAppointments,
+    upcomingAppointments,
+    completedToday,
+    appointments: allAppointments,
+  } = useScheduleAppointments();
   const [selectedAppointment, setSelectedAppointment] = useState<{
     id: string;
     patientName: string;
@@ -445,43 +658,59 @@ export default function Schedule() {
             </div>
 
             <div className="flex items-center gap-4">
-              <div className="p-1 bg-slate-100 rounded-full flex gap-1">
+              <div className="flex space-x-1 p-1 bg-white rounded-2xl w-fit shadow-sm border border-gray-100">
                 {(["Dia", "Semana", "Mês"] as const).map((view) => (
                   <button
                     key={view}
                     onClick={() => setViewMode(view)}
-                    className={`px-6 py-2 rounded-full text-xs font-bold transition-all ${
+                    className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
                       view === viewMode
-                        ? "bg-white text-primary shadow-sm"
-                        : "text-slate-500 hover:text-slate-900"
+                        ? "bg-primary/5 text-primary"
+                        : "text-gray-500 hover:text-gray-800 bg-transparent"
                     }`}
                   >
                     {view}
                   </button>
                 ))}
               </div>
-              <button
+              <Button
                 onClick={() => setShowNewAppointment(true)}
-                className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-full font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+                variant="primary"
+                size="md"
+                icon={<Plus className="w-4 h-4" />}
               >
-                <Plus className="w-5 h-5" />
                 Novo Agendamento
-              </button>
+              </Button>
             </div>
           </div>
 
           {/* View Content */}
           {viewMode === "Dia" ? (
-            <DayView selectedDate={selectedDate} setSelectedDate={setSelectedDate} appointments={allAppointments} />
+            <DayView
+              selectedDate={selectedDate}
+              setSelectedDate={setSelectedDate}
+              appointments={allAppointments}
+            />
           ) : viewMode === "Semana" ? (
-            <WeekView selectedDate={selectedDate} onDayClick={(d: Date) => { setSelectedDate(d); setViewMode("Dia"); }} appointments={allAppointments} />
+            <WeekView
+              selectedDate={selectedDate}
+              onDayClick={(d: Date) => {
+                setSelectedDate(d);
+                setViewMode("Dia");
+              }}
+              onWeekChange={(d: Date) => setSelectedDate(d)}
+              appointments={allAppointments}
+            />
           ) : (
             <>
               {/* Calendar Box - Dynamic */}
               <CalendarView
                 appointments={allAppointments}
                 onAppointmentClick={handleAppointmentClick}
-                onDayClick={(d: Date) => { setSelectedDate(d); setViewMode("Dia"); }}
+                onDayClick={(d: Date) => {
+                  setSelectedDate(d);
+                  setViewMode("Dia");
+                }}
               />
 
               {/* Stats Bar */}
