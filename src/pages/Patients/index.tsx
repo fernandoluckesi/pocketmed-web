@@ -24,6 +24,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { MainLayout } from "../../components/MainLayout";
 import { SearchWithViewToggle } from "../../components/ui/SearchWithViewToggle";
+import { Pagination } from "../../components/ui/Pagination";
 import { Button } from "../../components/ui/Button";
 import {
   useMyPatients,
@@ -1039,6 +1040,8 @@ function MyPatientsContent({
   const { patients, loading, error, refetch } = useMyPatients();
   const [searchFilter, setSearchFilter] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   // Expose refetch to parent via ref
   useEffect(() => {
@@ -1102,6 +1105,14 @@ function MyPatientsContent({
         )
       : patients;
 
+    // Paginate
+    const totalFiltered = filteredPatients.length;
+    const startIdx = (currentPage - 1) * pageSize;
+    const paginatedPatients = filteredPatients.slice(
+      startIdx,
+      startIdx + pageSize,
+    );
+
     return (
       <section className="space-y-8">
         <div className="flex justify-between items-end">
@@ -1130,7 +1141,7 @@ function MyPatientsContent({
               : "space-y-4"
           }
         >
-          {filteredPatients.map((patient, idx) =>
+          {paginatedPatients.map((patient, idx) =>
             view === "grid" ? (
               <motion.div
                 key={patient.id}
@@ -1245,6 +1256,18 @@ function MyPatientsContent({
             ),
           )}
         </div>
+
+        <Pagination
+          currentPage={currentPage}
+          totalItems={totalFiltered}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setCurrentPage(1);
+          }}
+          label="pacientes"
+        />
       </section>
     );
   }

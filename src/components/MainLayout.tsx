@@ -167,7 +167,9 @@ export function MainLayout({ children }: MainLayoutProps) {
             <>
               {/* Main Menu */}
               {filteredNavItems.map((item, idx) => {
-                const isActive = location.pathname === item.path;
+                const isActive =
+                  location.pathname === item.path ||
+                  location.pathname.startsWith(item.path + "/");
                 return (
                   <motion.div key={idx} whileHover={{ x: 4 }}>
                     <Link
