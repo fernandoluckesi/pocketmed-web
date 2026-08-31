@@ -1,15 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import {
-  PlusCircle,
-  CalendarRange,
-  BadgeCheck,
-  Loader2,
-  UserX,
-  ArrowRight,
-  Send,
-} from "lucide-react";
+import { PlusCircle, CalendarRange, Loader2, UserX, Send } from "lucide-react";
 import { motion } from "motion/react";
-import { useNavigate } from "react-router-dom";
 import { MainLayout } from "../../components/MainLayout";
 import { SearchWithViewToggle } from "../../components/ui/SearchWithViewToggle";
 import { Button } from "../../components/ui/Button";
@@ -27,6 +18,22 @@ interface Doctor {
   phone: string;
   profileImage: string | null;
   createdAt: string;
+}
+
+// --- Helpers ---
+
+// Normalizes a CRM (stored as "SP-100001" or "100001/SP") to the "numero/uf" format.
+function formatCrm(crm: string): string {
+  if (!crm) return "";
+  const dashMatch = crm.match(/^([A-Za-z]{2})-(\d+)$/);
+  if (dashMatch) {
+    return `${dashMatch[2]}/${dashMatch[1].toUpperCase()}`;
+  }
+  const slashMatch = crm.match(/^(\d+)\/([A-Za-z]{2})$/);
+  if (slashMatch) {
+    return `${slashMatch[1]}/${slashMatch[2].toUpperCase()}`;
+  }
+  return crm;
 }
 
 // --- Helper Components ---
@@ -67,48 +74,36 @@ function DoctorCard({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -5, boxShadow: "0 12px 32px rgba(25, 28, 30, 0.08)" }}
-      onClick={() => navigate(`/doctors/${doctor.id}`)}
-      className="bg-white rounded-[2rem] p-8 transition-all flex flex-col space-y-6 shadow-sm border border-slate-100 cursor-pointer group"
+      whileHover={{ y: -6 }}
+      className="group"
     >
-      <div className="flex justify-between items-start">
-        <div className="relative">
-          {doctor.profileImage ? (
-            <img
-              alt={doctor.name}
-              className="w-20 h-20 rounded-full object-cover"
-              src={doctor.profileImage}
-            />
-          ) : (
-            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-2xl">
-              {doctor.name
-                .split(" ")
-                .map((n) => n[0])
-                .slice(0, 2)
-                .join("")}
-            </div>
-          )}
-          <span className="absolute bottom-0 right-0 w-6 h-6 bg-green-500 border-4 border-white rounded-full"></span>
+      <div className="block bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all">
+        <div className="flex items-start gap-4 mb-5">
+          <div className="w-7 h-7 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
+            {doctor.profileImage ? (
+              <img
+                src={doctor.profileImage}
+                alt={doctor.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold text-xs">
+                {doctor.name.charAt(0).toUpperCase()}
+              </div>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h5 className="font-bold text-sm leading-tight group-hover:text-primary transition-colors font-display truncate">
+              {doctor.name}
+            </h5>
+            <p className="text-gray-500 text-sm font-medium truncate">
+              {doctor.specialty}
+            </p>
+            <p className="text-gray-400 text-xs font-medium whitespace-nowrap">
+              CRM: {formatCrm(doctor.crm)}
+            </p>
+          </div>
         </div>
-        <span className="bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full flex items-center gap-1">
-          <BadgeCheck size={12} />
-          Verificado
-        </span>
-      </div>
-
-      <div className="space-y-1 min-w-0">
-        <h3 className="text-xl font-display font-bold text-slate-900 truncate">
-          {doctor.name}
-        </h3>
-        <p className="text-primary text-sm font-semibold">{doctor.specialty}</p>
-        <p className="text-slate-400 text-xs font-medium">CRM: {doctor.crm}</p>
-      </div>
-
-      <div className="pt-4 border-t border-gray-100 flex items-center justify-between mt-auto">
-        <span className="text-xs font-semibold text-gray-400">
-          Ver perfil completo
-        </span>
-        <ArrowRight className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
     </motion.div>
   );
@@ -117,13 +112,10 @@ function DoctorCard({
 // --- List Row View ---
 
 function DoctorListRow({ doctor }: { doctor: Doctor }) {
-  const navigate = useNavigate();
-
   return (
     <motion.div
       whileHover={{ y: -2 }}
-      onClick={() => navigate(`/doctors/${doctor.id}`)}
-      className="bg-white p-5 rounded-2xl border border-slate-100 hover:border-primary/20 hover:shadow-xl hover:shadow-slate-200/50 transition-all flex items-center justify-between gap-6 cursor-pointer"
+      className="bg-white p-5 rounded-2xl border border-slate-100 hover:border-primary/20 hover:shadow-xl hover:shadow-slate-200/50 transition-all flex items-center justify-between gap-6"
     >
       <div className="flex items-center gap-4 flex-1 min-w-0">
         <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 border-slate-100">
@@ -150,22 +142,9 @@ function DoctorListRow({ doctor }: { doctor: Doctor }) {
       </div>
 
       <div className="hidden md:flex items-center gap-6 text-sm text-slate-500">
-        <span className="flex items-center gap-1.5">
-          <BadgeCheck size={14} className="text-primary" />
-          {doctor.crm}
-        </span>
+        <span className="whitespace-nowrap">CRM: {formatCrm(doctor.crm)}</span>
         <span>{doctor.email}</span>
       </div>
-
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          navigate(`/doctors/${doctor.id}`);
-        }}
-        className="shrink-0 px-5 py-2.5 bg-primary/5 text-primary rounded-xl font-semibold text-sm hover:bg-primary hover:text-white transition-all cursor-pointer border-none"
-      >
-        Ver Perfil
-      </button>
     </motion.div>
   );
 }
@@ -457,49 +436,37 @@ export default function Doctors() {
                       key={doctor.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      whileHover={{
-                        y: -5,
-                        boxShadow: "0 12px 32px rgba(25, 28, 30, 0.08)",
-                      }}
-                      className="bg-white rounded-[2rem] p-8 transition-all flex flex-col space-y-6 shadow-sm border border-slate-100"
+                      whileHover={{ y: -6 }}
+                      className="group bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all"
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="relative">
+                      <div className="flex items-start gap-4 mb-5">
+                        <div className="w-7 h-7 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
                           {doctor.profileImage ? (
                             <img
-                              alt={doctor.name}
-                              className="w-20 h-20 rounded-full object-cover"
                               src={doctor.profileImage}
+                              alt={doctor.name}
+                              className="w-full h-full object-cover"
                             />
                           ) : (
-                            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-2xl">
-                              {doctor.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .slice(0, 2)
-                                .join("")}
+                            <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold text-xs">
+                              {doctor.name.charAt(0).toUpperCase()}
                             </div>
                           )}
                         </div>
-                        <span className="bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full flex items-center gap-1">
-                          <BadgeCheck size={12} />
-                          Verificado
-                        </span>
+                        <div className="min-w-0 flex-1">
+                          <h5 className="font-bold text-sm leading-tight font-display truncate">
+                            {doctor.name}
+                          </h5>
+                          <p className="text-gray-500 text-sm font-medium truncate">
+                            {doctor.specialty}
+                          </p>
+                          <p className="text-gray-400 text-xs font-medium whitespace-nowrap">
+                            CRM: {formatCrm(doctor.crm)}
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="space-y-1 min-w-0">
-                        <h3 className="text-xl font-display font-bold text-slate-900 truncate">
-                          {doctor.name}
-                        </h3>
-                        <p className="text-primary text-sm font-semibold">
-                          {doctor.specialty}
-                        </p>
-                        <p className="text-slate-400 text-xs font-medium">
-                          CRM: {doctor.crm}
-                        </p>
-                      </div>
-
-                      <div className="pt-4 border-t border-gray-100 mt-auto">
+                      <div className="pt-4 border-t border-gray-100">
                         <button
                           onClick={() => handleInviteDoctor(doctor.id)}
                           disabled={invitingDoctorId === doctor.id}
@@ -545,9 +512,8 @@ export default function Doctors() {
                       </div>
 
                       <div className="hidden md:flex items-center gap-6 text-sm text-slate-500">
-                        <span className="flex items-center gap-1.5">
-                          <BadgeCheck size={14} className="text-primary" />
-                          {doctor.crm}
+                        <span className="whitespace-nowrap">
+                          CRM: {formatCrm(doctor.crm)}
                         </span>
                       </div>
 

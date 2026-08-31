@@ -13,7 +13,6 @@ import Consultations from "../pages/Consultations";
 import Patients from "../pages/Patients";
 import PatientDetail from "../pages/Patients/PatientDetail";
 import Doctors from "../pages/Doctors";
-import DoctorClinicView from "../pages/Doctors/DoctorClinicView";
 import DoctorProfile from "../pages/Doctors/DoctorProfile";
 import Schedule from "../pages/Schedule";
 import ClinicalManagement from "../pages/ClinicalManagement";
@@ -41,7 +40,10 @@ export default function AppRoutes() {
       <Route path="/activate-account" element={<ActivateAccount />} />
       <Route path="/institutional" element={<InstitutionalHome />} />
       <Route path="/institutional/mobile" element={<InstitutionalMobile />} />
-      <Route path="/institutional/platform" element={<InstitutionalPlatform />} />
+      <Route
+        path="/institutional/platform"
+        element={<InstitutionalPlatform />}
+      />
 
       {/* Protected routes */}
       <Route
@@ -89,14 +91,6 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute>
             <Doctors />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/doctors/:id"
-        element={
-          <ProtectedRoute>
-            <DoctorClinicView />
           </ProtectedRoute>
         }
       />

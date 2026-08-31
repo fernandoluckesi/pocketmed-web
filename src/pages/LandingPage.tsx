@@ -207,7 +207,7 @@ export default function LandingPage() {
                 Prontuário digital inteligente
               </div>
               <h1 className="text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.1] mb-6">
-                Saude conectada,
+                Saúde conectada,
                 <br />
                 <span className="text-primary">prontuário universal</span>
               </h1>
