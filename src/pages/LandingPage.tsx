@@ -32,7 +32,7 @@ type ModalType = "privacy" | "terms" | "security" | null;
 const testimonials = [
   {
     quote:
-      "O PocketMed transformou a forma como gerencio minha clínica. Tudo integrado, seguro e acessível.",
+      "O Hispora transformou a forma como gerencio minha clínica. Tudo integrado, seguro e acessível.",
     name: "Dr. Fernando Luckesi",
     specialty: "Clínica Geral",
   },
@@ -153,11 +153,11 @@ export default function LandingPage() {
           <Link to="/" className="flex items-center gap-3">
             <img
               src={iconLogo}
-              alt="PocketMed"
+              alt="Hispora"
               className="w-10 h-10 rounded-xl"
             />
             <span className="text-xl font-extrabold text-slate-900">
-              Pocket<span className="text-primary">Med</span>
+              His<span className="text-primary">pora</span>
             </span>
           </Link>
           <nav className="hidden md:flex items-center gap-6">
@@ -212,7 +212,7 @@ export default function LandingPage() {
                 <span className="text-primary">prontuário universal</span>
               </h1>
               <p className="text-xl text-slate-600 leading-relaxed mb-10">
-                O PocketMed conecta pacientes e profissionais de saúde em uma
+                O Hispora conecta pacientes e profissionais de saúde em uma
                 plataforma segura. Acesse consultas, exames e histórico médico
                 de qualquer lugar.
               </p>
@@ -236,7 +236,7 @@ export default function LandingPage() {
             <div className="hidden md:flex justify-center relative">
               <img
                 src={mobileImg}
-                alt="PocketMed App"
+                alt="Hispora App"
                 className="w-[300px] drop-shadow-2xl"
               />
             </div>
@@ -474,17 +474,17 @@ export default function LandingPage() {
             <div className="flex items-center gap-2">
               <img
                 src={iconLogo}
-                alt="PocketMed"
+                alt="Hispora"
                 className="w-8 h-8 rounded-lg"
               />
               <span className="text-sm font-bold text-slate-700">
-                Pocket<span className="text-primary">Med</span>
+                His<span className="text-primary">pora</span>
               </span>
             </div>
 
             <p className="text-sm text-slate-400">
-              &copy; {new Date().getFullYear()} PocketMed Clínical Systems.
-              Todos os direitos reservados.
+              &copy; {new Date().getFullYear()} Hispora Clínical Systems. Todos
+              os direitos reservados.
             </p>
           </div>
         </div>

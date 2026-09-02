@@ -236,7 +236,7 @@ export default function FinancialDashboard() {
               <div className="absolute -right-12 -top-12 w-40 h-40 bg-blue-600/25 rounded-full blur-2xl group-hover:bg-blue-600/35 transition-all duration-500"></div>
               <div className="flex items-center gap-2 mb-4 relative z-10">
                 <BrainCircuit className="w-5 h-5 text-blue-400 animate-pulse" />
-                <h2 className="text-md font-bold text-white tracking-tight">PocketIA Insights</h2>
+                <h2 className="text-md font-bold text-white tracking-tight">HisporaIA Insights</h2>
               </div>
               <div className="flex flex-col gap-3 relative z-10">
                 <div className="p-3 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl transition-all cursor-pointer group/card text-left">

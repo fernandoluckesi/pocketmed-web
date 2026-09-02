@@ -46,7 +46,7 @@ export default function InstitutionalPlatform() {
               <span className="text-primary">profissionais de saúde</span>
             </h1>
             <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-6 sm:mb-8">
-              A plataforma web do PocketMed oferece aos médicos e clínicas todas
+              A plataforma web do Hispora oferece aos médicos e clínicas todas
               as ferramentas necessárias para gestão de pacientes, prontuários
               eletrônicos, agendamentos, equipe médica e financeiro — tudo em um
               painel moderno e intuitivo.
@@ -141,7 +141,7 @@ export default function InstitutionalPlatform() {
       <section className="bg-slate-50 py-14 sm:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 text-center mb-12 sm:mb-16">
-            Por que escolher o PocketMed?
+            Por que escolher o Hispora?
           </h2>
           <div className="grid sm:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
             {[
@@ -264,7 +264,7 @@ export default function InstitutionalPlatform() {
             Segurança e Conformidade
           </h2>
           <p className="text-slate-400 text-base sm:text-lg max-w-2xl mx-auto mb-10 sm:mb-12">
-            O PocketMed foi projetado desde o início com segurança como
+            O Hispora foi projetado desde o início com segurança como
             prioridade. Todos os dados sao protegidos e rastreados.
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 max-w-4xl mx-auto">

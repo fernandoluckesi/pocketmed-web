@@ -76,21 +76,34 @@ async function drawFooter(doc: jsPDF, doctor: DoctorInfo) {
   const pageHeight = doc.internal.pageSize.getHeight();
 
   // QR Code
-  const qrText = `PocketMed - Documento assinado digitalmente por ${doctor.name} - CRM ${doctor.crm}`;
+  const qrText = `Hispora - Documento assinado digitalmente por ${doctor.name} - CRM ${doctor.crm}`;
   const qrDataUrl = await generateQRCodeDataUrl(qrText);
   doc.addImage(qrDataUrl, "PNG", 20, pageHeight - 75, 22, 22);
 
   // Footer text next to QR
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7);
-  doc.text("POCKETMED - Acesso à sua receita digital via QR Code", 46, pageHeight - 70);
+  doc.text(
+    "HISPORA - Acesso à sua receita digital via QR Code",
+    46,
+    pageHeight - 70,
+  );
   doc.setFont("helvetica", "normal");
-  doc.text(`Assinado digitalmente por ${doctor.name.toUpperCase()} - CRM ${doctor.crm}`, 46, pageHeight - 65);
+  doc.text(
+    `Assinado digitalmente por ${doctor.name.toUpperCase()} - CRM ${doctor.crm}`,
+    46,
+    pageHeight - 65,
+  );
 
   // Clinic line (centered)
   doc.setFont("helvetica", "italic");
   doc.setFontSize(8);
-  doc.text("PocketMed - Plataforma de Saúde Digital", pageWidth / 2, pageHeight - 45, { align: "center" });
+  doc.text(
+    "Hispora - Plataforma de Saúde Digital",
+    pageWidth / 2,
+    pageHeight - 45,
+    { align: "center" },
+  );
 
   // Bottom validation line
   doc.setFont("helvetica", "normal");
@@ -98,7 +111,7 @@ async function drawFooter(doc: jsPDF, doctor: DoctorInfo) {
   doc.text(
     "*Para validar assinatura deste documento, acesse https://pocketmed.com.br/validar",
     20,
-    pageHeight - 20
+    pageHeight - 20,
   );
 }
 
@@ -151,7 +164,9 @@ export interface PrescriptionPdfData {
   medications: PrescriptionItem[];
 }
 
-export async function generatePrescriptionPdf(data: PrescriptionPdfData): Promise<void> {
+export async function generatePrescriptionPdf(
+  data: PrescriptionPdfData,
+): Promise<void> {
   const doc = new jsPDF("portrait", "mm", "a4");
 
   drawHeader(doc, data.doctor);

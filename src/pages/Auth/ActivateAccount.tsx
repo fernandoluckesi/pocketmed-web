@@ -25,7 +25,10 @@ const passwordSchema = Yup.object({
     .matches(/[A-Z]/, "Deve conter letra maiúscula")
     .matches(/[a-z]/, "Deve conter letra minúscula")
     .matches(/\d/, "Deve conter um número")
-    .matches(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, "Deve conter caractere especial")
+    .matches(
+      /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/,
+      "Deve conter caractere especial",
+    )
     .required("Senha é obrigatória"),
   confirmPassword: Yup.string()
     .oneOf([Yup.ref("password")], "Senhas não conferem")
@@ -49,12 +52,16 @@ export default function ActivateAccount() {
     onSubmit: async (values, { setSubmitting }) => {
       setError("");
       try {
-        const response = await api.post("/auth/check-shadow", { email: values.email });
+        const response = await api.post("/auth/check-shadow", {
+          email: values.email,
+        });
         if (response.data?.isShadow) {
           setEmail(values.email);
           setStep("code");
         } else {
-          setError("Nenhuma conta pendente de ativação encontrada com este email.");
+          setError(
+            "Nenhuma conta pendente de ativação encontrada com este email.",
+          );
         }
       } catch {
         setError("Erro ao verificar email. Tente novamente.");
@@ -79,7 +86,9 @@ export default function ActivateAccount() {
       } catch (err: any) {
         const msg = err?.response?.data?.message || "";
         if (msg.includes("expired") || msg.includes("expirado")) {
-          setError("Código expirado. Solicite um novo código ao administrador.");
+          setError(
+            "Código expirado. Solicite um novo código ao administrador.",
+          );
         } else if (msg.includes("Invalid") || msg.includes("inválido")) {
           setError("Código inválido. Verifique e tente novamente.");
         } else {
@@ -107,7 +116,9 @@ export default function ActivateAccount() {
       } catch (err: any) {
         const msg = err?.response?.data?.message || "";
         if (msg.includes("expired") || msg.includes("expirado")) {
-          setError("Código expirado. Solicite um novo código ao administrador.");
+          setError(
+            "Código expirado. Solicite um novo código ao administrador.",
+          );
           setStep("email");
         } else if (msg.includes("Invalid") || msg.includes("inválido")) {
           setError("Código inválido. Verifique e tente novamente.");
@@ -129,15 +140,22 @@ export default function ActivateAccount() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src={iconLogo} alt="PocketMed" className="w-14 h-14 mx-auto rounded-xl mb-4" />
+          <img
+            src={iconLogo}
+            alt="Hispora"
+            className="w-14 h-14 mx-auto rounded-xl mb-4"
+          />
           <h1 className="text-2xl font-extrabold tracking-tight">
-            <span className="text-slate-900">Pocket</span>
-            <span className="text-primary">Med</span>
+            <span className="text-slate-900">His</span>
+            <span className="text-primary">pora</span>
           </h1>
           <p className="text-sm text-slate-500 mt-3">
-            {step === "email" && "Informe o email cadastrado pelo administrador"}
-            {step === "code" && `Insira o código de 6 dígitos enviado para ${email}`}
-            {step === "password" && "Crie uma senha segura para acessar sua conta"}
+            {step === "email" &&
+              "Informe o email cadastrado pelo administrador"}
+            {step === "code" &&
+              `Insira o código de 6 dígitos enviado para ${email}`}
+            {step === "password" &&
+              "Crie uma senha segura para acessar sua conta"}
           </p>
         </div>
 
@@ -160,7 +178,12 @@ export default function ActivateAccount() {
           {step === "email" && (
             <form onSubmit={emailFormik.handleSubmit} className="space-y-5">
               <div className="space-y-1.5">
-                <label htmlFor="email" className="text-sm font-medium text-slate-700">E-mail</label>
+                <label
+                  htmlFor="email"
+                  className="text-sm font-medium text-slate-700"
+                >
+                  E-mail
+                </label>
                 <div className="relative group">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
                   <input
@@ -172,7 +195,9 @@ export default function ActivateAccount() {
                   />
                 </div>
                 {fieldError(emailFormik, "email") && (
-                  <p className="text-xs text-red-500 mt-1">{fieldError(emailFormik, "email")}</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldError(emailFormik, "email")}
+                  </p>
                 )}
               </div>
               <button
@@ -189,7 +214,12 @@ export default function ActivateAccount() {
           {step === "code" && (
             <form onSubmit={codeFormik.handleSubmit} className="space-y-5">
               <div className="space-y-1.5">
-                <label htmlFor="code" className="text-sm font-medium text-slate-700">Código de verificação</label>
+                <label
+                  htmlFor="code"
+                  className="text-sm font-medium text-slate-700"
+                >
+                  Código de verificação
+                </label>
                 <input
                   className={`w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-slate-900 text-sm text-center tracking-[0.5em] font-mono placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError(codeFormik, "code") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
                   id="code"
@@ -199,7 +229,9 @@ export default function ActivateAccount() {
                   {...codeFormik.getFieldProps("code")}
                 />
                 {fieldError(codeFormik, "code") && (
-                  <p className="text-xs text-red-500 mt-1">{fieldError(codeFormik, "code")}</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldError(codeFormik, "code")}
+                  </p>
                 )}
               </div>
               <button
@@ -216,7 +248,12 @@ export default function ActivateAccount() {
           {step === "password" && (
             <form onSubmit={passwordFormik.handleSubmit} className="space-y-5">
               <div className="space-y-1.5">
-                <label htmlFor="password" className="text-sm font-medium text-slate-700">Nova senha</label>
+                <label
+                  htmlFor="password"
+                  className="text-sm font-medium text-slate-700"
+                >
+                  Nova senha
+                </label>
                 <div className="relative group">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
                   <input
@@ -228,13 +265,22 @@ export default function ActivateAccount() {
                   />
                 </div>
                 {fieldError(passwordFormik, "password") && (
-                  <p className="text-xs text-red-500 mt-1">{fieldError(passwordFormik, "password")}</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldError(passwordFormik, "password")}
+                  </p>
                 )}
-                <PasswordStrengthIndicator password={passwordFormik.values.password} />
+                <PasswordStrengthIndicator
+                  password={passwordFormik.values.password}
+                />
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700">Confirmar senha</label>
+                <label
+                  htmlFor="confirmPassword"
+                  className="text-sm font-medium text-slate-700"
+                >
+                  Confirmar senha
+                </label>
                 <div className="relative group">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
                   <input
@@ -246,7 +292,9 @@ export default function ActivateAccount() {
                   />
                 </div>
                 {fieldError(passwordFormik, "confirmPassword") && (
-                  <p className="text-xs text-red-500 mt-1">{fieldError(passwordFormik, "confirmPassword")}</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldError(passwordFormik, "confirmPassword")}
+                  </p>
                 )}
               </div>
 

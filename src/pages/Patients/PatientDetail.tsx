@@ -109,7 +109,7 @@ function PatientHeroFromAPI({
                 <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2 bg-slate-900 text-white text-[10px] font-normal normal-case rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 text-center leading-relaxed shadow-lg">
                   Este paciente está cadastrado somente para visualização deste
                   médico. Para compartilhar com outros profissionais, o paciente
-                  deve baixar o aplicativo PocketMed no celular.
+                  deve baixar o aplicativo Hispora no celular.
                 </span>
               </span>
             </span>

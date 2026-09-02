@@ -63,7 +63,7 @@ export default function Login() {
         <img
           className="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-luminosity grayscale-[20%] brightness-75"
           src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_ICKjyHccRapfSsJLM5KtqB36YSgA0OSqydYRQHI1kyzLT3F_cCOwAJFlGud13vCWc6Tw3TWe5-r-ig-Vk9A__dGC0svSPrgq3ssWrxubtRzChSeoYZ405V5UbzoPwFA5n3Nq9-c-Ftgugjb15HDDF94OOKzGJ7fkkovFS7F0GcEjYqK1cZZG_vSf0hRRR0QK_IaVt3V4aEw3o3le5txnSXH1YVexcnQ-BUcG7OYgbIPCzdx5x3hOD2sbfnpFYlszrdLO4BGvZw2H"
-          alt="PocketMed Clinical Setting"
+          alt="Hispora Clinical Setting"
           referrerPolicy="no-referrer"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent flex flex-col justify-end p-16 z-10">
@@ -86,12 +86,12 @@ export default function Login() {
             <div className="inline-flex items-center gap-3 justify-center mb-12 w-full">
               <img
                 src={iconLogo}
-                alt="PocketMed"
+                alt="Hispora"
                 className="w-[72px] h-[72px] rounded-xl"
               />
               <h1 className="text-4xl font-display font-extrabold tracking-tight">
-                <span className="text-slate-900">Pocket</span>
-                <span className="text-primary">Med</span>
+                <span className="text-slate-900">His</span>
+                <span className="text-primary">pora</span>
               </h1>
             </div>
             <div className="space-y-2">
@@ -246,7 +246,7 @@ export default function Login() {
             </button>
           </div>
           <p className="text-[10px] text-slate-400">
-            © {new Date().getFullYear()} PocketMed Clinical Systems. Todos os
+            © {new Date().getFullYear()} Hispora Clinical Systems. Todos os
             direitos reservados.
           </p>
         </div>

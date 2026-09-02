@@ -50,10 +50,11 @@ export const Sidebar = () => {
     <aside className="h-screen w-64 fixed left-0 top-0 bg-slate-100 flex flex-col justify-between py-3 px-4 z-50">
       <div>
         <div className="flex items-center space-x-3 px-2 mb-3">
-          <img src={iconLogo} alt="PocketMed" className="w-8 h-8 rounded-xl" />
+          <img src={iconLogo} alt="Hispora" className="w-8 h-8 rounded-xl" />
           <div>
             <h2 className="text-base font-black tracking-tight font-manrope">
-              <span className="text-slate-900">Pocket</span><span className="text-primary">Med</span>
+              <span className="text-slate-900">His</span>
+              <span className="text-primary">pora</span>
             </h2>
             <p className="text-[9px] font-bold uppercase tracking-wider text-on-surface-variant/60">
               Excelência Clínica

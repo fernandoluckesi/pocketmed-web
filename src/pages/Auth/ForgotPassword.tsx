@@ -111,7 +111,7 @@ export default function ForgotPassword() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src={iconLogo} alt="PocketMed" className="w-14 h-14 mx-auto rounded-xl mb-4" />
+          <img src={iconLogo} alt="Hispora" className="w-14 h-14 mx-auto rounded-xl mb-4" />
           <h1 className="text-2xl font-bold text-slate-900">
             {step === "email" && "Recuperar senha"}
             {step === "code" && "Código de verificação"}

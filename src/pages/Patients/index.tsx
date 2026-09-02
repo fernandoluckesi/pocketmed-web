@@ -65,7 +65,7 @@ function SearchHero({
           Encontre Novos Pacientes
         </h3>
         <p className="text-gray-500 text-sm font-medium">
-          Pesquise na base global do PocketMed por nome ou CPF do paciente.
+          Pesquise na base global do Hispora por nome ou CPF do paciente.
         </p>
       </div>
       <div className="flex flex-col md:flex-row gap-2 max-w-lg">
@@ -802,7 +802,7 @@ function AddPatientModal({
         <div className="bg-blue-50/50 p-4 flex items-center justify-center gap-2 border-t border-outline-variant/5">
           <ShieldCheck size={16} className="text-primary fill-primary/10" />
           <p className="text-[10px] font-bold text-blue-700 tracking-wide uppercase">
-            Dados protegidos por criptografia PocketMed
+            Dados protegidos por criptografia Hispora
           </p>
         </div>
       </motion.div>
@@ -1190,7 +1190,7 @@ function MyPatientsContent({
                               Este paciente está cadastrado somente para
                               visualização deste médico. Para compartilhar com
                               outros profissionais, o paciente deve baixar o
-                              aplicativo PocketMed no celular.
+                              aplicativo Hispora no celular.
                             </span>
                           </span>
                         )}

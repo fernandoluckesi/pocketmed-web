@@ -28,7 +28,7 @@ export default function InstitutionalHome() {
             <span className="text-primary">sempre com você</span>
           </h1>
           <p className="text-base sm:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed mb-8 sm:mb-12">
-            O PocketMed conecta pacientes e profissionais de saúde em uma
+            O Hispora conecta pacientes e profissionais de saúde em uma
             plataforma segura e intuitiva. Acesse consultas, exames,
             medicamentos e histórico médico completo de qualquer lugar.
           </p>
@@ -53,14 +53,14 @@ export default function InstitutionalHome() {
         </div>
       </section>
 
-      {/* O que é o PocketMed */}
+      {/* O que é o Hispora */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-14 sm:py-20">
         <div className="text-center mb-12 sm:mb-16">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-4">
-            O que é o PocketMed?
+            O que é o Hispora?
           </h2>
           <p className="text-base sm:text-lg text-slate-600 max-w-3xl mx-auto">
-            O PocketMed é um ecossistema completo de saúde digital que unifica o
+            O Hispora é um ecossistema completo de saúde digital que unifica o
             prontuário médico do paciente com as ferramentas de gestão do
             profissional de saúde.
           </p>
@@ -162,7 +162,7 @@ export default function InstitutionalHome() {
         </h2>
         <p className="text-base sm:text-lg text-slate-600 mb-8 sm:mb-10 max-w-xl mx-auto">
           Junte-se a milhares de profissionais e pacientes que já utilizam o
-          PocketMed.
+          Hispora.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
           <Link

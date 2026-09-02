@@ -421,7 +421,7 @@ function ClinicSignupForm({
               <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
               <input
                 className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${fieldError("clinicName") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
-                placeholder="Clínica PocketMed"
+                placeholder="Clínica Hispora"
                 type="text"
                 {...formik.getFieldProps("clinicName")}
               />
@@ -917,7 +917,7 @@ function ClinicSignupForm({
               >
                 Política de Privacidade
               </button>{" "}
-              do PocketMed.
+              do Hispora.
             </label>
           </div>
           {fieldError("acceptTerms") && (
@@ -1215,12 +1215,12 @@ export default function Signup() {
             <div className="inline-flex items-center gap-3 justify-center mb-12 w-full">
               <img
                 src={iconLogo}
-                alt="PocketMed"
+                alt="Hispora"
                 className="w-[72px] h-[72px] rounded-xl"
               />
               <h1 className="text-4xl font-display font-extrabold tracking-tight">
-                <span className="text-slate-900">Pocket</span>
-                <span className="text-primary">Med</span>
+                <span className="text-slate-900">His</span>
+                <span className="text-primary">pora</span>
               </h1>
             </div>
             <div className="space-y-2">
@@ -1230,7 +1230,7 @@ export default function Signup() {
               <p className="text-slate-500 text-base">
                 {pendingVerification
                   ? "Insira o código de 6 dígitos enviado para:"
-                  : "Comece sua jornada digital no PocketMed hoje mesmo."}
+                  : "Comece sua jornada digital no Hispora hoje mesmo."}
               </p>
               {pendingVerification && (
                 <p className="text-primary font-semibold text-sm">
@@ -1748,7 +1748,7 @@ export default function Signup() {
                       >
                         Política de Privacidade
                       </button>{" "}
-                      do PocketMed.
+                      do Hispora.
                     </label>
                   </div>
                   {fieldError("acceptTerms") && (
@@ -1826,7 +1826,7 @@ export default function Signup() {
             </button>
           </div>
           <p className="text-[10px] text-slate-400">
-            © 2026 PocketMed Clinical Systems. Todos os direitos reservados.
+            © 2026 Hispora Clinical Systems. Todos os direitos reservados.
           </p>
         </div>
 

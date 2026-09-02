@@ -45,7 +45,7 @@ export default function InstitutionalMobile() {
                 <span className="text-primary">no bolso</span>
               </h1>
               <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-6 sm:mb-8">
-                O aplicativo PocketMed é gratuito e permite que pacientes
+                O aplicativo Hispora é gratuito e permite que pacientes
                 acessem todo o seu histórico médico de forma simples, segura e
                 instantânea. Consultas, exames, medicamentos, vacinas e
                 alergias, tudo em um só lugar.
@@ -62,7 +62,7 @@ export default function InstitutionalMobile() {
             <div className="hidden md:flex justify-center">
               <img
                 src={mobileImg}
-                alt="PocketMed App"
+                alt="Hispora App"
                 className="w-[300px] drop-shadow-2xl"
               />
             </div>
@@ -217,7 +217,7 @@ export default function InstitutionalMobile() {
       <section className="bg-gradient-to-r from-primary to-blue-700 py-16">
         <div className="max-w-4xl mx-auto px-6 text-center text-white">
           <h2 className="text-3xl font-extrabold mb-4">
-            Baixe o PocketMed agora
+            Baixe o Hispora agora
           </h2>
           <p className="text-blue-200 text-lg mb-8">
             Tenha seu prontuário médico completo sempre acessível no seu

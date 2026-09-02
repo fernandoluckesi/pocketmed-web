@@ -309,7 +309,7 @@ function InviteBanner() {
           </h3>
           <p className="text-on-surface-variant font-medium opacity-80 max-w-lg">
             Envie um convite para que ela possa atender pacientes e compartilhar
-            relatórios dentro do PocketMed.
+            relatórios dentro do Hispora.
           </p>
         </div>
       </div>

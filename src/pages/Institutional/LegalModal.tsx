@@ -61,7 +61,7 @@ export function PrivacyPolicyContent() {
 
       <h3 className="text-lg font-bold text-slate-900 mt-4">1. Introdução</h3>
       <p>
-        A PocketMed Clínical Systems ("PocketMed", "nos") valoriza a privacidade
+        A Hispora Clínical Systems ("Hispora", "nos") valoriza a privacidade
         dos seus usuarios. Esta Política de Privacidade descreve como coletamos,
         usamos, armazenamos e protegemos seus dados pessoais quando você utiliza
         nosso aplicativo mobile e plataforma web.
@@ -191,7 +191,7 @@ export function TermsOfServiceContent() {
         1. Aceitação dos Termos
       </h3>
       <p>
-        Ao utilizar o aplicativo PocketMed ou a plataforma web, você concorda
+        Ao utilizar o aplicativo Hispora ou a plataforma web, você concorda
         integralmente com estes Termos de Serviço. Caso não concorde, não
         utilize nossos serviços.
       </p>
@@ -199,7 +199,7 @@ export function TermsOfServiceContent() {
       <h3 className="text-lg font-bold text-slate-900">
         2. Descrição do Serviço
       </h3>
-      <p>O PocketMed é uma plataforma de saúde digital que oferece:</p>
+      <p>O Hispora é uma plataforma de saúde digital que oferece:</p>
       <ul className="list-disc pl-6 space-y-1">
         <li>Prontuário eletrônico universal para pacientes;</li>
         <li>Gestão de consultas, exames e medicamentos;</li>
@@ -235,15 +235,15 @@ export function TermsOfServiceContent() {
       </h3>
       <p>
         Profissionais de saúde que utilizam a plataforma declaram possuir
-        registro profissional valido (CRM, CRO ou equivalente). O PocketMed não
+        registro profissional valido (CRM, CRO ou equivalente). O Hispora não
         se responsabiliza por diagnósticos, prescrições ou orientações medicas
         registradas pelos profissionais.
       </p>
 
       <h3 className="text-lg font-bold text-slate-900">6. Dados de Saúde</h3>
       <p>
-        Dados de saúde registrados no PocketMed sao de responsabilidade do
-        profissional que os registrou e do paciente titular. O PocketMed atua
+        Dados de saúde registrados no Hispora sao de responsabilidade do
+        profissional que os registrou e do paciente titular. O Hispora atua
         como operador dos dados conforme a LGPD, garantindo segurança e
         disponibilidade.
       </p>
@@ -268,7 +268,7 @@ export function TermsOfServiceContent() {
         9. Limitação de Responsabilidade
       </h3>
       <p>
-        O PocketMed não substitui consultas medicas presenciais. A plataforma é
+        O Hispora não substitui consultas medicas presenciais. A plataforma é
         uma ferramenta de organizacao e gestão de informações de saúde. Decisoes
         clínicas sao de responsabilidade exclusiva dos profissionais de saúde.
       </p>
@@ -310,7 +310,7 @@ export function SecurityStandardsContent() {
 
       <h3 className="text-lg font-bold text-slate-900 mt-4">1. Visão Geral</h3>
       <p>
-        O PocketMed implementa um conjunto robusto de controles de segurança
+        O Hispora implementa um conjunto robusto de controles de segurança
         para proteger dados pessoais e de saúde dos nossos usuarios. Este
         documento descreve os padrões e praticas adotados.
       </p>

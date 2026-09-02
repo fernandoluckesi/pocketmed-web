@@ -43,16 +43,16 @@ export function InstitutionalFooter() {
             <div className="flex items-center gap-2">
               <img
                 src={iconLogo}
-                alt="PocketMed"
+                alt="Hispora"
                 className="w-8 h-8 rounded-lg"
               />
               <span className="text-sm font-bold text-slate-700">
-                Pocket<span className="text-primary">Med</span>
+                His<span className="text-primary">pora</span>
               </span>
             </div>
 
             <p className="text-xs sm:text-sm text-slate-400">
-              &copy; {new Date().getFullYear()} PocketMed Clínical Systems.
+              &copy; {new Date().getFullYear()} Hispora Clínical Systems.
             </p>
           </div>
         </div>

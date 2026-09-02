@@ -114,7 +114,7 @@ export default function Expenses() {
     const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(expenses, null, 2))}`;
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", jsonString);
-    downloadAnchor.setAttribute("download", "PocketMed_Despesas_Export.json");
+    downloadAnchor.setAttribute("download", "Hispora_Despesas_Export.json");
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();

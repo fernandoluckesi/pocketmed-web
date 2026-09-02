@@ -131,7 +131,7 @@ export function RequestAccessModal({
                         {patient.name}
                       </h5>
                       <p className="text-sm text-gray-500">
-                        Paciente PocketMed
+                        Paciente Hispora
                       </p>
                     </div>
                   </div>

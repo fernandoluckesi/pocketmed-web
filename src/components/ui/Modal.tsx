@@ -57,7 +57,7 @@ export function Modal({
               <div className="bg-blue-50/50 p-4 flex items-center justify-center gap-2 border-t border-outline-variant/5 shrink-0">
                 <ShieldCheck size={16} className="text-primary fill-primary/10" />
                 <p className="text-[10px] font-bold text-blue-700 tracking-wide uppercase">
-                  Dados protegidos por criptografia PocketMed
+                  Dados protegidos por criptografia Hispora
                 </p>
               </div>
             )}

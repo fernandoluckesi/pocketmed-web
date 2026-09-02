@@ -120,7 +120,7 @@ export default function Register() {
             </div>
             <div>
               <h1 className="text-2xl font-black text-white tracking-tight font-display">
-                PocketMed
+                Hispora
               </h1>
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">
                 Excelência Clínica
@@ -139,7 +139,7 @@ export default function Register() {
           </p>
         </div>
         <p className="text-white/40 text-xs font-bold relative z-10">
-          © 2024 PocketMed Clinical Systems
+          © 2024 Hispora Clinical Systems
         </p>
       </div>
 

@@ -181,7 +181,7 @@ export default function Plans() {
           </h1>
           <p className="text-slate-500 font-medium mt-3 text-md">
             Selecione o plano ideal para sua prática médica. Todos incluem
-            acesso à plataforma PocketMed com atualizações gratuitas.
+            acesso à plataforma Hispora com atualizações gratuitas.
           </p>
         </div>
 

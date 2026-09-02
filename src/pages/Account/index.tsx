@@ -658,7 +658,7 @@ export default function Account() {
                     Plano Atual
                   </h2>
                   <p className="text-sm text-slate-500 mt-1">
-                    Gerencie sua assinatura da plataforma PocketMed.
+                    Gerencie sua assinatura da plataforma Hispora.
                   </p>
                 </div>
                 <span className="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-bold">

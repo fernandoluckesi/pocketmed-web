@@ -16,11 +16,11 @@ export function InstitutionalHeader({ currentPage }: InstitutionalHeaderProps) {
         <Link to="/" className="flex items-center gap-2.5">
           <img
             src={iconLogo}
-            alt="PocketMed"
+            alt="Hispora"
             className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl"
           />
           <span className="text-lg sm:text-xl font-extrabold text-slate-900">
-            Pocket<span className="text-primary">Med</span>
+            His<span className="text-primary">pora</span>
           </span>
         </Link>
 

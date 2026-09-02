@@ -1,4 +1,4 @@
-// Lista de exames do catálogo PocketMed
+// Lista de exames do catálogo Hispora
 // Baseado na lista oficial da Unimed Região da Campanha/RS
 // Categorização: classificação laboratorial clínica padrão (SBPC/ML)
 

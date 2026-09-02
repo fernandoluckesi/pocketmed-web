@@ -114,12 +114,12 @@ export function MainLayout({ children }: MainLayoutProps) {
         <div className="flex items-center space-x-3 px-2">
           <img
             src={iconLogo}
-            alt="PocketMed"
+            alt="Hispora"
             className="w-10 h-10 rounded-xl"
           />
           <h2 className="text-xl font-black tracking-tight font-manrope">
-            <span className="text-slate-900">Pocket</span>
-            <span className="text-primary">Med</span>
+            <span className="text-slate-900">His</span>
+            <span className="text-primary">pora</span>
           </h2>
         </div>
 
