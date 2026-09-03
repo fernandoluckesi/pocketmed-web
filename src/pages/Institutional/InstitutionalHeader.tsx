@@ -52,7 +52,7 @@ export function InstitutionalHeader({ currentPage }: InstitutionalHeaderProps) {
           )}
           <Link
             to="/login"
-            className="bg-primary text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors"
+            className="bg-primary text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-primary-dark transition-colors"
           >
             Acessar
           </Link>

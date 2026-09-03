@@ -214,7 +214,7 @@ export default function FinancialDashboard() {
                 </div>
                 <div className="mt-4 flex flex-col gap-2">
                   {specialties.slice(0, 5).map((sp, idx) => {
-                    const colors = ['bg-blue-600', 'bg-blue-400', 'bg-slate-400', 'bg-emerald-400', 'bg-amber-400'];
+                    const colors = ['bg-primary', 'bg-blue-400', 'bg-slate-400', 'bg-emerald-400', 'bg-amber-400'];
                     return (
                       <div key={sp.specialty} className="flex justify-between items-center py-1 border-b border-slate-100">
                         <div className="flex items-center gap-2">
@@ -233,7 +233,7 @@ export default function FinancialDashboard() {
           {/* AI Insights */}
           <div className="col-span-12 lg:col-span-8 flex flex-col gap-4">
             <div className="bg-slate-950 text-white p-6 rounded-xl relative overflow-hidden group shadow-lg border border-slate-800">
-              <div className="absolute -right-12 -top-12 w-40 h-40 bg-blue-600/25 rounded-full blur-2xl group-hover:bg-blue-600/35 transition-all duration-500"></div>
+              <div className="absolute -right-12 -top-12 w-40 h-40 bg-primary/25 rounded-full blur-2xl group-hover:bg-primary/35 transition-all duration-500"></div>
               <div className="flex items-center gap-2 mb-4 relative z-10">
                 <BrainCircuit className="w-5 h-5 text-blue-400 animate-pulse" />
                 <h2 className="text-md font-bold text-white tracking-tight">HisporaIA Insights</h2>
@@ -259,7 +259,7 @@ export default function FinancialDashboard() {
                       : 'Inadimplência sob controle. Continue acompanhando.'}
                   </p>
                 </div>
-                <div className="p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all cursor-pointer flex items-center justify-between mt-1 shadow-sm font-semibold text-xs active:scale-95">
+                <div className="p-3 bg-primary hover:bg-primary text-white rounded-xl transition-all cursor-pointer flex items-center justify-between mt-1 shadow-sm font-semibold text-xs active:scale-95">
                   <div className="flex items-center gap-2">
                     <Lightbulb className="w-4 h-4 fill-white/10" />
                     <span>Ver relatórios detalhados</span>
@@ -285,7 +285,7 @@ export default function FinancialDashboard() {
               </button>
               <button
                 onClick={handleExport}
-                className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-700 cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all shadow-xs"
+                className="bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-primary-dark cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all shadow-xs"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Exportar</span>

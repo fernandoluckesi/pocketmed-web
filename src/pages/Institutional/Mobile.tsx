@@ -214,7 +214,7 @@ export default function InstitutionalMobile() {
       </section>
 
       {/* CTA */}
-      <section className="bg-gradient-to-r from-primary to-blue-700 py-16">
+      <section className="bg-gradient-to-r from-primary to-primary py-16">
         <div className="max-w-4xl mx-auto px-6 text-center text-white">
           <h2 className="text-3xl font-extrabold mb-4">
             Baixe o Hispora agora

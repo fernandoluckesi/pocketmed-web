@@ -128,7 +128,7 @@ export default function DRE() {
             </div>
             <button
               onClick={handleExportCSV}
-              className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-700 cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all shadow-xs"
+              className="bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-primary-dark cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all shadow-xs"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Exportar CSV</span>

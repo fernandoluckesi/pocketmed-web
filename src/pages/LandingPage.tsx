@@ -84,7 +84,7 @@ function TestimonialsCarousel() {
   const t = testimonials[current];
 
   return (
-    <div className="bg-gradient-to-r from-primary to-blue-700 rounded-3xl p-12  text-white text-center relative overflow-hidden">
+    <div className="bg-gradient-to-r from-primary to-primary rounded-3xl p-12  text-white text-center relative overflow-hidden">
       <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=60 height=60 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.05%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]" />
 
       <div className="relative z-10">
@@ -189,7 +189,7 @@ export default function LandingPage() {
             </Link>
             <Link
               to="/signup"
-              className="bg-primary text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm"
+              className="bg-primary text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-primary-dark transition-colors shadow-sm"
             >
               Criar Conta
             </Link>

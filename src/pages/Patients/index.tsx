@@ -470,7 +470,7 @@ function StatsSection({ requests }: { requests: AccessRequest[] }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div className="bg-blue-50/60 p-6 rounded-2xl border border-blue-100/50 flex items-center gap-4 group hover:bg-blue-50 transition-colors">
-        <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-blue-200 transition-transform group-hover:scale-110">
+        <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white shadow-lg shadow-blue-200 transition-transform group-hover:scale-110">
           <Hourglass size={24} fill="currentColor" />
         </div>
         <div>

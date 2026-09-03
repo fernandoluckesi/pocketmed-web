@@ -118,7 +118,7 @@ export default function Login() {
                 <div className="relative group">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors w-5 h-5" />
                   <input
-                    className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-blue-100 ${fieldError("email") ? "border-red-400 focus:border-red-400" : "border-slate-200 focus:border-blue-500"}`}
+                    className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/20 ${fieldError("email") ? "border-red-400 focus:border-red-400" : "border-slate-200 focus:border-primary"}`}
                     id="email-input"
                     placeholder="dr.exemplo@hospital.com"
                     type="email"
@@ -143,7 +143,7 @@ export default function Login() {
                 <div className="relative group">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors w-5 h-5" />
                   <input
-                    className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-12 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-blue-100 ${fieldError("password") ? "border-red-400 focus:border-red-400" : "border-slate-200 focus:border-blue-500"}`}
+                    className={`w-full bg-slate-50 border rounded-xl py-3.5 pl-12 pr-12 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/20 ${fieldError("password") ? "border-red-400 focus:border-red-400" : "border-slate-200 focus:border-primary"}`}
                     id="password-input"
                     placeholder="••••••••"
                     type={showPassword ? "text" : "password"}
@@ -173,7 +173,7 @@ export default function Login() {
             <div className="flex items-center justify-between py-1 text-sm">
               <label className="flex items-center gap-2.5 cursor-pointer select-none group">
                 <input
-                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 transition-all cursor-pointer"
+                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-primary transition-all cursor-pointer"
                   type="checkbox"
                   name="rememberMe"
                   checked={formik.values.rememberMe}
@@ -194,7 +194,7 @@ export default function Login() {
 
             {/* Submit */}
             <button
-              className="w-full bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-700 text-white font-semibold py-4 rounded-xl shadow-md shadow-blue-500/10 hover:shadow-blue-500/20 active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-2.5 border-none disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-primary-dark to-primary hover:from-primary-dark hover:to-primary text-white font-semibold py-4 rounded-xl shadow-md shadow-blue-500/10 hover:shadow-blue-500/20 active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-2.5 border-none disabled:opacity-60 disabled:cursor-not-allowed"
               type="submit"
               disabled={formik.isSubmitting}
             >

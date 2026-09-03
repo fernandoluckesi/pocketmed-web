@@ -84,7 +84,7 @@ export default function Costs() {
           </div>
           <button
             onClick={() => setShowAdd(!showAdd)}
-            className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 cursor-pointer active:scale-95 transition-all shadow-xs"
+            className="bg-primary text-white hover:bg-primary-dark px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 cursor-pointer active:scale-95 transition-all shadow-xs"
           >
             <Plus className="w-4 h-4" />
             <span>Novo Centro de Custo</span>
@@ -105,7 +105,7 @@ export default function Costs() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-hidden"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
                   placeholder="Ex: Folha de Pagamento"
                   required
                 />
@@ -118,7 +118,7 @@ export default function Costs() {
                   type="text"
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-hidden"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
                   placeholder="CC007"
                   required
                 />
@@ -132,7 +132,7 @@ export default function Costs() {
                   step="0.01"
                   value={budgetAllocated}
                   onChange={(e) => setBudgetAllocated(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-hidden font-mono"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden font-mono"
                   placeholder="0.00"
                 />
               </div>
@@ -158,7 +158,7 @@ export default function Costs() {
               </button>
               <button
                 type="submit"
-                className="bg-blue-600 text-white hover:bg-blue-700 px-5 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all active:scale-95 shadow-sm"
+                className="bg-primary text-white hover:bg-primary-dark px-5 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all active:scale-95 shadow-sm"
               >
                 Criar
               </button>

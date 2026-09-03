@@ -455,7 +455,7 @@ function SidePanel({ overview }: { overview: Overview | null }) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-br from-primary to-blue-400 p-6 rounded-xl shadow-lg text-white">
+      <div className="bg-gradient-to-br from-primary to-primary-gradient-end p-6 rounded-xl shadow-lg text-white">
         <h3 className="font-bold font-display mb-2">Desempenho da Clínica</h3>
         <p className="text-white/80 text-sm mb-4">
           {overview?.clinicName || "Sua clínica"} está operando com{" "}
@@ -843,7 +843,7 @@ export default function ClinicalManagement() {
                 <button
                   type="submit"
                   disabled={addLoading}
-                  className="flex-1 bg-primary text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors cursor-pointer border-none disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="flex-1 bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary-dark transition-colors cursor-pointer border-none disabled:opacity-60 flex items-center justify-center gap-2"
                 >
                   {addLoading && <Loader2 size={16} className="animate-spin" />}
                   {addLoading ? "Salvando..." : editingMember ? "Salvar" : "Adicionar"}

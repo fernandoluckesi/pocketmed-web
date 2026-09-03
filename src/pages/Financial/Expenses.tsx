@@ -186,7 +186,7 @@ export default function Expenses() {
               <AlertCircle className="w-6 h-6" />
             </div>
           </div>
-          <div className="bg-blue-600 text-white p-6 rounded-xl relative overflow-hidden flex flex-col justify-between shadow-md">
+          <div className="bg-primary text-white p-6 rounded-xl relative overflow-hidden flex flex-col justify-between shadow-md">
             <div>
               <p className="text-[10px] uppercase font-extrabold tracking-widest text-blue-200">
                 Ação Administrativa
@@ -214,7 +214,7 @@ export default function Expenses() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-lg pl-3 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full bg-white border border-slate-200 rounded-lg pl-3 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="Buscar por fornecedor ou categoria..."
               />
             </div>
@@ -392,7 +392,7 @@ function AddExpenseModal({
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl overflow-hidden"
           >
-            <div className="flex justify-between items-center bg-blue-600 p-5 text-white">
+            <div className="flex justify-between items-center bg-primary p-5 text-white">
               <div className="flex items-center gap-2">
                 <Plus className="w-5 h-5" />
                 <h3 className="font-semibold text-lg">Lançar Nova Despesa</h3>
@@ -441,7 +441,7 @@ function AddExpenseModal({
                   placeholder="Ex: MedSupply Brasil"
                   value={provider}
                   onChange={(e) => setProvider(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -456,7 +456,7 @@ function AddExpenseModal({
                     placeholder="0,00"
                     value={value}
                     onChange={(e) => setValue(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-semibold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 font-semibold"
                   />
                 </div>
                 <div>
@@ -468,7 +468,7 @@ function AddExpenseModal({
                     required
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
               </div>
@@ -482,7 +482,7 @@ function AddExpenseModal({
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold cursor-pointer active:scale-95"
+                  className="flex-1 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-semibold cursor-pointer active:scale-95"
                 >
                   Confirmar
                 </button>

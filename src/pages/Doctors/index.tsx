@@ -45,8 +45,6 @@ function DoctorCard({
   doctor?: Doctor;
   isAddCard?: boolean;
 }) {
-  const navigate = useNavigate();
-
   if (isAddCard) {
     return (
       <motion.div

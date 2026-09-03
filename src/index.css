@@ -1,35 +1,122 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
+/*
+ * Theme aligned with the Hispora mobile app (React Native theme).
+ * Source of truth: mobile `theme` object.
+ * Existing web token names (primary, secondary, on-surface, outline, etc.) are
+ * preserved so current utility classes keep working, but their VALUES now match
+ * the mobile palette. New mobile-only tokens (success, warning, info, tints,
+ * background/border variants) are added below.
+ */
 @theme {
+  /* --- Typography --- */
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Manrope", sans-serif;
   --font-manrope: "Manrope", sans-serif;
   --font-inter: "Inter", sans-serif;
 
-  --color-primary: #2B5AED;
-  --color-primary-container: #1a4ad4;
-  --color-on-primary: #ffffff;
-  --color-secondary: #6474B4;
-  --color-secondary-container: #4b5b9a;
-  --color-on-secondary: #ffffff;
-  --color-tertiary: #B94000;
-  --color-tertiary-container: #a33800;
-  --color-on-tertiary: #ffffff;
-  --color-background: #F8FAFC;
-  --color-surface: #F8FAFC;
-  --color-surface-container: #eceef0;
-  --color-surface-container-low: #f2f4f6;
-  --color-surface-container-high: #e6e8ea;
-  --color-surface-low: #f2f4f6;
-  --color-on-surface: #191c1e;
-  --color-on-surface-variant: #434655;
-  --color-outline: #747687;
-  --color-outline-variant: #c4c5d8;
-  --color-error: #ba1a1a;
-  --color-error-container: #ffdad6;
-  --color-priority: #913000;
-  --color-sidebar: #f2f4f6;
+  /* --- Primary (mobile primary) --- */
+  --color-primary: #1B3FCC;
+  --color-primary-light: #e3f2fd;
+  --color-primary-dark: #0d47a1;
+  --color-primary-container: #0d47a1;
+  --color-on-primary: #FFFFFF;
+  --color-primary-gradient-start: #0d47a1;
+  --color-primary-gradient-mid: #1976d2;
+  --color-primary-gradient-end: #42a5f5;
+
+  /* --- Secondary (mobile secondary) --- */
+  --color-secondary: #1976d2;
+  --color-secondary-light: #bbdefb;
+  --color-secondary-dark: #0d47a1;
+  --color-secondary-container: #0d47a1;
+  --color-on-secondary: #FFFFFF;
+
+  /* --- Tertiary (mobile tertiary) --- */
+  --color-tertiary: #42a5f5;
+  --color-tertiary-light: #e3f2fd;
+  --color-tertiary-dark: #1565c0;
+  --color-tertiary-container: #1565c0;
+  --color-on-tertiary: #FFFFFF;
+
+  /* --- Status / semantic (mobile success/warning/error/status) --- */
+  --color-success: #2e7d32;
+  --color-success-light: #e8f5e9;
+  --color-success-dark: #1b5e20;
+  --color-warning: #e65100;
+  --color-warning-light: #fff3e0;
+  --color-warning-dark: #bf360c;
+  --color-error: #c62828;
+  --color-error-light: #ffebee;
+  --color-error-container: #ffebee;
+  --color-error-dark: #b71c1c;
+  --color-info: #1565c0;
+  --color-priority: #e65100;
+
+  /* --- Disabled (mobile disabled) --- */
+  --color-disabled: #9aa5b4;
+  --color-disabled-light: #f5f8fc;
+  --color-disabled-dark: #6b7a8d;
+
+  /* --- Backgrounds / surfaces (mobile background) --- */
+  --color-background: #fafcff;
+  --color-surface: #FFFFFF;
+  --color-surface-secondary: #fafcff;
+  --color-surface-tertiary: #f0f4f8;
+  --color-surface-container: #f0f4f8;
+  --color-surface-container-low: #fafcff;
+  --color-surface-container-high: #eef2f7;
+  --color-surface-low: #fafcff;
+  --color-sidebar: #fafcff;
+
+  /* --- Text (mobile text) --- */
+  --color-on-surface: #1a1a2e;
+  --color-on-surface-variant: #9aa5b4;
+  --color-text-primary: #1a1a2e;
+  --color-text-secondary: #9aa5b4;
+  --color-text-tertiary: #b0b8c4;
+  --color-text-label: #555555;
+  --color-text-disabled: #9aa5b4;
+  --color-text-white: #FFFFFF;
+
+  /* --- Borders / outlines (mobile border) --- */
+  --color-outline: #dde5ef;
+  --color-outline-variant: #c8d6e8;
+  --color-border: #dde5ef;
+  --color-border-light: #eef2f7;
+  --color-border-dark: #c8d6e8;
+
+  /* --- Tints (mobile Colors.light) --- */
+  --color-tint: #1565c0;
+}
+
+/*
+ * Mobile design tokens exposed as plain CSS variables (not Tailwind scale
+ * overrides) so they can be referenced without altering existing utilities
+ * like rounded-*, p-*, gap-*, text-*.
+ */
+:root {
+  /* Radius (mobile borderRadius) */
+  --hispora-radius-sm: 6px;
+  --hispora-radius-md: 12px;
+  --hispora-radius-lg: 14px;
+  --hispora-radius-xl: 16px;
+  --hispora-radius-2xl: 28px;
+  --hispora-radius-full: 9999px;
+
+  /* Spacing (mobile spacing) */
+  --hispora-spacing-xs: 4px;
+  --hispora-spacing-sm: 8px;
+  --hispora-spacing-md: 16px;
+  --hispora-spacing-lg: 24px;
+  --hispora-spacing-xl: 32px;
+  --hispora-spacing-2xl: 48px;
+
+  /* Shadows (mobile shadows) */
+  --hispora-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --hispora-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --hispora-shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 @layer base {

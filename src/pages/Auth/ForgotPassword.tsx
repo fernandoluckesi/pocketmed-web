@@ -164,7 +164,7 @@ export default function ForgotPassword() {
               <button
                 type="submit"
                 disabled={emailFormik.isSubmitting}
-                className="w-full bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-700 text-white font-semibold py-3.5 rounded-xl shadow-md transition-all cursor-pointer border-none disabled:opacity-60"
+                className="w-full bg-gradient-to-r from-primary-dark to-primary hover:from-primary-dark hover:to-primary text-white font-semibold py-3.5 rounded-xl shadow-md transition-all cursor-pointer border-none disabled:opacity-60"
               >
                 {emailFormik.isSubmitting ? "Enviando..." : "Enviar código"}
               </button>
@@ -194,7 +194,7 @@ export default function ForgotPassword() {
               <button
                 type="submit"
                 disabled={codeFormik.isSubmitting}
-                className="w-full bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-700 text-white font-semibold py-3.5 rounded-xl shadow-md transition-all cursor-pointer border-none disabled:opacity-60"
+                className="w-full bg-gradient-to-r from-primary-dark to-primary hover:from-primary-dark hover:to-primary text-white font-semibold py-3.5 rounded-xl shadow-md transition-all cursor-pointer border-none disabled:opacity-60"
               >
                 Verificar código
               </button>
@@ -246,7 +246,7 @@ export default function ForgotPassword() {
               <button
                 type="submit"
                 disabled={passwordFormik.isSubmitting}
-                className="w-full bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-700 text-white font-semibold py-3.5 rounded-xl shadow-md transition-all cursor-pointer border-none disabled:opacity-60"
+                className="w-full bg-gradient-to-r from-primary-dark to-primary hover:from-primary-dark hover:to-primary text-white font-semibold py-3.5 rounded-xl shadow-md transition-all cursor-pointer border-none disabled:opacity-60"
               >
                 {passwordFormik.isSubmitting ? "Redefinindo..." : "Redefinir senha"}
               </button>

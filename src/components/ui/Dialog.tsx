@@ -107,8 +107,8 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
                   variant === "error"
                     ? "bg-red-600 text-white hover:bg-red-700"
                     : variant === "confirm"
-                      ? "bg-primary text-white hover:bg-blue-700"
-                      : "bg-primary text-white hover:bg-blue-700"
+                      ? "bg-primary text-white hover:bg-primary-dark"
+                      : "bg-primary text-white hover:bg-primary-dark"
                 }`}
               >
                 {dialog.confirmLabel || "OK"}

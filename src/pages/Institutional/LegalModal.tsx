@@ -42,7 +42,7 @@ export function LegalModal({
         <div className="px-5 sm:px-8 py-3 sm:py-4 border-t border-slate-100 shrink-0">
           <button
             onClick={onClose}
-            className="bg-primary text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors cursor-pointer border-none"
+            className="bg-primary text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-primary-dark transition-colors cursor-pointer border-none"
           >
             Fechar
           </button>
