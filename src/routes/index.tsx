@@ -7,6 +7,7 @@ import LandingPage from "../pages/LandingPage";
 import InstitutionalHome from "../pages/Institutional";
 import InstitutionalMobile from "../pages/Institutional/Mobile";
 import InstitutionalPlatform from "../pages/Institutional/Platform";
+import LegalPage from "../pages/Institutional/LegalPage";
 import Verification from "../pages/Verification";
 import Dashboard from "../pages/Dashboard";
 import Consultations from "../pages/Consultations";
@@ -44,6 +45,11 @@ export default function AppRoutes() {
         path="/institutional/platform"
         element={<InstitutionalPlatform />}
       />
+      {/* Single combined Terms of Use + Privacy Policy page. /termos and
+          /privacidade are kept as aliases so existing links keep working. */}
+      <Route path="/legal" element={<LegalPage />} />
+      <Route path="/termos" element={<LegalPage />} />
+      <Route path="/privacidade" element={<LegalPage />} />
 
       {/* Protected routes */}
       <Route
