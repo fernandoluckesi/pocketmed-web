@@ -1,0 +1,12 @@
+HISPORA — versão branca (fundo transparente)
+Para usar sobre azul #1B3FCC / #0d47a1 ou fundos escuros.
+
+hispora-horizontal-branco.png   símbolo + nome ao lado (1190x600)
+hispora-vertical-branco.png     símbolo + nome abaixo (792x1200)
+hispora-simbolo-branco.png      só o símbolo (1024x1024)
+hispora-simbolo-branco.svg      só o símbolo, vetor
+
+Todos com fundo transparente. A folha de trás é branco a 50% —
+ela precisa de fundo com contraste suficiente para aparecer.
+Não usar sobre primary light (#e3f2fd) nem sobre branco.
+Wordmark: Sora 600, tracking -3,5%.

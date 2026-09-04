@@ -1,0 +1,7 @@
+HISPORA — lockups em primary #1B3FCC
+Símbolo e nome na mesma cor primary.
+
+hispora-vertical-primary.png    nome abaixo do símbolo (1200x1200)
+hispora-horizontal-primary.png  nome ao lado do símbolo (1718x600)
+
+Fundo transparente. Wordmark: Sora 600, tracking -3,5%.
