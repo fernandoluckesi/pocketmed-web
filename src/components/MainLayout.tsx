@@ -23,7 +23,7 @@ import { logout } from "../services/auth";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "../components/ui/Button";
 import { NotificationsDropdown } from "./NotificationsDropdown";
-import iconLogo from "../assets/images/icon.png";
+import logoHorizontal from "../assets/logos/hispora-horizontal-primary.png";
 
 const navItems = [
   {
@@ -111,16 +111,12 @@ export function MainLayout({ children }: MainLayoutProps) {
     <div className="min-h-screen flex bg-surface text-on-surface">
       {/* Sidebar */}
       <aside className="h-screen w-64 fixed left-0 top-0 bg-slate-100 flex flex-col p-6 space-y-8 z-50">
-        <div className="flex items-center space-x-3 px-2">
+        <div className="flex items-center px-2">
           <img
-            src={iconLogo}
+            src={logoHorizontal}
             alt="Hispora"
-            className="w-10 h-10 rounded-xl"
+            className="h-[4.5rem] w-auto"
           />
-          <h2 className="text-xl font-black tracking-tight font-manrope">
-            <span className="text-slate-900">His</span>
-            <span className="text-primary">pora</span>
-          </h2>
         </div>
 
         <nav className="flex-grow space-y-1">

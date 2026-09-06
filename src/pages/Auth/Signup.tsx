@@ -25,7 +25,7 @@ import { Snackbar } from "../../components/Snackbar";
 import { Button } from "../../components/ui/Button";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 import { PasswordStrengthIndicator } from "../../components/PasswordStrengthIndicator";
-import iconLogo from "../../assets/images/icon.png";
+import logoHorizontal from "../../assets/logos/hispora-horizontal-primary.png";
 import api from "../../config/api";
 import {
   LegalModal,
@@ -1212,16 +1212,12 @@ export default function Signup() {
         <div className="w-full max-w-md space-y-8 my-auto">
           {/* Header */}
           <header className="text-center space-y-4">
-            <div className="inline-flex items-center gap-3 justify-center mb-12 w-full">
+            <div className="inline-flex items-center justify-center mb-12 w-full">
               <img
-                src={iconLogo}
+                src={logoHorizontal}
                 alt="Hispora"
-                className="w-[72px] h-[72px] rounded-xl"
+                className="h-28 w-auto"
               />
-              <h1 className="text-4xl font-display font-extrabold tracking-tight">
-                <span className="text-slate-900">His</span>
-                <span className="text-primary">pora</span>
-              </h1>
             </div>
             <div className="space-y-2">
               <h2 className="text-3xl font-display font-bold text-slate-900 tracking-tight">

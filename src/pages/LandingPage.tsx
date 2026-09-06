@@ -16,7 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import iconLogo from "../assets/images/icon.png";
+import logoHorizontal from "../assets/logos/hispora-horizontal-primary.png";
 import mobileImg from "../assets/images/mobile.png";
 import {
   LegalModal,
@@ -150,15 +150,12 @@ export default function LandingPage() {
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-lg border-b border-slate-100">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
+          <Link to="/" className="flex items-center">
             <img
-              src={iconLogo}
+              src={logoHorizontal}
               alt="Hispora"
-              className="w-10 h-10 rounded-xl"
+              className="h-[4.5rem] w-auto"
             />
-            <span className="text-xl font-extrabold text-slate-900">
-              His<span className="text-primary">pora</span>
-            </span>
           </Link>
           <nav className="hidden md:flex items-center gap-6">
             <Link
@@ -471,15 +468,12 @@ export default function LandingPage() {
 
           {/* Nav + Copyright */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center">
               <img
-                src={iconLogo}
+                src={logoHorizontal}
                 alt="Hispora"
-                className="w-8 h-8 rounded-lg"
+                className="h-14 w-auto"
               />
-              <span className="text-sm font-bold text-slate-700">
-                His<span className="text-primary">pora</span>
-              </span>
             </div>
 
             <p className="text-sm text-slate-400">

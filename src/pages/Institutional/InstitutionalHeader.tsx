@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
-import iconLogo from "../../assets/images/icon.png";
+import logoHorizontal from "../../assets/logos/hispora-horizontal-primary.png";
 
 interface InstitutionalHeaderProps {
   currentPage?: "home" | "mobile" | "platform";
@@ -13,15 +13,12 @@ export function InstitutionalHeader({ currentPage }: InstitutionalHeaderProps) {
   return (
     <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-lg border-b border-slate-100">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5">
+        <Link to="/" className="flex items-center">
           <img
-            src={iconLogo}
+            src={logoHorizontal}
             alt="Hispora"
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl"
+            className="h-16 sm:h-[4.5rem] w-auto"
           />
-          <span className="text-lg sm:text-xl font-extrabold text-slate-900">
-            His<span className="text-primary">pora</span>
-          </span>
         </Link>
 
         {/* Desktop nav */}

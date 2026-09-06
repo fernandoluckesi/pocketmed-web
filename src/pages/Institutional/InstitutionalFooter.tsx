@@ -1,5 +1,5 @@
 import { useState } from "react";
-import iconLogo from "../../assets/images/icon.png";
+import logoHorizontal from "../../assets/logos/hispora-horizontal-primary.png";
 import {
   LegalModal,
   PrivacyPolicyContent,
@@ -40,15 +40,12 @@ export function InstitutionalFooter() {
 
           {/* Main Footer */}
           <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:justify-between sm:text-left">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center">
               <img
-                src={iconLogo}
+                src={logoHorizontal}
                 alt="Hispora"
-                className="w-8 h-8 rounded-lg"
+                className="h-14 w-auto"
               />
-              <span className="text-sm font-bold text-slate-700">
-                His<span className="text-primary">pora</span>
-              </span>
             </div>
 
             <p className="text-xs sm:text-sm text-slate-400">

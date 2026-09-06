@@ -2,8 +2,10 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import { Stethoscope, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
+import logoHorizontalWhite from "../../assets/logos/hispora-horizontal-branco.png";
+import logoHorizontalPrimary from "../../assets/logos/hispora-horizontal-primary.png";
 
 const loginSchema = Yup.object({
   email: Yup.string().email("Email inválido").required("Email é obrigatório"),
@@ -39,18 +41,12 @@ export default function Login() {
       <div className="hidden lg:flex lg:w-1/2 sticky top-0 h-screen bg-gradient-to-br from-primary to-primary-container p-12 flex-col justify-between relative overflow-hidden">
         <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-[40rem] h-[40rem] bg-white/5 rounded-full blur-[100px]" />
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-16">
-            <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
-              <Stethoscope className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-black text-white tracking-tight font-display">
-                Hispora
-              </h1>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">
-                Excelência Clínica
-              </p>
-            </div>
+          <div className="flex items-center mb-16">
+            <img
+              src={logoHorizontalWhite}
+              alt="Hispora"
+              className="h-20 w-auto"
+            />
           </div>
           <h2 className="text-5xl font-black text-white tracking-tight font-display leading-tight">
             Gestão médica
@@ -71,13 +67,12 @@ export default function Login() {
       {/* Right Panel - Form */}
       <div className="flex-1 flex items-center justify-center p-8 overflow-y-auto">
         <div className="w-full max-w-md space-y-8">
-          <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-              <Stethoscope className="w-6 h-6 text-white" />
-            </div>
-            <h1 className="text-xl font-black text-primary font-display">
-              Hispora
-            </h1>
+          <div className="lg:hidden flex items-center mb-8">
+            <img
+              src={logoHorizontalPrimary}
+              alt="Hispora"
+              className="h-[4.5rem] w-auto"
+            />
           </div>
 
           <div>

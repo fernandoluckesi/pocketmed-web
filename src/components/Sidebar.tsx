@@ -2,7 +2,7 @@ import { useLocation, Link } from "react-router-dom";
 import { ICONS } from "../constants";
 import { motion } from "motion/react";
 import { useAuth } from "../contexts/AuthContext";
-import iconLogo from "../assets/images/icon.png";
+import logoHorizontal from "../assets/logos/hispora-horizontal-primary.png";
 
 const navItems = [
   {
@@ -49,17 +49,8 @@ export const Sidebar = () => {
   return (
     <aside className="h-screen w-64 fixed left-0 top-0 bg-slate-100 flex flex-col justify-between py-3 px-4 z-50">
       <div>
-        <div className="flex items-center space-x-3 px-2 mb-3">
-          <img src={iconLogo} alt="Hispora" className="w-8 h-8 rounded-xl" />
-          <div>
-            <h2 className="text-base font-black tracking-tight font-manrope">
-              <span className="text-slate-900">His</span>
-              <span className="text-primary">pora</span>
-            </h2>
-            <p className="text-[9px] font-bold uppercase tracking-wider text-on-surface-variant/60">
-              Excelência Clínica
-            </p>
-          </div>
+        <div className="flex items-center px-2 mb-3">
+          <img src={logoHorizontal} alt="Hispora" className="h-16 w-auto" />
         </div>
 
         <nav>
