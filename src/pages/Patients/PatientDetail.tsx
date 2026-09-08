@@ -2285,6 +2285,886 @@ function DiseaseDetailView({
   );
 }
 
+// --- Surgeries Section ---
+
+interface Surgery {
+  id: string;
+  name: string;
+  status: string;
+  date: string | null;
+  indication: string | null;
+  diagnosisId: string | null;
+  bodyRegion: string | null;
+  laterality: string | null;
+  hospitalOrClinic: string | null;
+  surgeonName: string | null;
+  surgeonSpecialty: string | null;
+  city: string | null;
+  state: string | null;
+  surgeryType: string | null;
+  technique: string | null;
+  anesthesia: string | null;
+  outcome: string | null;
+  hadComplications: boolean | null;
+  complications: string | null;
+  hospitalAdmission: boolean | null;
+  dischargeDate: string | null;
+  postoperativeNotes: string | null;
+  hasPermanentImplant: boolean | null;
+  implantType: string | null;
+  implantDescription: string | null;
+  implantManufacturer: string | null;
+  implantModel: string | null;
+  implantSerial: string | null;
+  implantLocation: string | null;
+}
+
+const SURGERY_STATUS_OPTIONS = [
+  { value: "PLANNED", label: "Planejada" },
+  { value: "PERFORMED", label: "Realizada" },
+  { value: "CANCELLED", label: "Cancelada" },
+];
+
+const SURGERY_LATERALITY_OPTIONS = [
+  { value: "RIGHT", label: "Direita" },
+  { value: "LEFT", label: "Esquerda" },
+  { value: "BILATERAL", label: "Bilateral" },
+  { value: "NOT_APPLICABLE", label: "Não aplicável" },
+];
+
+const SURGERY_TYPE_OPTIONS = [
+  { value: "ELECTIVE", label: "Eletiva" },
+  { value: "URGENT", label: "Urgência" },
+  { value: "EMERGENCY", label: "Emergência" },
+];
+
+const SURGERY_TECHNIQUE_OPTIONS = [
+  { value: "OPEN", label: "Aberta" },
+  { value: "LAPAROSCOPIC", label: "Laparoscópica" },
+  { value: "ROBOTIC", label: "Robótica" },
+  { value: "OTHER", label: "Outra" },
+];
+
+const SURGERY_ANESTHESIA_OPTIONS = [
+  { value: "GENERAL", label: "Geral" },
+  { value: "LOCAL", label: "Local" },
+  { value: "REGIONAL", label: "Regional" },
+  { value: "SEDATION", label: "Sedação" },
+  { value: "OTHER", label: "Outra" },
+];
+
+const YES_NO_OPTIONS = [
+  { value: "no", label: "Não" },
+  { value: "yes", label: "Sim" },
+];
+
+function surgeryEnumLabel(
+  options: { value: string; label: string }[],
+  value: string | null,
+): string | null {
+  if (!value) return null;
+  return options.find((o) => o.value === value)?.label || value;
+}
+
+function getSurgeryStatusLabel(status: string): string {
+  return (
+    SURGERY_STATUS_OPTIONS.find((o) => o.value === status)?.label || status
+  );
+}
+
+function getSurgeryStatusStyle(status: string): string {
+  switch (status) {
+    case "PERFORMED":
+      return "bg-green-100 text-green-700";
+    case "CANCELLED":
+      return "bg-red-100 text-red-700";
+    case "PLANNED":
+    default:
+      return "bg-blue-100 text-primary";
+  }
+}
+
+function getSurgeryBorderStyle(status: string): string {
+  switch (status) {
+    case "PERFORMED":
+      return "border-l-green-500";
+    case "CANCELLED":
+      return "border-l-red-500";
+    case "PLANNED":
+    default:
+      return "border-l-blue-500";
+  }
+}
+
+function SurgeriesSection({ patientId }: { patientId: string }) {
+  const [surgeries, setSurgeries] = useState<Surgery[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [viewingSurgery, setViewingSurgery] = useState<Surgery | null>(null);
+
+  async function loadSurgeries() {
+    try {
+      const data = await api(`/patients/${patientId}/surgeries`);
+      setSurgeries(Array.isArray(data) ? data : []);
+    } catch {
+      setSurgeries([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useState(() => {
+    loadSurgeries();
+  });
+
+  if (loading) {
+    return <div className="text-center py-8 text-slate-400">Carregando...</div>;
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="font-bold text-xl font-display tracking-tight">
+          Cirurgias
+        </h3>
+        <Button
+          onClick={() => setShowCreateModal(true)}
+          variant="primary"
+          size="sm"
+          icon={<Plus className="w-3.5 h-3.5" />}
+        >
+          Adicionar Cirurgia
+        </Button>
+      </div>
+
+      {surgeries.length === 0 ? (
+        <div className="text-center py-8 text-slate-400">
+          <Activity className="w-10 h-10 mx-auto mb-3 opacity-50" />
+          <p className="font-medium">Nenhuma cirurgia registrada</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {surgeries.map((surgery) => (
+            <div
+              key={surgery.id}
+              onClick={() => setViewingSurgery(surgery)}
+              className={`group bg-white hover:bg-slate-50 rounded-2xl p-6 flex items-center gap-6 transition-all border border-slate-100 shadow-sm cursor-pointer border-l-4 ${getSurgeryBorderStyle(
+                surgery.status,
+              )}`}
+            >
+              <div className="flex-grow min-w-0">
+                <h4 className="font-bold text-lg text-slate-900">
+                  {surgery.name}
+                </h4>
+                <p className="text-xs text-slate-500 mt-1 truncate">
+                  {[
+                    surgery.date
+                      ? new Date(surgery.date).toLocaleDateString("pt-BR")
+                      : null,
+                    surgery.hospitalOrClinic,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || "Sem data definida"}
+                </p>
+              </div>
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 ${getSurgeryStatusStyle(
+                  surgery.status,
+                )}`}
+              >
+                {getSurgeryStatusLabel(surgery.status)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        label="Novo Registro"
+        title="Adicionar Cirurgia"
+        maxWidth="max-w-2xl"
+      >
+        <SurgeryForm
+          patientId={patientId}
+          onClose={() => setShowCreateModal(false)}
+          onSaved={() => {
+            loadSurgeries();
+            setShowCreateModal(false);
+          }}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={!!viewingSurgery}
+        onClose={() => setViewingSurgery(null)}
+        label="Cirurgia"
+        title="Detalhes da Cirurgia"
+        maxWidth="max-w-2xl"
+      >
+        {viewingSurgery && (
+          <SurgeryDetailView
+            surgery={viewingSurgery}
+            patientId={patientId}
+            onClose={() => setViewingSurgery(null)}
+            onSaved={() => {
+              loadSurgeries();
+              setViewingSurgery(null);
+            }}
+          />
+        )}
+      </Modal>
+    </div>
+  );
+}
+
+function SurgeryForm({
+  patientId,
+  onClose,
+  onSaved,
+  initial,
+}: {
+  patientId: string;
+  onClose: () => void;
+  onSaved: () => void;
+  initial?: Surgery;
+}) {
+  const [name, setName] = useState(initial?.name || "");
+  const [status, setStatus] = useState(initial?.status || "PLANNED");
+  const [date, setDate] = useState(initial?.date?.split("T")[0] || "");
+  const [indication, setIndication] = useState(initial?.indication || "");
+  const [diagnosisId, setDiagnosisId] = useState(initial?.diagnosisId || "");
+  const [bodyRegion, setBodyRegion] = useState(initial?.bodyRegion || "");
+  const [laterality, setLaterality] = useState(initial?.laterality || "");
+  const [hospitalOrClinic, setHospitalOrClinic] = useState(
+    initial?.hospitalOrClinic || "",
+  );
+  const [surgeonName, setSurgeonName] = useState(initial?.surgeonName || "");
+  const [surgeonSpecialty, setSurgeonSpecialty] = useState(
+    initial?.surgeonSpecialty || "",
+  );
+  const [city, setCity] = useState(initial?.city || "");
+  const [state, setState] = useState(initial?.state || "");
+  const [surgeryType, setSurgeryType] = useState(initial?.surgeryType || "");
+  const [technique, setTechnique] = useState(initial?.technique || "");
+  const [anesthesia, setAnesthesia] = useState(initial?.anesthesia || "");
+  const [outcome, setOutcome] = useState(initial?.outcome || "");
+  const [hadComplications, setHadComplications] = useState(
+    initial?.hadComplications ? "yes" : "no",
+  );
+  const [complications, setComplications] = useState(
+    initial?.complications || "",
+  );
+  const [hospitalAdmission, setHospitalAdmission] = useState(
+    initial?.hospitalAdmission ? "yes" : "no",
+  );
+  const [dischargeDate, setDischargeDate] = useState(
+    initial?.dischargeDate?.split("T")[0] || "",
+  );
+  const [postoperativeNotes, setPostoperativeNotes] = useState(
+    initial?.postoperativeNotes || "",
+  );
+  const [hasPermanentImplant, setHasPermanentImplant] = useState(
+    initial?.hasPermanentImplant ? "yes" : "no",
+  );
+  const [implantType, setImplantType] = useState(initial?.implantType || "");
+  const [implantDescription, setImplantDescription] = useState(
+    initial?.implantDescription || "",
+  );
+  const [implantManufacturer, setImplantManufacturer] = useState(
+    initial?.implantManufacturer || "",
+  );
+  const [implantModel, setImplantModel] = useState(initial?.implantModel || "");
+  const [implantSerial, setImplantSerial] = useState(
+    initial?.implantSerial || "",
+  );
+  const [implantLocation, setImplantLocation] = useState(
+    initial?.implantLocation || "",
+  );
+  const [diagnosisOptions, setDiagnosisOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const isPerformed = status === "PERFORMED";
+  const showImplant = hasPermanentImplant === "yes";
+
+  useState(() => {
+    (async () => {
+      try {
+        const data = await api(`/patients/${patientId}/diseases`);
+        const list = Array.isArray(data) ? (data as Disease[]) : [];
+        setDiagnosisOptions(
+          list.map((d) => ({ value: d.id, label: d.name })),
+        );
+      } catch {
+        setDiagnosisOptions([]);
+      }
+    })();
+  });
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!name.trim()) {
+      setError("Informe o nome da cirurgia.");
+      return;
+    }
+    if (isPerformed && date && dischargeDate && dischargeDate < date) {
+      setError("A data de alta não pode ser anterior à data da cirurgia.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const body = {
+        name: name.trim(),
+        status,
+        date: date || undefined,
+        indication: indication.trim() || undefined,
+        diagnosisId: diagnosisId || undefined,
+        bodyRegion: bodyRegion.trim() || undefined,
+        laterality: laterality || undefined,
+        hospitalOrClinic: hospitalOrClinic.trim() || undefined,
+        surgeonName: surgeonName.trim() || undefined,
+        surgeonSpecialty: surgeonSpecialty.trim() || undefined,
+        city: city.trim() || undefined,
+        state: state.trim() || undefined,
+        surgeryType: surgeryType || undefined,
+        technique: technique || undefined,
+        anesthesia: anesthesia || undefined,
+        outcome: isPerformed ? outcome.trim() || undefined : undefined,
+        hadComplications: isPerformed ? hadComplications === "yes" : undefined,
+        complications: isPerformed
+          ? complications.trim() || undefined
+          : undefined,
+        hospitalAdmission: isPerformed
+          ? hospitalAdmission === "yes"
+          : undefined,
+        dischargeDate: isPerformed ? dischargeDate || undefined : undefined,
+        postoperativeNotes: isPerformed
+          ? postoperativeNotes.trim() || undefined
+          : undefined,
+        hasPermanentImplant: hasPermanentImplant === "yes",
+        implantType: showImplant ? implantType.trim() || undefined : undefined,
+        implantDescription: showImplant
+          ? implantDescription.trim() || undefined
+          : undefined,
+        implantManufacturer: showImplant
+          ? implantManufacturer.trim() || undefined
+          : undefined,
+        implantModel: showImplant
+          ? implantModel.trim() || undefined
+          : undefined,
+        implantSerial: showImplant
+          ? implantSerial.trim() || undefined
+          : undefined,
+        implantLocation: showImplant
+          ? implantLocation.trim() || undefined
+          : undefined,
+      };
+
+      if (initial) {
+        await api(`/patients/${patientId}/surgeries/${initial.id}`, {
+          method: "PUT",
+          body,
+        });
+      } else {
+        await api(`/patients/${patientId}/surgeries`, {
+          method: "POST",
+          body,
+        });
+      }
+      onSaved();
+    } catch (err) {
+      console.error("Erro ao salvar cirurgia:", err);
+      setError("Não foi possível salvar a cirurgia. Tente novamente.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form className="p-8 pt-0 space-y-6" onSubmit={handleSubmit}>
+      {/* Informações */}
+      <div className="space-y-5">
+        <p className="text-xs font-bold text-primary uppercase tracking-wider">
+          Informações
+        </p>
+        <TextInput
+          label="Nome da Cirurgia"
+          name="surgery-name"
+          value={name}
+          onChange={setName}
+          placeholder="Ex: Colecistectomia"
+        />
+        <SelectInput
+          label="Status"
+          name="surgery-status"
+          value={status}
+          onChange={setStatus}
+          options={SURGERY_STATUS_OPTIONS}
+        />
+        <DateInput
+          label="Data da Cirurgia"
+          name="surgery-date"
+          value={date}
+          onChange={setDate}
+        />
+        <Textarea
+          label="Indicação"
+          name="surgery-indication"
+          value={indication}
+          onChange={setIndication}
+          placeholder="Motivo/indicação da cirurgia"
+          rows={2}
+        />
+        {diagnosisOptions.length > 0 && (
+          <SelectInput
+            label="Diagnóstico Relacionado"
+            name="surgery-diagnosis"
+            value={diagnosisId}
+            onChange={setDiagnosisId}
+            options={diagnosisOptions}
+            placeholder="Nenhum"
+          />
+        )}
+      </div>
+
+      {/* Local e equipe */}
+      <div className="space-y-5">
+        <p className="text-xs font-bold text-primary uppercase tracking-wider">
+          Local e equipe
+        </p>
+        <TextInput
+          label="Região do Corpo"
+          name="surgery-body-region"
+          value={bodyRegion}
+          onChange={setBodyRegion}
+          placeholder="Ex: Abdome"
+        />
+        <SelectInput
+          label="Lateralidade"
+          name="surgery-laterality"
+          value={laterality}
+          onChange={setLaterality}
+          options={SURGERY_LATERALITY_OPTIONS}
+          placeholder="Não informado"
+        />
+        <TextInput
+          label="Hospital / Clínica"
+          name="surgery-hospital"
+          value={hospitalOrClinic}
+          onChange={setHospitalOrClinic}
+          placeholder="Local da cirurgia"
+        />
+        <div className="grid grid-cols-2 gap-6">
+          <TextInput
+            label="Cirurgião"
+            name="surgery-surgeon"
+            value={surgeonName}
+            onChange={setSurgeonName}
+            placeholder="Nome do cirurgião"
+          />
+          <TextInput
+            label="Especialidade"
+            name="surgery-surgeon-specialty"
+            value={surgeonSpecialty}
+            onChange={setSurgeonSpecialty}
+            placeholder="Ex: Cirurgia geral"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-6">
+          <TextInput
+            label="Cidade"
+            name="surgery-city"
+            value={city}
+            onChange={setCity}
+          />
+          <TextInput
+            label="Estado"
+            name="surgery-state"
+            value={state}
+            onChange={setState}
+          />
+        </div>
+      </div>
+
+      {/* Detalhes */}
+      <div className="space-y-5">
+        <p className="text-xs font-bold text-primary uppercase tracking-wider">
+          Detalhes
+        </p>
+        <SelectInput
+          label="Tipo de Cirurgia"
+          name="surgery-type"
+          value={surgeryType}
+          onChange={setSurgeryType}
+          options={SURGERY_TYPE_OPTIONS}
+          placeholder="Não informado"
+        />
+        <SelectInput
+          label="Técnica"
+          name="surgery-technique"
+          value={technique}
+          onChange={setTechnique}
+          options={SURGERY_TECHNIQUE_OPTIONS}
+          placeholder="Não informado"
+        />
+        <SelectInput
+          label="Anestesia"
+          name="surgery-anesthesia"
+          value={anesthesia}
+          onChange={setAnesthesia}
+          options={SURGERY_ANESTHESIA_OPTIONS}
+          placeholder="Não informado"
+        />
+      </div>
+
+      {/* Pós-operatório (só PERFORMED) */}
+      {isPerformed && (
+        <div className="space-y-5">
+          <p className="text-xs font-bold text-primary uppercase tracking-wider">
+            Pós-operatório
+          </p>
+          <Textarea
+            label="Desfecho"
+            name="surgery-outcome"
+            value={outcome}
+            onChange={setOutcome}
+            placeholder="Resultado da cirurgia"
+            rows={2}
+          />
+          <SelectInput
+            label="Houve Complicações?"
+            name="surgery-had-complications"
+            value={hadComplications}
+            onChange={setHadComplications}
+            options={YES_NO_OPTIONS}
+          />
+          {hadComplications === "yes" && (
+            <Textarea
+              label="Complicações"
+              name="surgery-complications"
+              value={complications}
+              onChange={setComplications}
+              placeholder="Descreva as complicações"
+              rows={2}
+            />
+          )}
+          <SelectInput
+            label="Houve Internação?"
+            name="surgery-hospital-admission"
+            value={hospitalAdmission}
+            onChange={setHospitalAdmission}
+            options={YES_NO_OPTIONS}
+          />
+          <DateInput
+            label="Data de Alta"
+            name="surgery-discharge-date"
+            value={dischargeDate}
+            onChange={setDischargeDate}
+          />
+          <Textarea
+            label="Notas Pós-operatórias"
+            name="surgery-postop-notes"
+            value={postoperativeNotes}
+            onChange={setPostoperativeNotes}
+            placeholder="Observações do pós-operatório"
+            rows={3}
+          />
+        </div>
+      )}
+
+      {/* Implante */}
+      <div className="space-y-5">
+        <p className="text-xs font-bold text-primary uppercase tracking-wider">
+          Implante
+        </p>
+        <SelectInput
+          label="Possui Implante Permanente?"
+          name="surgery-has-implant"
+          value={hasPermanentImplant}
+          onChange={setHasPermanentImplant}
+          options={YES_NO_OPTIONS}
+        />
+        {showImplant && (
+          <>
+            <TextInput
+              label="Tipo do Implante"
+              name="surgery-implant-type"
+              value={implantType}
+              onChange={setImplantType}
+            />
+            <Textarea
+              label="Descrição do Implante"
+              name="surgery-implant-description"
+              value={implantDescription}
+              onChange={setImplantDescription}
+              rows={2}
+            />
+            <div className="grid grid-cols-2 gap-6">
+              <TextInput
+                label="Fabricante"
+                name="surgery-implant-manufacturer"
+                value={implantManufacturer}
+                onChange={setImplantManufacturer}
+              />
+              <TextInput
+                label="Modelo"
+                name="surgery-implant-model"
+                value={implantModel}
+                onChange={setImplantModel}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+              <TextInput
+                label="Número de Série"
+                name="surgery-implant-serial"
+                value={implantSerial}
+                onChange={setImplantSerial}
+              />
+              <TextInput
+                label="Localização"
+                name="surgery-implant-location"
+                value={implantLocation}
+                onChange={setImplantLocation}
+              />
+            </div>
+          </>
+        )}
+      </div>
+
+      {error && <p className="text-xs text-red-500">{error}</p>}
+
+      <FormActions
+        onCancel={onClose}
+        submitLabel={initial ? "Salvar Alterações" : "Adicionar"}
+        loading={saving}
+      />
+    </form>
+  );
+}
+
+function SurgeryDetailField({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | null | undefined;
+}) {
+  if (!value) return null;
+  return (
+    <div>
+      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+        {label}
+      </p>
+      <p className="text-sm text-slate-700 leading-relaxed">{value}</p>
+    </div>
+  );
+}
+
+function SurgeryDetailView({
+  surgery,
+  patientId,
+  onClose,
+  onSaved,
+}: {
+  surgery: Surgery;
+  patientId: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    if (!window.confirm("Tem certeza que deseja excluir esta cirurgia?"))
+      return;
+    setDeleting(true);
+    try {
+      await api(`/patients/${patientId}/surgeries/${surgery.id}`, {
+        method: "DELETE",
+      });
+      onSaved();
+    } catch (err) {
+      console.error("Erro ao excluir cirurgia:", err);
+      setDeleting(false);
+    }
+  }
+
+  if (editing) {
+    return (
+      <SurgeryForm
+        patientId={patientId}
+        onClose={() => setEditing(false)}
+        onSaved={onSaved}
+        initial={surgery}
+      />
+    );
+  }
+
+  const isPerformed = surgery.status === "PERFORMED";
+
+  return (
+    <div className="p-8 pt-0 space-y-6">
+      <div className="space-y-5">
+        <div>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+            Status
+          </p>
+          <span
+            className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${getSurgeryStatusStyle(
+              surgery.status,
+            )}`}
+          >
+            {getSurgeryStatusLabel(surgery.status)}
+          </span>
+        </div>
+
+        <SurgeryDetailField
+          label="Data da Cirurgia"
+          value={
+            surgery.date
+              ? new Date(surgery.date).toLocaleDateString("pt-BR")
+              : null
+          }
+        />
+        <SurgeryDetailField label="Indicação" value={surgery.indication} />
+        <SurgeryDetailField label="Região do Corpo" value={surgery.bodyRegion} />
+        <SurgeryDetailField
+          label="Lateralidade"
+          value={surgeryEnumLabel(
+            SURGERY_LATERALITY_OPTIONS,
+            surgery.laterality,
+          )}
+        />
+        <SurgeryDetailField
+          label="Hospital / Clínica"
+          value={surgery.hospitalOrClinic}
+        />
+        <SurgeryDetailField label="Cirurgião" value={surgery.surgeonName} />
+        <SurgeryDetailField
+          label="Especialidade"
+          value={surgery.surgeonSpecialty}
+        />
+        <SurgeryDetailField
+          label="Local"
+          value={
+            [surgery.city, surgery.state].filter(Boolean).join(" - ") || null
+          }
+        />
+        <SurgeryDetailField
+          label="Tipo de Cirurgia"
+          value={surgeryEnumLabel(SURGERY_TYPE_OPTIONS, surgery.surgeryType)}
+        />
+        <SurgeryDetailField
+          label="Técnica"
+          value={surgeryEnumLabel(SURGERY_TECHNIQUE_OPTIONS, surgery.technique)}
+        />
+        <SurgeryDetailField
+          label="Anestesia"
+          value={surgeryEnumLabel(
+            SURGERY_ANESTHESIA_OPTIONS,
+            surgery.anesthesia,
+          )}
+        />
+
+        {isPerformed && (
+          <>
+            <SurgeryDetailField label="Desfecho" value={surgery.outcome} />
+            {surgery.hadComplications != null && (
+              <SurgeryDetailField
+                label="Complicações"
+                value={
+                  surgery.hadComplications
+                    ? surgery.complications || "Sim"
+                    : "Não"
+                }
+              />
+            )}
+            {surgery.hospitalAdmission != null && (
+              <SurgeryDetailField
+                label="Internação"
+                value={surgery.hospitalAdmission ? "Sim" : "Não"}
+              />
+            )}
+            <SurgeryDetailField
+              label="Data de Alta"
+              value={
+                surgery.dischargeDate
+                  ? new Date(surgery.dischargeDate).toLocaleDateString("pt-BR")
+                  : null
+              }
+            />
+            <SurgeryDetailField
+              label="Notas Pós-operatórias"
+              value={surgery.postoperativeNotes}
+            />
+          </>
+        )}
+
+        {surgery.hasPermanentImplant && (
+          <>
+            <SurgeryDetailField
+              label="Tipo do Implante"
+              value={surgery.implantType}
+            />
+            <SurgeryDetailField
+              label="Descrição do Implante"
+              value={surgery.implantDescription}
+            />
+            <SurgeryDetailField
+              label="Fabricante"
+              value={surgery.implantManufacturer}
+            />
+            <SurgeryDetailField label="Modelo" value={surgery.implantModel} />
+            <SurgeryDetailField
+              label="Número de Série"
+              value={surgery.implantSerial}
+            />
+            <SurgeryDetailField
+              label="Localização do Implante"
+              value={surgery.implantLocation}
+            />
+          </>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between pt-[24px]">
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={deleting}
+          className="flex items-center gap-1.5 text-red-600 text-sm font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0 disabled:opacity-50"
+        >
+          <X className="w-3.5 h-3.5" />
+          {deleting ? "Excluindo..." : "Excluir cirurgia"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="flex items-center gap-1.5 text-primary text-sm font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
+        >
+          <Edit className="w-3.5 h-3.5" />
+          Editar cirurgia
+        </button>
+      </div>
+
+      <div className="pt-4 border-t border-slate-100">
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full py-3 bg-slate-100 rounded-full font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer border-none"
+        >
+          Fechar
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // --- Allergies Section ---
 
 interface Allergy {
@@ -2810,6 +3690,7 @@ export default function PatientDetail() {
     | "doencas"
     | "alergias"
     | "vacinas"
+    | "cirurgias"
     | "dependentes"
   >("consultas");
   const [showConsultaModal, setShowConsultaModal] = useState(false);
@@ -2951,6 +3832,16 @@ export default function PatientDetail() {
             </button>
             <button
               className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
+                activeTab === "cirurgias"
+                  ? "bg-primary/5 text-primary"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+              onClick={() => setActiveTab("cirurgias")}
+            >
+              Cirurgias
+            </button>
+            <button
+              className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
                 activeTab === "dependentes"
                   ? "bg-primary/5 text-primary"
                   : "text-gray-500 hover:text-gray-800"
@@ -3036,6 +3927,12 @@ export default function PatientDetail() {
 
           <div style={{ display: activeTab === "vacinas" ? "block" : "none" }}>
             <VaccinesSection patientId={patient.id} />
+          </div>
+
+          <div
+            style={{ display: activeTab === "cirurgias" ? "block" : "none" }}
+          >
+            <SurgeriesSection patientId={patient.id} />
           </div>
 
           <div
