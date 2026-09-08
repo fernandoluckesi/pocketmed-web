@@ -11,6 +11,7 @@ import { PasswordStrengthIndicator } from "../../components/PasswordStrengthIndi
 import { useDialog } from "../../components/ui/Dialog";
 import { Link } from "react-router-dom";
 import api from "../../config/api";
+import { isValidCpf, maskCpf, normalizeCpf } from "../../utils/cpf";
 
 const profileSchema = Yup.object({
   name: Yup.string()
@@ -22,7 +23,9 @@ const profileSchema = Yup.object({
   birthDate: Yup.string().required("Data de nascimento é obrigatória"),
   specialty: Yup.string().required("Especialidade é obrigatória"),
   crm: Yup.string().required("CRM é obrigatório"),
-  cpf: Yup.string().required("CPF é obrigatório"),
+  cpf: Yup.string()
+    .required("CPF é obrigatório")
+    .test("cpf-valid", "CPF inválido", (val) => isValidCpf(val)),
 });
 
 const passwordSchema = Yup.object({
@@ -150,6 +153,7 @@ export default function Account() {
         if (values.specialty) formData.append("specialty", values.specialty);
         if (values.crm) formData.append("crm", values.crm);
         if (values.rqe) formData.append("rqe", values.rqe);
+        if (values.cpf) formData.append("cpf", normalizeCpf(values.cpf));
         if (selectedFile) formData.append("profileImage", selectedFile);
 
         const response = await api.patch("/auth/profile", formData, {
@@ -362,17 +366,7 @@ export default function Account() {
                     name="cpf"
                     value={profileFormik.values.cpf}
                     onChange={(e) => {
-                      const digits = e.target.value
-                        .replace(/\D/g, "")
-                        .slice(0, 11);
-                      let masked = digits;
-                      if (digits.length > 3)
-                        masked = digits.slice(0, 3) + "." + digits.slice(3);
-                      if (digits.length > 6)
-                        masked = masked.slice(0, 7) + "." + digits.slice(6);
-                      if (digits.length > 9)
-                        masked = masked.slice(0, 11) + "-" + digits.slice(9);
-                      profileFormik.setFieldValue("cpf", masked);
+                      profileFormik.setFieldValue("cpf", maskCpf(e.target.value));
                     }}
                     className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
                     placeholder="000.000.000-00"

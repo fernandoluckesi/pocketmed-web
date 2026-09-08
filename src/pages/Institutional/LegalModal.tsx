@@ -105,6 +105,43 @@ export function PrivacyPolicyContent() {
         <li>Cumprir obrigações legais e regulatórias.</li>
       </ul>
 
+      <h3 className="text-lg font-bold text-slate-900">
+        3.1. Tratamento do CPF
+      </h3>
+      <p>
+        O Hispora coleta o CPF de pacientes e de médicos. O CPF é utilizado para
+        a identificação segura do usuário dentro da plataforma e poderá, no
+        futuro, viabilizar integrações e a interoperabilidade com laboratórios,
+        hospitais, clínicas e outros serviços e sistemas de saúde, quando
+        aplicável e cabível.
+      </p>
+      <ul className="list-disc pl-6 space-y-1">
+        <li>
+          O CPF é tratado com as mesmas medidas de segurança aplicadas aos
+          demais dados pessoais (ver seção "Armazenamento e Segurança");
+        </li>
+        <li>
+          O CPF não é utilizado como identificador público do usuário nem como
+          credencial de acesso à conta;
+        </li>
+        <li>
+          Eventual compartilhamento do CPF com terceiros ocorrerá apenas quando
+          houver finalidade legítima e base legal adequada, observando os
+          princípios da LGPD;
+        </li>
+        <li>
+          O fornecimento do CPF pelo paciente é opcional no momento do cadastro
+          e pode ser preenchido ou atualizado posteriormente no perfil.
+        </li>
+      </ul>
+      <p>
+        Você pode, a qualquer momento, exercer os direitos previstos na LGPD em
+        relação ao tratamento do seu CPF e dos seus demais dados pessoais
+        (conforme a seção "Direitos do Titular"), inclusive solicitar acesso,
+        correção ou esclarecimentos, entrando em contato pelo canal indicado na
+        seção "Contato".
+      </p>
+
       <h3 className="text-lg font-bold text-slate-900">4. Base Legal (LGPD)</h3>
       <p>
         O tratamento dos dados pessoais e de saúde é realizado com base no

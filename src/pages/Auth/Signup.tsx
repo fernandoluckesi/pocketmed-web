@@ -19,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useAuth } from "../../contexts/AuthContext";
+import { isValidCpf } from "../../utils/cpf";
 import { ApiError } from "../../services/api";
 import { fetchCep } from "../../services/cep";
 import { Snackbar } from "../../components/Snackbar";
@@ -127,10 +128,7 @@ const doctorSchema = Yup.object({
   crm: Yup.string().required("Número do CRM é obrigatório"),
   cpf: Yup.string()
     .required("CPF é obrigatório")
-    .test("cpf-length", "CPF deve ter 11 dígitos", (val) => {
-      if (!val) return false;
-      return val.replace(/\D/g, "").length === 11;
-    }),
+    .test("cpf-valid", "CPF inválido", (val) => isValidCpf(val)),
   phone: Yup.string()
     .required("Celular é obrigatório")
     .test(
@@ -208,10 +206,7 @@ const clinicSchema = Yup.object({
   crm: Yup.string().required("CRM é obrigatório"),
   cpf: Yup.string()
     .required("CPF é obrigatório")
-    .test("cpf-length", "CPF deve ter 11 dígitos", (val) => {
-      if (!val) return false;
-      return val.replace(/\D/g, "").length === 11;
-    }),
+    .test("cpf-valid", "CPF inválido", (val) => isValidCpf(val)),
   phone: Yup.string()
     .required("Celular é obrigatório")
     .test(

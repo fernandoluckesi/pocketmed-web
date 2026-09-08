@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import { isValidCpf, maskCpf, normalizeCpf } from "../../utils/cpf";
 import {
   Eye,
   EyeOff,
@@ -28,7 +29,9 @@ const registerSchema = Yup.object({
   birthDate: Yup.string().required("Data de nascimento é obrigatória"),
   specialty: Yup.string().required("Especialidade é obrigatória"),
   crm: Yup.string().required("CRM é obrigatório"),
-  cpf: Yup.string().required("CPF é obrigatório"),
+  cpf: Yup.string()
+    .required("CPF é obrigatório")
+    .test("cpf-valid", "CPF inválido", (val) => isValidCpf(val)),
 });
 
 export default function Register() {
@@ -66,6 +69,8 @@ export default function Register() {
       setError("");
       try {
         const { confirmPassword: _unused, ...rest } = values;
+        // Store CPF as 11 digits (no mask).
+        rest.cpf = normalizeCpf(rest.cpf);
         const formData = new FormData();
         Object.entries(rest).forEach(([key, value]) => {
           formData.append(key, value);
@@ -362,9 +367,13 @@ export default function Register() {
                 <input
                   type="text"
                   name="cpf"
-                  onChange={formik.handleChange}
+                  onChange={(e) =>
+                    formik.setFieldValue("cpf", maskCpf(e.target.value))
+                  }
                   onBlur={formik.handleBlur}
                   value={formik.values.cpf}
+                  inputMode="numeric"
+                  maxLength={14}
                   className={`w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none ${formik.touched.cpf && formik.errors.cpf ? "ring-2 ring-red-300" : ""}`}
                   placeholder="000.000.000-00"
                 />
