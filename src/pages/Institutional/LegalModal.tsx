@@ -61,8 +61,8 @@ export function PrivacyPolicyContent() {
 
       <h3 className="text-lg font-bold text-slate-900 mt-4">1. Introdução</h3>
       <p>
-        A Hispora Clinical Systems ("Hispora", "nós") valoriza a privacidade
-        dos seus usuários. Esta Política de Privacidade descreve como coletamos,
+        A Hispora Clinical Systems ("Hispora", "nós") valoriza a privacidade dos
+        seus usuários. Esta Política de Privacidade descreve como coletamos,
         usamos, armazenamos e protegemos seus dados pessoais quando você utiliza
         nosso aplicativo mobile e plataforma web.
       </p>
@@ -210,8 +210,7 @@ export function PrivacyPolicyContent() {
       <h3 className="text-lg font-bold text-slate-900">10. Contato</h3>
       <p>
         Para exercer seus direitos ou esclarecer dúvidas sobre esta política,
-        entre em contato pelo email:{" "}
-        <strong>privacidade@hispora.com.br</strong>
+        entre em contato pelo email: <strong>hispora.suporte@yahoo.com</strong>
       </p>
     </>
   );
@@ -272,16 +271,16 @@ export function TermsOfServiceContent() {
       </h3>
       <p>
         Profissionais de saúde que utilizam a plataforma declaram possuir
-        registro profissional válido (CRM, CRO ou equivalente). O Hispora não
-        se responsabiliza por diagnósticos, prescrições ou orientações médicas
+        registro profissional válido (CRM, CRO ou equivalente). O Hispora não se
+        responsabiliza por diagnósticos, prescrições ou orientações médicas
         registradas pelos profissionais.
       </p>
 
       <h3 className="text-lg font-bold text-slate-900">6. Dados de Saúde</h3>
       <p>
         Dados de saúde registrados no Hispora são de responsabilidade do
-        profissional que os registrou e do paciente titular. O Hispora atua
-        como operador dos dados conforme a LGPD, garantindo segurança e
+        profissional que os registrou e do paciente titular. O Hispora atua como
+        operador dos dados conforme a LGPD, garantindo segurança e
         disponibilidade.
       </p>
 
@@ -347,9 +346,9 @@ export function SecurityStandardsContent() {
 
       <h3 className="text-lg font-bold text-slate-900 mt-4">1. Visão Geral</h3>
       <p>
-        O Hispora implementa um conjunto robusto de controles de segurança
-        para proteger dados pessoais e de saúde dos nossos usuários. Este
-        documento descreve os padrões e práticas adotados.
+        O Hispora implementa um conjunto robusto de controles de segurança para
+        proteger dados pessoais e de saúde dos nossos usuários. Este documento
+        descreve os padrões e práticas adotados.
       </p>
 
       <h3 className="text-lg font-bold text-slate-900">2. Criptografia</h3>
@@ -480,7 +479,7 @@ export function SecurityStandardsContent() {
       <p>
         Caso identifique uma vulnerabilidade de segurança, entre em contato pelo
         email:
-        <strong> seguranca@hispora.com.br</strong>. Nós nos comprometemos a
+        <strong> hispora.suporte@yahoo.com</strong>. Nós nos comprometemos a
         avaliar e responder em até 72 horas.
       </p>
     </>

@@ -61,41 +61,37 @@ export default function SupportPage() {
           perguntas frequentes ou entre em contato conosco.
         </p>
 
-        {/* Contact channels */}
+        {/* Contact channels (informative only) */}
         <section className="grid gap-4 sm:grid-cols-2 mb-10 sm:mb-12">
-          <a
-            href="mailto:suporte@hispora.com.br"
-            className="flex items-start gap-3 rounded-2xl border border-slate-100 shadow-sm p-5 hover:border-primary/40 transition-colors"
-          >
+          <div className="flex items-start gap-3 rounded-2xl border border-slate-100 shadow-sm p-5">
             <div className="rounded-xl bg-primary/10 p-2.5">
               <Mail className="text-primary" size={20} />
             </div>
             <div>
               <p className="font-bold text-slate-900">Suporte</p>
-              <p className="text-sm text-slate-500">suporte@hispora.com.br</p>
+              <p className="text-sm text-slate-500">
+                hispora.suporte@yahoo.com
+              </p>
               <p className="text-xs text-slate-400 mt-1">
                 Dúvidas, problemas e ajuda com o app
               </p>
             </div>
-          </a>
+          </div>
 
-          <a
-            href="mailto:privacidade@hispora.com.br"
-            className="flex items-start gap-3 rounded-2xl border border-slate-100 shadow-sm p-5 hover:border-primary/40 transition-colors"
-          >
+          <div className="flex items-start gap-3 rounded-2xl border border-slate-100 shadow-sm p-5">
             <div className="rounded-xl bg-primary/10 p-2.5">
               <ShieldCheck className="text-primary" size={20} />
             </div>
             <div>
               <p className="font-bold text-slate-900">Privacidade</p>
               <p className="text-sm text-slate-500">
-                privacidade@hispora.com.br
+                hispora.suporte@yahoo.com
               </p>
               <p className="text-xs text-slate-400 mt-1">
                 Direitos do titular e dados pessoais (LGPD)
               </p>
             </div>
-          </a>
+          </div>
         </section>
 
         {/* Delete account highlight (required by the App Store) */}
