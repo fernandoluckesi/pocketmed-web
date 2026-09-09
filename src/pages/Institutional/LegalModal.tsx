@@ -61,8 +61,8 @@ export function PrivacyPolicyContent() {
 
       <h3 className="text-lg font-bold text-slate-900 mt-4">1. Introdução</h3>
       <p>
-        A Hispora Clínical Systems ("Hispora", "nos") valoriza a privacidade
-        dos seus usuarios. Esta Política de Privacidade descreve como coletamos,
+        A Hispora Clinical Systems ("Hispora", "nós") valoriza a privacidade
+        dos seus usuários. Esta Política de Privacidade descreve como coletamos,
         usamos, armazenamos e protegemos seus dados pessoais quando você utiliza
         nosso aplicativo mobile e plataforma web.
       </p>
@@ -74,7 +74,7 @@ export function PrivacyPolicyContent() {
       <ul className="list-disc pl-6 space-y-1">
         <li>
           <strong>Dados de cadastro:</strong> nome completo, email, telefone,
-          CPF, data de nascimento, genero, CRM (para médicos).
+          CPF, data de nascimento, gênero, CRM (para médicos).
         </li>
         <li>
           <strong>Dados de saúde:</strong> histórico de consultas, diagnósticos,
@@ -147,15 +147,15 @@ export function PrivacyPolicyContent() {
         O tratamento dos dados pessoais e de saúde é realizado com base no
         consentimento do titular (Art. 7, I da LGPD), na execução de contrato
         (Art. 7, V), na tutela da saúde (Art. 7, VIII) e no cumprimento de
-        obrigacao legal (Art. 7, II), conforme aplicavel.
+        obrigação legal (Art. 7, II), conforme aplicável.
       </p>
 
       <h3 className="text-lg font-bold text-slate-900">
         5. Compartilhamento de Dados
       </h3>
       <p>
-        Seus dados de saúde só sao compartilhados com profissionais de saúde que
-        você explícitamente autorizar. Não vendemos, alugamos ou compartilhamos
+        Seus dados de saúde só são compartilhados com profissionais de saúde que
+        você explicitamente autorizar. Não vendemos, alugamos ou compartilhamos
         dados pessoais com terceiros para fins de marketing.
       </p>
       <p>Podemos compartilhar dados com:</p>
@@ -172,17 +172,17 @@ export function PrivacyPolicyContent() {
         6. Armazenamento e Segurança
       </h3>
       <p>
-        Os dados sao armazenados em servidores seguros com criptografia em
+        Os dados são armazenados em servidores seguros com criptografia em
         trânsito (TLS) e em repouso. Implementamos controle de acesso, auditoria
         de operações, detecção de anomalias e políticas de retenção conforme a
-        legislacao vigente.
+        legislação vigente.
       </p>
 
       <h3 className="text-lg font-bold text-slate-900">7. Retenção de Dados</h3>
       <p>
-        Dados de prontuário médico sao mantidos pelo prazo mínimo de 20 anos
-        após o ultimo registro, conforme Resolucao CFM 1.821/2007. Dados de
-        conta podem ser excluidos mediante solicitação do titular, respeitando
+        Dados de prontuário médico são mantidos pelo prazo mínimo de 20 anos
+        após o último registro, conforme Resolução CFM 1.821/2007. Dados de
+        conta podem ser excluídos mediante solicitação do titular, respeitando
         obrigações legais de retenção.
       </p>
 
@@ -191,7 +191,7 @@ export function PrivacyPolicyContent() {
       </h3>
       <p>Conforme a LGPD, você tem direito a:</p>
       <ul className="list-disc pl-6 space-y-1">
-        <li>Confirmar a existencia de tratamento dos seus dados;</li>
+        <li>Confirmar a existência de tratamento dos seus dados;</li>
         <li>Acessar seus dados pessoais;</li>
         <li>Corrigir dados incompletos ou desatualizados;</li>
         <li>Solicitar a exclusão de dados (respeitando obrigações legais);</li>
@@ -202,16 +202,16 @@ export function PrivacyPolicyContent() {
       <h3 className="text-lg font-bold text-slate-900">9. Exclusão de Conta</h3>
       <p>
         Você pode solicitar a exclusão da sua conta a qualquer momento através
-        do aplicativo ou plataforma web. A exclusão e confirmada mediante
-        verificação por código enviado ao email cadastrado. Dados clinicos
+        do aplicativo ou plataforma web. A exclusão é confirmada mediante
+        verificação por código enviado ao email cadastrado. Dados clínicos
         obrigatórios por lei serão retidos pelo prazo legal.
       </p>
 
       <h3 className="text-lg font-bold text-slate-900">10. Contato</h3>
       <p>
-        Para exercer seus direitos ou esclarecer duvidas sobre esta politica,
+        Para exercer seus direitos ou esclarecer dúvidas sobre esta política,
         entre em contato pelo email:{" "}
-        <strong>privacidade@pocketmed.com.br</strong>
+        <strong>privacidade@hispora.com.br</strong>
       </p>
     </>
   );
@@ -253,8 +253,8 @@ export function TermsOfServiceContent() {
         conta.
       </p>
       <p>
-        Senhas devem conter no mínimo 8 caracteres, incluindo letras maiusculas,
-        minusculas, numeros e caracteres especiais.
+        Senhas devem conter no mínimo 8 caracteres, incluindo letras maiúsculas,
+        minúsculas, números e caracteres especiais.
       </p>
 
       <h3 className="text-lg font-bold text-slate-900">4. Uso Adequado</h3>
@@ -263,7 +263,7 @@ export function TermsOfServiceContent() {
         <li>Fornecer informações verdadeiras e atualizadas;</li>
         <li>Não compartilhar credenciais de acesso;</li>
         <li>Não utilizar o serviço para fins ilegais;</li>
-        <li>Não tentar acessar dados de outros usuarios sem autorização;</li>
+        <li>Não tentar acessar dados de outros usuários sem autorização;</li>
         <li>Não interferir no funcionamento da plataforma.</li>
       </ul>
 
@@ -272,14 +272,14 @@ export function TermsOfServiceContent() {
       </h3>
       <p>
         Profissionais de saúde que utilizam a plataforma declaram possuir
-        registro profissional valido (CRM, CRO ou equivalente). O Hispora não
-        se responsabiliza por diagnósticos, prescrições ou orientações medicas
+        registro profissional válido (CRM, CRO ou equivalente). O Hispora não
+        se responsabiliza por diagnósticos, prescrições ou orientações médicas
         registradas pelos profissionais.
       </p>
 
       <h3 className="text-lg font-bold text-slate-900">6. Dados de Saúde</h3>
       <p>
-        Dados de saúde registrados no Hispora sao de responsabilidade do
+        Dados de saúde registrados no Hispora são de responsabilidade do
         profissional que os registrou e do paciente titular. O Hispora atua
         como operador dos dados conforme a LGPD, garantindo segurança e
         disponibilidade.
@@ -296,18 +296,18 @@ export function TermsOfServiceContent() {
 
       <h3 className="text-lg font-bold text-slate-900">8. Disponibilidade</h3>
       <p>
-        Nos esforçamos para manter o serviço disponível 24 horas por dia, 7 dias
-        por semana. No entanto, não garantimos disponibilidade ininterrupta e
-        podemos realizar manutenções programadas.
+        Nós nos esforçamos para manter o serviço disponível 24 horas por dia, 7
+        dias por semana. No entanto, não garantimos disponibilidade ininterrupta
+        e podemos realizar manutenções programadas.
       </p>
 
       <h3 className="text-lg font-bold text-slate-900">
         9. Limitação de Responsabilidade
       </h3>
       <p>
-        O Hispora não substitui consultas medicas presenciais. A plataforma é
-        uma ferramenta de organizacao e gestão de informações de saúde. Decisoes
-        clínicas sao de responsabilidade exclusiva dos profissionais de saúde.
+        O Hispora não substitui consultas médicas presenciais. A plataforma é
+        uma ferramenta de organização e gestão de informações de saúde. Decisões
+        clínicas são de responsabilidade exclusiva dos profissionais de saúde.
       </p>
 
       <h3 className="text-lg font-bold text-slate-900">
@@ -324,14 +324,14 @@ export function TermsOfServiceContent() {
       </h3>
       <p>
         Podemos atualizar estes termos periodicamente. Alterações significativas
-        serão comunicadas por email ou notificacao no aplicativo. O uso
-        continuado após as alterações constitui aceitacao dos novos termos.
+        serão comunicadas por email ou notificação no aplicativo. O uso
+        continuado após as alterações constitui aceitação dos novos termos.
       </p>
 
       <h3 className="text-lg font-bold text-slate-900">12. Foro</h3>
       <p>
-        Este contrato é regido pelas leis da Republica Federativa do Brasil.
-        Fica eleito o foro da comarca de Sao Paulo/SP para dirimir quaisquer
+        Este contrato é regido pelas leis da República Federativa do Brasil.
+        Fica eleito o foro da comarca de São Paulo/SP para dirimir quaisquer
         controvérsias.
       </p>
     </>
@@ -348,18 +348,18 @@ export function SecurityStandardsContent() {
       <h3 className="text-lg font-bold text-slate-900 mt-4">1. Visão Geral</h3>
       <p>
         O Hispora implementa um conjunto robusto de controles de segurança
-        para proteger dados pessoais e de saúde dos nossos usuarios. Este
-        documento descreve os padrões e praticas adotados.
+        para proteger dados pessoais e de saúde dos nossos usuários. Este
+        documento descreve os padrões e práticas adotados.
       </p>
 
       <h3 className="text-lg font-bold text-slate-900">2. Criptografia</h3>
       <ul className="list-disc pl-6 space-y-1">
         <li>
-          <strong>Em trânsito:</strong> todas as comunicacoes utilizam TLS 1.2+
+          <strong>Em trânsito:</strong> todas as comunicações utilizam TLS 1.2+
           (HTTPS);
         </li>
         <li>
-          <strong>Em repouso:</strong> dados sensiveis armazenados com
+          <strong>Em repouso:</strong> dados sensíveis armazenados com
           criptografia no banco de dados;
         </li>
         <li>
@@ -373,18 +373,18 @@ export function SecurityStandardsContent() {
       </h3>
       <ul className="list-disc pl-6 space-y-1">
         <li>
-          Autenticação baseada em JWT (JSON Web Tokens) com expiracao de 7 dias;
+          Autenticação baseada em JWT (JSON Web Tokens) com expiração de 7 dias;
         </li>
         <li>
-          Política de senha forte: mínimo 8 caracteres com maiusculas,
-          minusculas, numeros e simbolos;
+          Política de senha forte: mínimo 8 caracteres com maiúsculas,
+          minúsculas, números e símbolos;
         </li>
-        <li>Verificação de email obrigatória por código de 6 digitos;</li>
+        <li>Verificação de email obrigatória por código de 6 dígitos;</li>
         <li>
-          Verificação por código para operações criticas (exclusão de conta);
+          Verificação por código para operações críticas (exclusão de conta);
         </li>
         <li>
-          Controle de acesso baseado em papeis (RBAC): médico, admin,
+          Controle de acesso baseado em papéis (RBAC): médico, admin,
           secretário(a), paciente.
         </li>
       </ul>
@@ -393,37 +393,37 @@ export function SecurityStandardsContent() {
         4. Sistema de Auditoria
       </h3>
       <p>
-        Todas as operações sobre dados sensiveis sao registradas em um sistema
+        Todas as operações sobre dados sensíveis são registradas em um sistema
         de auditoria centralizado com:
       </p>
       <ul className="list-disc pl-6 space-y-1">
-        <li>Registro de quem realizou a operacao (ator);</li>
-        <li>Qual recurso foi afetado e qual paciente esta relacionado;</li>
-        <li>Timestamp com precisao de microsegundos;</li>
-        <li>Endereco IP e User-Agent da requisicao;</li>
+        <li>Registro de quem realizou a operação (ator);</li>
+        <li>Qual recurso foi afetado e qual paciente está relacionado;</li>
+        <li>Timestamp com precisão de microssegundos;</li>
+        <li>Endereço IP e User-Agent da requisição;</li>
         <li>Campos alterados (antes/depois) para operações de UPDATE;</li>
-        <li>Cadeia de hash SHA-256 para detecção de adulteracao;</li>
+        <li>Cadeia de hash SHA-256 para detecção de adulteração;</li>
         <li>
-          Registros em modo append-only (nao podem ser alterados ou excluidos).
+          Registros em modo append-only (não podem ser alterados ou excluídos).
         </li>
       </ul>
 
       <h3 className="text-lg font-bold text-slate-900">
-        5. Deteccao de Anomalias
+        5. Detecção de Anomalias
       </h3>
       <ul className="list-disc pl-6 space-y-1">
         <li>
-          Monitoramento de tentativas de brute force (login) por IP e usuario;
+          Monitoramento de tentativas de brute force (login) por IP e usuário;
         </li>
-        <li>Deteccao de padrões de acesso anomalos a prontuários;</li>
+        <li>Detecção de padrões de acesso anômalos a prontuários;</li>
         <li>
-          Alertas automáticos para operações em massa (downloads, exportacoes);
+          Alertas automáticos para operações em massa (downloads, exportações);
         </li>
-        <li>Thresholds configuráveis para diferentes tipos de ameaca.</li>
+        <li>Limites configuráveis para diferentes tipos de ameaça.</li>
       </ul>
 
       <h3 className="text-lg font-bold text-slate-900">
-        6. Controle de Acesso a Dados Clinicos
+        6. Controle de Acesso a Dados Clínicos
       </h3>
       <ul className="list-disc pl-6 space-y-1">
         <li>
@@ -432,27 +432,27 @@ export function SecurityStandardsContent() {
         </li>
         <li>Pacientes podem revogar acesso a qualquer momento;</li>
         <li>
-          Tentativas de acesso não autorizado sao registradas e auditadas;
+          Tentativas de acesso não autorizado são registradas e auditadas;
         </li>
-        <li>Secretários(as) não possuem acesso a dados clinicos.</li>
+        <li>Secretários(as) não possuem acesso a dados clínicos.</li>
       </ul>
 
       <h3 className="text-lg font-bold text-slate-900">7. Infraestrutura</h3>
       <ul className="list-disc pl-6 space-y-1">
-        <li>Hospedagem em provedores com certificacao SOC 2;</li>
-        <li>Banco de dados com backups automáticos diarios;</li>
-        <li>Isolamento de ambientes (desenvolvimento, staging, producao);</li>
-        <li>Monitoramento continuo de saúde da aplicacao.</li>
+        <li>Hospedagem em provedores com certificação SOC 2;</li>
+        <li>Banco de dados com backups automáticos diários;</li>
+        <li>Isolamento de ambientes (desenvolvimento, staging, produção);</li>
+        <li>Monitoramento contínuo de saúde da aplicação.</li>
       </ul>
 
       <h3 className="text-lg font-bold text-slate-900">
         8. Política de Retenção
       </h3>
       <ul className="list-disc pl-6 space-y-1">
-        <li>Dados de prontuário: mínimo 20 anos (Resolucao CFM 1.821/2007);</li>
-        <li>Logs de auditoria: 7 anos por padrao (configuravel);</li>
+        <li>Dados de prontuário: mínimo 20 anos (Resolução CFM 1.821/2007);</li>
+        <li>Logs de auditoria: 7 anos por padrão (configurável);</li>
         <li>
-          Dados de conta excluida: removidos imediatamente, exceto obrigações
+          Dados de conta excluída: removidos imediatamente, exceto obrigações
           legais.
         </li>
       </ul>
@@ -460,18 +460,18 @@ export function SecurityStandardsContent() {
       <h3 className="text-lg font-bold text-slate-900">9. Conformidade</h3>
       <ul className="list-disc pl-6 space-y-1">
         <li>
-          <strong>LGPD</strong> (Lei Geral de Proteção de Dados) — Lei
+          <strong>LGPD</strong> (Lei Geral de Proteção de Dados), Lei
           13.709/2018;
         </li>
         <li>
-          <strong>CFM 1.821/2007</strong> — Normas tecnicas para prontuário
+          <strong>CFM 1.821/2007</strong>, normas técnicas para prontuário
           eletrônico;
         </li>
         <li>
-          <strong>CFM 2.217/2018</strong> — Código de Ética Médica (sigilo
+          <strong>CFM 2.217/2018</strong>, Código de Ética Médica (sigilo
           profissional);
         </li>
-        <li>Principios de minimizacao de dados e privacy by design.</li>
+        <li>Princípios de minimização de dados e privacy by design.</li>
       </ul>
 
       <h3 className="text-lg font-bold text-slate-900">
@@ -480,7 +480,7 @@ export function SecurityStandardsContent() {
       <p>
         Caso identifique uma vulnerabilidade de segurança, entre em contato pelo
         email:
-        <strong> segurança@pocketmed.com.br</strong>. Nos comprometemos a
+        <strong> seguranca@hispora.com.br</strong>. Nós nos comprometemos a
         avaliar e responder em até 72 horas.
       </p>
     </>

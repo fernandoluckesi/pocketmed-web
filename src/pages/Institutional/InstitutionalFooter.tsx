@@ -49,7 +49,7 @@ export function InstitutionalFooter() {
             </div>
 
             <p className="text-xs sm:text-sm text-slate-400">
-              &copy; {new Date().getFullYear()} Hispora Clínical Systems.
+              &copy; {new Date().getFullYear()} Hispora Clinical Systems.
             </p>
           </div>
         </div>
