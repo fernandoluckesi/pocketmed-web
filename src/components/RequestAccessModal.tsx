@@ -57,7 +57,7 @@ export function RequestAccessModal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm cursor-pointer"
             onClick={onClose}
           />
 
@@ -104,7 +104,7 @@ export function RequestAccessModal({
                   </div>
                   <button
                     onClick={onClose}
-                    className="text-gray-400 hover:text-gray-600 p-2 bg-gray-50 rounded-full transition-colors"
+                    className="text-gray-400 hover:text-gray-600 p-2 bg-gray-50 rounded-full transition-colors cursor-pointer"
                   >
                     <X size={18} />
                   </button>
@@ -165,14 +165,14 @@ export function RequestAccessModal({
                   <button
                     onClick={onClose}
                     disabled={loading}
-                    className="flex-1 bg-gray-100 py-3.5 rounded-xl font-bold text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-50"
+                    className="flex-1 bg-gray-100 py-3.5 rounded-xl font-bold text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-50 cursor-pointer"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleSubmit}
                     disabled={loading}
-                    className="flex-1 bg-primary py-3.5 rounded-xl font-bold text-white shadow-lg shadow-primary/20 hover:brightness-110 transition-all disabled:opacity-70 flex items-center justify-center gap-2"
+                    className="flex-1 bg-primary py-3.5 rounded-xl font-bold text-white shadow-lg shadow-primary/20 hover:brightness-110 transition-all disabled:opacity-70 flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {loading ? (
                       <>

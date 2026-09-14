@@ -1269,7 +1269,7 @@ export default function Signup() {
                 disabled={
                   verifyLoading || verificationCode.join("").length !== 6
                 }
-                className="w-full py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-full py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
               >
                 {verifyLoading ? "Verificando..." : "Confirmar código"}
               </button>

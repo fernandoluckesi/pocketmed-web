@@ -384,7 +384,7 @@ function AddExpenseModal({
             animate={{ opacity: 0.6 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm cursor-pointer"
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -399,7 +399,7 @@ function AddExpenseModal({
               </div>
               <button
                 onClick={onClose}
-                className="text-white/80 hover:text-white p-1.5 rounded-full"
+                className="text-white/80 hover:text-white p-1.5 rounded-full cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>

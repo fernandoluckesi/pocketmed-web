@@ -45,7 +45,7 @@ export function ToastContainer({ toasts, onRemove }: ToastProps) {
             </span>
             <button
               onClick={() => onRemove(toast.id)}
-              className="p-1 text-gray-400 hover:text-gray-600 rounded-lg transition-colors shrink-0"
+              className="p-1 text-gray-400 hover:text-gray-600 rounded-lg transition-colors shrink-0 cursor-pointer"
               aria-label="Fechar notificação"
             >
               <X className="w-4 h-4" />

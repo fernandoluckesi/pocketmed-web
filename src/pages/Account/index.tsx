@@ -251,7 +251,7 @@ export default function Account() {
               <div className="relative">
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-24 h-24 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden hover:border-primary hover:bg-primary/5 transition-all group"
+                  className="w-24 h-24 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden hover:border-primary hover:bg-primary/5 transition-all group cursor-pointer"
                 >
                   {profilePreview || user?.profileImage ? (
                     <img
@@ -631,7 +631,7 @@ export default function Account() {
                       }}
                       variant="secondary"
                       size="md"
-                      className="bg-slate-100 text-slate-600 hover:bg-slate-200 shadow-none"
+                      className="bg-slate-100 text-slate-600 hover:bg-slate-200 shadow-none cursor-pointer"
                     >
                       Cancelar
                     </Button>

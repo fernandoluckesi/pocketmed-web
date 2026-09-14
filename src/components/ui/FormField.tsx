@@ -332,7 +332,7 @@ export function FormActions({
         variant="secondary"
         size="md"
         fullWidth
-        className="shadow-none bg-slate-100 text-slate-700 hover:bg-slate-200"
+        className="shadow-none bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
       >
         {cancelLabel}
       </Button>

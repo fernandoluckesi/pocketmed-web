@@ -75,7 +75,7 @@ export function InstitutionalHeader({ currentPage }: InstitutionalHeaderProps) {
             <Link
               to="/"
               onClick={() => setMenuOpen(false)}
-              className="block px-4 py-3 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+              className="block px-4 py-3 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
             >
               Início
             </Link>
@@ -84,7 +84,7 @@ export function InstitutionalHeader({ currentPage }: InstitutionalHeaderProps) {
             <Link
               to="/institutional/mobile"
               onClick={() => setMenuOpen(false)}
-              className="block px-4 py-3 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+              className="block px-4 py-3 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
             >
               Para Pacientes
             </Link>
@@ -93,7 +93,7 @@ export function InstitutionalHeader({ currentPage }: InstitutionalHeaderProps) {
             <Link
               to="/institutional/platform"
               onClick={() => setMenuOpen(false)}
-              className="block px-4 py-3 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+              className="block px-4 py-3 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
             >
               Para Médicos
             </Link>
@@ -102,14 +102,14 @@ export function InstitutionalHeader({ currentPage }: InstitutionalHeaderProps) {
             <Link
               to="/login"
               onClick={() => setMenuOpen(false)}
-              className="flex-1 text-center px-4 py-3 rounded-xl text-sm font-bold text-slate-700 border border-slate-200"
+              className="flex-1 text-center px-4 py-3 rounded-xl text-sm font-bold text-slate-700 border border-slate-200 cursor-pointer"
             >
               Entrar
             </Link>
             <Link
               to="/signup"
               onClick={() => setMenuOpen(false)}
-              className="flex-1 text-center px-4 py-3 rounded-xl text-sm font-bold bg-primary text-white"
+              className="flex-1 text-center px-4 py-3 rounded-xl text-sm font-bold bg-primary text-white cursor-pointer"
             >
               Criar Conta
             </Link>

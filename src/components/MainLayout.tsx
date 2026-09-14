@@ -311,7 +311,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                 onClick={() => navigate("/verification")}
                 variant="primary"
                 size="sm"
-                className="shrink-0 bg-amber-600 hover:bg-amber-700 shadow-none"
+                className="shrink-0 bg-amber-600 hover:bg-amber-700 shadow-none cursor-pointer"
               >
                 Completar Verificação
               </Button>

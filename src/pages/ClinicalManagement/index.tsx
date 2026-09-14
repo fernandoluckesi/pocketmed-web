@@ -345,7 +345,7 @@ function MembersSection({
         <div className="flex items-center gap-1">
           <button
             onClick={() => onPageChange(page - 1)}
-            className="p-2 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-30"
+            className="p-2 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-30 cursor-pointer"
             disabled={page <= 1}
           >
             <ChevronLeft className="w-4 h-4" />
@@ -355,7 +355,7 @@ function MembersSection({
           </div>
           <button
             onClick={() => onPageChange(page + 1)}
-            className="p-2 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-30"
+            className="p-2 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-30 cursor-pointer"
             disabled={page >= totalPages}
           >
             <ChevronRight className="w-4 h-4" />
@@ -769,7 +769,7 @@ export default function ClinicalManagement() {
       {/* Add Member Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowAddModal(false)} />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-pointer" onClick={() => setShowAddModal(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full">
             <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
               <h2 className="text-lg font-extrabold text-slate-900">{editingMember ? "Editar Secretário(a)" : "Adicionar Secretário(a)"}</h2>
@@ -857,7 +857,7 @@ export default function ClinicalManagement() {
       {/* Remove Confirmation Dialog */}
       {removeTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setRemoveTarget(null)} />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-pointer" onClick={() => setRemoveTarget(null)} />
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center">
             <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-5">
               <AlertTriangle className="text-red-600" size={28} />

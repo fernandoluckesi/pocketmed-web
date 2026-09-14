@@ -677,7 +677,7 @@ export default function Schedule() {
                 onClick={() => setShowNewAppointment(true)}
                 variant="primary"
                 size="md"
-                icon={<Plus className="w-4 h-4" />}
+                icon={<Plus className="w-4 h-4 cursor-pointer" />}
               >
                 Novo Agendamento
               </Button>

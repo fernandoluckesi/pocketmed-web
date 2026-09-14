@@ -160,7 +160,7 @@ function APIPatientCard({
             onClick={() => onRequestAccess(patient)}
             variant="ghost"
             size="md"
-            iconRight={<ArrowRight className="w-5 h-5" />}
+            iconRight={<ArrowRight className="w-5 h-5 cursor-pointer" />}
             fullWidth
             className="py-4 rounded-2xl text-gray-700 bg-gray-50 hover:bg-primary hover:text-white"
           >
@@ -243,7 +243,7 @@ function APIPatientListRow({
             variant="ghost"
             size="md"
             iconRight={
-              <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+              <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform cursor-pointer" />
             }
             className="w-full md:w-auto bg-blue-50 text-primary hover:bg-primary hover:text-white rounded-xl"
           >
@@ -614,7 +614,7 @@ function AddPatientModal({
           </div>
           <button
             onClick={handleClose}
-            className="text-on-surface-variant hover:text-on-surface p-2 bg-surface-container-low rounded-full transition-colors"
+            className="text-on-surface-variant hover:text-on-surface p-2 bg-surface-container-low rounded-full transition-colors cursor-pointer"
           >
             <X size={20} />
           </button>
@@ -779,7 +779,7 @@ function AddPatientModal({
                 variant="secondary"
                 size="lg"
                 fullWidth
-                className="rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 shadow-none"
+                className="rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 shadow-none cursor-pointer"
               >
                 Cancelar
               </Button>
@@ -885,13 +885,13 @@ function SearchTabContent({
             <div className="flex gap-2 bg-white p-1 rounded-xl shadow-sm border border-gray-100">
               <button
                 onClick={() => setView("grid")}
-                className={`p-2 rounded-lg transition-all ${view === "grid" ? "bg-primary text-white shadow-md" : "text-gray-400 hover:text-primary"}`}
+                className={`cursor-pointer p-2 rounded-lg transition-all ${view === "grid" ? "bg-primary text-white shadow-md" : "text-gray-400 hover:text-primary"}`}
               >
                 <LayoutGrid className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setView("list")}
-                className={`p-2 rounded-lg transition-all ${view === "list" ? "bg-primary text-white shadow-md" : "text-gray-400 hover:text-primary"}`}
+                className={`cursor-pointer p-2 rounded-lg transition-all ${view === "list" ? "bg-primary text-white shadow-md" : "text-gray-400 hover:text-primary"}`}
               >
                 <List className="w-5 h-5" />
               </button>
@@ -1331,7 +1331,7 @@ export default function Patients() {
                 onClick={() => setIsModalOpen(true)}
                 variant="primary"
                 size="md"
-                icon={<Plus className="w-5 h-5" />}
+                icon={<Plus className="w-5 h-5 cursor-pointer" />}
               >
                 Adicionar Paciente
               </Button>
@@ -1350,7 +1350,7 @@ export default function Patients() {
                       refetchPatientsRef.current();
                     }
                   }}
-                  className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all ${
+                  className={`cursor-pointer px-6 py-2.5 text-sm font-semibold rounded-xl transition-all ${
                     tab === activeTab
                       ? "bg-primary/5 text-primary"
                       : "text-gray-500 hover:text-gray-800"

@@ -431,11 +431,11 @@ export default function Consultations() {
       {/* Consultation Detail Modal */}
       {selectedConsultation && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm cursor-pointer"
           onClick={() => setSelectedConsultation(null)}
         >
           <div
-            className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden"
+            className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden cursor-pointer"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6 border-b border-slate-100 flex justify-between items-start">

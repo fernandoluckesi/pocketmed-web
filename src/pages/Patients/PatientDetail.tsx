@@ -43,6 +43,13 @@ import {
   generatePrescriptionPdf,
 } from "../../utils/generate-pdf";
 import { api } from "../../services/api";
+import { Snackbar } from "../../components/Snackbar";
+import {
+  canEditRecord,
+  isRecordOwner,
+  isWithinEditWindow,
+  EDIT_EXPIRED_MESSAGE,
+} from "../../utils/edit-window";
 
 // --- Types ---
 
@@ -1754,7 +1761,7 @@ function ConsultaDetailView({
           variant="primary"
           size="md"
           fullWidth
-          className="rounded-full"
+          className="rounded-full cursor-pointer"
         >
           {resending
             ? "Reenviando..."
@@ -1889,6 +1896,8 @@ interface Disease {
   diagnosisDate: string | null;
   treatmentStartDate: string | null;
   treatmentEndDate: string | null;
+  doctorId: string | null;
+  createdAt: string;
 }
 
 const DISEASE_STATUS_OPTIONS = [
@@ -1959,7 +1968,7 @@ function DiseasesSection({
           onClick={() => setShowCreateModal(true)}
           variant="primary"
           size="sm"
-          icon={<Plus className="w-3.5 h-3.5" />}
+          icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
         >
           Adicionar Doença
         </Button>
@@ -2180,7 +2189,20 @@ function DiseaseDetailView({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { user } = useAuth();
   const [editing, setEditing] = useState(false);
+  const [showExpired, setShowExpired] = useState(false);
+
+  const isOwner = isRecordOwner(disease, user?.userId);
+  const canEdit = canEditRecord(disease, user?.userId);
+
+  function handleEditClick() {
+    if (isOwner && !isWithinEditWindow(disease)) {
+      setShowExpired(true);
+      return;
+    }
+    setEditing(true);
+  }
 
   if (editing) {
     return (
@@ -2261,16 +2283,22 @@ function DiseaseDetailView({
         )}
       </div>
 
-      <div className="flex justify-end pt-[24px]">
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          className="flex items-center gap-1.5 text-primary text-sm font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
-        >
-          <Edit className="w-3.5 h-3.5" />
-          Editar doença
-        </button>
-      </div>
+      {isOwner && (
+        <div className="flex justify-end pt-[24px]">
+          <button
+            type="button"
+            onClick={handleEditClick}
+            className={`flex items-center gap-1.5 text-sm font-semibold underline underline-offset-2 transition-opacity cursor-pointer border-none bg-transparent p-0 ${
+              canEdit
+                ? "text-primary hover:opacity-80"
+                : "text-slate-400 hover:opacity-80"
+            }`}
+          >
+            <Edit className="w-3.5 h-3.5" />
+            Editar doença
+          </button>
+        </div>
+      )}
 
       <div className="pt-4 border-t border-slate-100">
         <button
@@ -2281,6 +2309,12 @@ function DiseaseDetailView({
           Fechar
         </button>
       </div>
+
+      <Snackbar
+        message={EDIT_EXPIRED_MESSAGE}
+        visible={showExpired}
+        onClose={() => setShowExpired(false)}
+      />
     </div>
   );
 }
@@ -2317,6 +2351,8 @@ interface Surgery {
   implantModel: string | null;
   implantSerial: string | null;
   implantLocation: string | null;
+  doctorId: string | null;
+  createdAt: string;
 }
 
 const SURGERY_STATUS_OPTIONS = [
@@ -2431,7 +2467,7 @@ function SurgeriesSection({ patientId }: { patientId: string }) {
           onClick={() => setShowCreateModal(true)}
           variant="primary"
           size="sm"
-          icon={<Plus className="w-3.5 h-3.5" />}
+          icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
         >
           Adicionar Cirurgia
         </Button>
@@ -2596,9 +2632,7 @@ function SurgeryForm({
       try {
         const data = await api(`/patients/${patientId}/diseases`);
         const list = Array.isArray(data) ? (data as Disease[]) : [];
-        setDiagnosisOptions(
-          list.map((d) => ({ value: d.id, label: d.name })),
-        );
+        setDiagnosisOptions(list.map((d) => ({ value: d.id, label: d.name })));
       } catch {
         setDiagnosisOptions([]);
       }
@@ -2976,10 +3010,27 @@ function SurgeryDetailView({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { user } = useAuth();
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showExpired, setShowExpired] = useState(false);
+
+  const isOwner = isRecordOwner(surgery, user?.userId);
+  const canEdit = canEditRecord(surgery, user?.userId);
+
+  function handleEditClick() {
+    if (!canEdit) {
+      setShowExpired(true);
+      return;
+    }
+    setEditing(true);
+  }
 
   async function handleDelete() {
+    if (!canEdit) {
+      setShowExpired(true);
+      return;
+    }
     if (!window.confirm("Tem certeza que deseja excluir esta cirurgia?"))
       return;
     setDeleting(true);
@@ -3032,7 +3083,10 @@ function SurgeryDetailView({
           }
         />
         <SurgeryDetailField label="Indicação" value={surgery.indication} />
-        <SurgeryDetailField label="Região do Corpo" value={surgery.bodyRegion} />
+        <SurgeryDetailField
+          label="Região do Corpo"
+          value={surgery.bodyRegion}
+        />
         <SurgeryDetailField
           label="Lateralidade"
           value={surgeryEnumLabel(
@@ -3132,25 +3186,31 @@ function SurgeryDetailView({
         )}
       </div>
 
-      <div className="flex items-center justify-between pt-[24px]">
-        <button
-          type="button"
-          onClick={handleDelete}
-          disabled={deleting}
-          className="flex items-center gap-1.5 text-red-600 text-sm font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0 disabled:opacity-50"
-        >
-          <X className="w-3.5 h-3.5" />
-          {deleting ? "Excluindo..." : "Excluir cirurgia"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          className="flex items-center gap-1.5 text-primary text-sm font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
-        >
-          <Edit className="w-3.5 h-3.5" />
-          Editar cirurgia
-        </button>
-      </div>
+      {isOwner && (
+        <div className="flex items-center justify-between pt-[24px]">
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleting}
+            className={`flex items-center gap-1.5 text-sm font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0 disabled:opacity-50 ${
+              canEdit ? "text-red-600" : "text-slate-400"
+            }`}
+          >
+            <X className="w-3.5 h-3.5" />
+            {deleting ? "Excluindo..." : "Excluir cirurgia"}
+          </button>
+          <button
+            type="button"
+            onClick={handleEditClick}
+            className={`flex items-center gap-1.5 text-sm font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0 ${
+              canEdit ? "text-primary" : "text-slate-400"
+            }`}
+          >
+            <Edit className="w-3.5 h-3.5" />
+            Editar cirurgia
+          </button>
+        </div>
+      )}
 
       <div className="pt-4 border-t border-slate-100">
         <button
@@ -3161,6 +3221,12 @@ function SurgeryDetailView({
           Fechar
         </button>
       </div>
+
+      <Snackbar
+        message={EDIT_EXPIRED_MESSAGE}
+        visible={showExpired}
+        onClose={() => setShowExpired(false)}
+      />
     </div>
   );
 }
@@ -3173,6 +3239,8 @@ interface Allergy {
   severity: string;
   reaction: string | null;
   notes: string | null;
+  doctorId: string | null;
+  createdAt: string;
 }
 
 const SEVERITY_OPTIONS = [
@@ -3200,6 +3268,7 @@ function AllergiesSection({ patientId }: { patientId: string }) {
   const [allergies, setAllergies] = useState<Allergy[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [viewingAllergy, setViewingAllergy] = useState<Allergy | null>(null);
 
   async function loadAllergies() {
     try {
@@ -3229,7 +3298,7 @@ function AllergiesSection({ patientId }: { patientId: string }) {
           onClick={() => setShowCreateModal(true)}
           variant="primary"
           size="sm"
-          icon={<Plus className="w-3.5 h-3.5" />}
+          icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
         >
           Adicionar Alergia
         </Button>
@@ -3245,7 +3314,8 @@ function AllergiesSection({ patientId }: { patientId: string }) {
           {allergies.map((allergy) => (
             <div
               key={allergy.id}
-              className="bg-white rounded-2xl p-6 flex items-center gap-6 border border-slate-100 shadow-sm"
+              onClick={() => setViewingAllergy(allergy)}
+              className="group bg-white hover:bg-slate-50 rounded-2xl p-6 flex items-center gap-6 border border-slate-100 shadow-sm cursor-pointer transition-all"
             >
               <div className="flex-grow min-w-0">
                 <h4 className="font-bold text-lg text-slate-900">
@@ -3283,6 +3353,26 @@ function AllergiesSection({ patientId }: { patientId: string }) {
           }}
         />
       </Modal>
+
+      <Modal
+        isOpen={!!viewingAllergy}
+        onClose={() => setViewingAllergy(null)}
+        label="Alergia"
+        title="Detalhes da Alergia"
+        maxWidth="max-w-2xl"
+      >
+        {viewingAllergy && (
+          <AllergyDetailView
+            allergy={viewingAllergy}
+            patientId={patientId}
+            onClose={() => setViewingAllergy(null)}
+            onSaved={() => {
+              loadAllergies();
+              setViewingAllergy(null);
+            }}
+          />
+        )}
+      </Modal>
     </div>
   );
 }
@@ -3291,15 +3381,17 @@ function AllergyForm({
   patientId,
   onClose,
   onSaved,
+  initial,
 }: {
   patientId: string;
   onClose: () => void;
   onSaved: () => void;
+  initial?: Allergy;
 }) {
-  const [name, setName] = useState("");
-  const [severity, setSeverity] = useState("moderate");
-  const [reaction, setReaction] = useState("");
-  const [notes, setNotes] = useState("");
+  const [name, setName] = useState(initial?.name || "");
+  const [severity, setSeverity] = useState(initial?.severity || "moderate");
+  const [reaction, setReaction] = useState(initial?.reaction || "");
+  const [notes, setNotes] = useState(initial?.notes || "");
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -3307,15 +3399,23 @@ function AllergyForm({
     if (!name.trim()) return;
     setSaving(true);
     try {
-      await api(`/patients/${patientId}/allergies`, {
-        method: "POST",
-        body: {
-          name: name.trim(),
-          severity,
-          reaction: reaction.trim() || undefined,
-          notes: notes.trim() || undefined,
-        },
-      });
+      const body = {
+        name: name.trim(),
+        severity,
+        reaction: reaction.trim() || undefined,
+        notes: notes.trim() || undefined,
+      };
+      if (initial) {
+        await api(`/patients/${patientId}/allergies/${initial.id}`, {
+          method: "PUT",
+          body,
+        });
+      } else {
+        await api(`/patients/${patientId}/allergies`, {
+          method: "POST",
+          body,
+        });
+      }
       onSaved();
     } catch (err) {
       console.error(err);
@@ -3362,10 +3462,118 @@ function AllergyForm({
       />
       <FormActions
         onCancel={onClose}
-        submitLabel="Adicionar"
+        submitLabel={initial ? "Salvar Alterações" : "Adicionar"}
         loading={saving}
       />
     </form>
+  );
+}
+
+function AllergyDetailField({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | null | undefined;
+}) {
+  if (!value) return null;
+  return (
+    <div>
+      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+        {label}
+      </p>
+      <p className="text-sm text-slate-700 leading-relaxed">{value}</p>
+    </div>
+  );
+}
+
+function AllergyDetailView({
+  allergy,
+  patientId,
+  onClose,
+  onSaved,
+}: {
+  allergy: Allergy;
+  patientId: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const { user } = useAuth();
+  const [editing, setEditing] = useState(false);
+  const [showExpired, setShowExpired] = useState(false);
+
+  const isOwner = isRecordOwner(allergy, user?.userId);
+  const canEdit = canEditRecord(allergy, user?.userId);
+
+  function handleEditClick() {
+    if (!canEdit) {
+      setShowExpired(true);
+      return;
+    }
+    setEditing(true);
+  }
+
+  if (editing) {
+    return (
+      <AllergyForm
+        patientId={patientId}
+        onClose={() => setEditing(false)}
+        onSaved={onSaved}
+        initial={allergy}
+      />
+    );
+  }
+
+  return (
+    <div className="p-8 pt-0 space-y-6">
+      <div className="space-y-5">
+        <div>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+            Severidade
+          </p>
+          <span
+            className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${getSeverityStyle(
+              allergy.severity,
+            )}`}
+          >
+            {getSeverityLabel(allergy.severity)}
+          </span>
+        </div>
+        <AllergyDetailField label="Reação" value={allergy.reaction} />
+        <AllergyDetailField label="Observações" value={allergy.notes} />
+      </div>
+
+      {isOwner && (
+        <div className="flex justify-end pt-[24px]">
+          <button
+            type="button"
+            onClick={handleEditClick}
+            className={`flex items-center gap-1.5 text-sm font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0 ${
+              canEdit ? "text-primary" : "text-slate-400"
+            }`}
+          >
+            <Edit className="w-3.5 h-3.5" />
+            Editar alergia
+          </button>
+        </div>
+      )}
+
+      <div className="pt-4 border-t border-slate-100">
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full py-3 bg-slate-100 rounded-full font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer border-none"
+        >
+          Fechar
+        </button>
+      </div>
+
+      <Snackbar
+        message={EDIT_EXPIRED_MESSAGE}
+        visible={showExpired}
+        onClose={() => setShowExpired(false)}
+      />
+    </div>
   );
 }
 
@@ -3379,6 +3587,8 @@ interface Vaccine {
   nextDoseDate: string | null;
   laboratory: string | null;
   notes: string | null;
+  doctorId: string | null;
+  createdAt: string;
 }
 
 // --- Dependents Section ---
@@ -3493,6 +3703,7 @@ function VaccinesSection({ patientId }: { patientId: string }) {
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [viewingVaccine, setViewingVaccine] = useState<Vaccine | null>(null);
 
   async function loadVaccines() {
     try {
@@ -3522,7 +3733,7 @@ function VaccinesSection({ patientId }: { patientId: string }) {
           onClick={() => setShowCreateModal(true)}
           variant="primary"
           size="sm"
-          icon={<Plus className="w-3.5 h-3.5" />}
+          icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
         >
           Adicionar Vacina
         </Button>
@@ -3538,7 +3749,8 @@ function VaccinesSection({ patientId }: { patientId: string }) {
           {vaccines.map((vaccine) => (
             <div
               key={vaccine.id}
-              className="bg-white rounded-2xl p-6 flex items-center gap-6 border border-slate-100 shadow-sm"
+              onClick={() => setViewingVaccine(vaccine)}
+              className="group bg-white hover:bg-slate-50 rounded-2xl p-6 flex items-center gap-6 border border-slate-100 shadow-sm cursor-pointer transition-all"
             >
               <div className="flex-grow min-w-0">
                 <h4 className="font-bold text-lg text-slate-900">
@@ -3578,6 +3790,26 @@ function VaccinesSection({ patientId }: { patientId: string }) {
           }}
         />
       </Modal>
+
+      <Modal
+        isOpen={!!viewingVaccine}
+        onClose={() => setViewingVaccine(null)}
+        label="Vacina"
+        title="Detalhes da Vacina"
+        maxWidth="max-w-2xl"
+      >
+        {viewingVaccine && (
+          <VaccineDetailView
+            vaccine={viewingVaccine}
+            patientId={patientId}
+            onClose={() => setViewingVaccine(null)}
+            onSaved={() => {
+              loadVaccines();
+              setViewingVaccine(null);
+            }}
+          />
+        )}
+      </Modal>
     </div>
   );
 }
@@ -3586,17 +3818,23 @@ function VaccineForm({
   patientId,
   onClose,
   onSaved,
+  initial,
 }: {
   patientId: string;
   onClose: () => void;
   onSaved: () => void;
+  initial?: Vaccine;
 }) {
-  const [name, setName] = useState("");
-  const [dose, setDose] = useState("");
-  const [applicationDate, setApplicationDate] = useState("");
-  const [nextDoseDate, setNextDoseDate] = useState("");
-  const [laboratory, setLaboratory] = useState("");
-  const [notes, setNotes] = useState("");
+  const [name, setName] = useState(initial?.name || "");
+  const [dose, setDose] = useState(initial?.dose || "");
+  const [applicationDate, setApplicationDate] = useState(
+    initial?.applicationDate?.split("T")[0] || "",
+  );
+  const [nextDoseDate, setNextDoseDate] = useState(
+    initial?.nextDoseDate?.split("T")[0] || "",
+  );
+  const [laboratory, setLaboratory] = useState(initial?.laboratory || "");
+  const [notes, setNotes] = useState(initial?.notes || "");
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -3604,17 +3842,25 @@ function VaccineForm({
     if (!name.trim()) return;
     setSaving(true);
     try {
-      await api(`/patients/${patientId}/vaccines`, {
-        method: "POST",
-        body: {
-          name: name.trim(),
-          dose: dose.trim() || undefined,
-          applicationDate: applicationDate || undefined,
-          nextDoseDate: nextDoseDate || undefined,
-          laboratory: laboratory.trim() || undefined,
-          notes: notes.trim() || undefined,
-        },
-      });
+      const body = {
+        name: name.trim(),
+        dose: dose.trim() || undefined,
+        applicationDate: applicationDate || undefined,
+        nextDoseDate: nextDoseDate || undefined,
+        laboratory: laboratory.trim() || undefined,
+        notes: notes.trim() || undefined,
+      };
+      if (initial) {
+        await api(`/patients/${patientId}/vaccines/${initial.id}`, {
+          method: "PUT",
+          body,
+        });
+      } else {
+        await api(`/patients/${patientId}/vaccines`, {
+          method: "POST",
+          body,
+        });
+      }
       onSaved();
     } catch (err) {
       console.error(err);
@@ -3670,10 +3916,123 @@ function VaccineForm({
       />
       <FormActions
         onCancel={onClose}
-        submitLabel="Adicionar"
+        submitLabel={initial ? "Salvar Alterações" : "Adicionar"}
         loading={saving}
       />
     </form>
+  );
+}
+
+function VaccineDetailField({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | null | undefined;
+}) {
+  if (!value) return null;
+  return (
+    <div>
+      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+        {label}
+      </p>
+      <p className="text-sm text-slate-700 leading-relaxed">{value}</p>
+    </div>
+  );
+}
+
+function VaccineDetailView({
+  vaccine,
+  patientId,
+  onClose,
+  onSaved,
+}: {
+  vaccine: Vaccine;
+  patientId: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const { user } = useAuth();
+  const [editing, setEditing] = useState(false);
+  const [showExpired, setShowExpired] = useState(false);
+
+  const isOwner = isRecordOwner(vaccine, user?.userId);
+  const canEdit = canEditRecord(vaccine, user?.userId);
+
+  function handleEditClick() {
+    if (!canEdit) {
+      setShowExpired(true);
+      return;
+    }
+    setEditing(true);
+  }
+
+  if (editing) {
+    return (
+      <VaccineForm
+        patientId={patientId}
+        onClose={() => setEditing(false)}
+        onSaved={onSaved}
+        initial={vaccine}
+      />
+    );
+  }
+
+  return (
+    <div className="p-8 pt-0 space-y-6">
+      <div className="space-y-5">
+        <VaccineDetailField label="Dose" value={vaccine.dose} />
+        <VaccineDetailField
+          label="Data de Aplicação"
+          value={
+            vaccine.applicationDate
+              ? new Date(vaccine.applicationDate).toLocaleDateString("pt-BR")
+              : null
+          }
+        />
+        <VaccineDetailField
+          label="Próxima Dose"
+          value={
+            vaccine.nextDoseDate
+              ? new Date(vaccine.nextDoseDate).toLocaleDateString("pt-BR")
+              : null
+          }
+        />
+        <VaccineDetailField label="Laboratório" value={vaccine.laboratory} />
+        <VaccineDetailField label="Observações" value={vaccine.notes} />
+      </div>
+
+      {isOwner && (
+        <div className="flex justify-end pt-[24px]">
+          <button
+            type="button"
+            onClick={handleEditClick}
+            className={`flex items-center gap-1.5 text-sm font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0 ${
+              canEdit ? "text-primary" : "text-slate-400"
+            }`}
+          >
+            <Edit className="w-3.5 h-3.5" />
+            Editar vacina
+          </button>
+        </div>
+      )}
+
+      <div className="pt-4 border-t border-slate-100">
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full py-3 bg-slate-100 rounded-full font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer border-none"
+        >
+          Fechar
+        </button>
+      </div>
+
+      <Snackbar
+        message={EDIT_EXPIRED_MESSAGE}
+        visible={showExpired}
+        onClose={() => setShowExpired(false)}
+      />
+    </div>
   );
 }
 
@@ -3798,7 +4157,7 @@ export default function PatientDetail() {
               }`}
               onClick={() => setActiveTab("exames")}
             >
-              Exames & Receitas
+              Exames
             </button>
             <button
               className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
@@ -3865,7 +4224,7 @@ export default function PatientDetail() {
                   onClick={() => setShowConsultaModal(true)}
                   variant="primary"
                   size="sm"
-                  icon={<Plus className="w-3.5 h-3.5" />}
+                  icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
                 >
                   Nova Consulta
                 </Button>
@@ -3886,7 +4245,7 @@ export default function PatientDetail() {
                   onClick={() => setShowMedicamentoModal(true)}
                   variant="primary"
                   size="sm"
-                  icon={<Plus className="w-3.5 h-3.5" />}
+                  icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
                 >
                   Adicionar Medicamento
                 </Button>
@@ -3904,7 +4263,7 @@ export default function PatientDetail() {
                   onClick={() => setShowDocumentoModal(true)}
                   variant="primary"
                   size="sm"
-                  icon={<Plus className="w-3.5 h-3.5" />}
+                  icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
                 >
                   Solicitar Exame
                 </Button>

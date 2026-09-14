@@ -30,7 +30,7 @@ export function ConfirmModal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm cursor-pointer"
             onClick={!loading ? onClose : undefined}
           />
           <motion.div
@@ -55,7 +55,7 @@ export function ConfirmModal({
                 <button
                   onClick={onClose}
                   disabled={loading}
-                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all disabled:opacity-50"
+                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all disabled:opacity-50 cursor-pointer"
                 >
                   <X size={18} />
                 </button>
@@ -66,14 +66,14 @@ export function ConfirmModal({
               <button
                 onClick={onClose}
                 disabled={loading}
-                className="flex-1 py-3 bg-gray-100 rounded-xl font-semibold text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-50"
+                className="flex-1 py-3 bg-gray-100 rounded-xl font-semibold text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-50 cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 onClick={onConfirm}
                 disabled={loading}
-                className="flex-1 py-3 bg-red-600 rounded-xl font-semibold text-white hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-red-200"
+                className="flex-1 py-3 bg-red-600 rounded-xl font-semibold text-white hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-red-200 cursor-pointer"
               >
                 {loading ? (
                   <>

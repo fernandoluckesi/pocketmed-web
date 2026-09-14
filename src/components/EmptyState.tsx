@@ -27,7 +27,7 @@ export function EmptyState({
       {actionLabel && onAction && (
         <button
           onClick={onAction}
-          className="bg-primary text-white px-6 py-3 rounded-xl font-bold text-sm hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-primary/20"
+          className="bg-primary text-white px-6 py-3 rounded-xl font-bold text-sm hover:brightness-110 transition-all active:scale-95 shadow-lg shadow-primary/20 cursor-pointer"
         >
           {actionLabel}
         </button>

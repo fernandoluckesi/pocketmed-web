@@ -66,7 +66,7 @@ export function CustomSelect({
         type="button"
         id={id}
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-left text-sm outline-none transition-all focus:ring-2 focus:ring-primary/10 flex items-center justify-between ${
+        className={`cursor-pointer w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-left text-sm outline-none transition-all focus:ring-2 focus:ring-primary/10 flex items-center justify-between ${
           error
             ? "border-red-400 focus:border-red-400"
             : isOpen
