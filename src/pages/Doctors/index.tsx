@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { PlusCircle, Loader2, UserX, Send, X, Clock } from "lucide-react";
+import { PlusCircle, Loader2, UserX, Send, X, Clock, Eye } from "lucide-react";
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { MainLayout } from "../../components/MainLayout";
@@ -20,6 +20,8 @@ interface Doctor {
   phone: string;
   profileImage: string | null;
   createdAt: string;
+  /** Present in search results: true when the doctor is already a clinic member. */
+  isClinicMember?: boolean;
 }
 
 interface SentInvite {
@@ -556,18 +558,30 @@ export default function Doctors() {
                       </div>
 
                       <div className="pt-4 border-t border-gray-100">
-                        <button
-                          onClick={() => handleInviteDoctor(doctor.id)}
-                          disabled={invitingDoctorId === doctor.id}
-                          className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary/90 transition-all cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {invitingDoctorId === doctor.id ? (
-                            <Loader2 size={16} className="animate-spin" />
-                          ) : (
-                            <Send size={16} />
-                          )}
-                          Enviar Convite
-                        </button>
+                        {doctor.isClinicMember ? (
+                          <button
+                            onClick={() =>
+                              navigate(`/doctors/${doctor.id}/profile`)
+                            }
+                            className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-200 transition-all cursor-pointer border-none"
+                          >
+                            <Eye size={16} />
+                            Ver Perfil
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleInviteDoctor(doctor.id)}
+                            disabled={invitingDoctorId === doctor.id}
+                            className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary/90 transition-all cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {invitingDoctorId === doctor.id ? (
+                              <Loader2 size={16} className="animate-spin" />
+                            ) : (
+                              <Send size={16} />
+                            )}
+                            Enviar Convite
+                          </button>
+                        )}
                       </div>
                     </motion.div>
                   ) : (
@@ -606,18 +620,30 @@ export default function Doctors() {
                         </span>
                       </div>
 
-                      <button
-                        onClick={() => handleInviteDoctor(doctor.id)}
-                        disabled={invitingDoctorId === doctor.id}
-                        className="shrink-0 px-5 py-2.5 bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary/90 transition-all cursor-pointer border-none flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {invitingDoctorId === doctor.id ? (
-                          <Loader2 size={14} className="animate-spin" />
-                        ) : (
-                          <Send size={14} />
-                        )}
-                        Enviar Convite
-                      </button>
+                      {doctor.isClinicMember ? (
+                        <button
+                          onClick={() =>
+                            navigate(`/doctors/${doctor.id}/profile`)
+                          }
+                          className="shrink-0 px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-200 transition-all cursor-pointer border-none flex items-center gap-2"
+                        >
+                          <Eye size={14} />
+                          Ver Perfil
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleInviteDoctor(doctor.id)}
+                          disabled={invitingDoctorId === doctor.id}
+                          className="shrink-0 px-5 py-2.5 bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary/90 transition-all cursor-pointer border-none flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {invitingDoctorId === doctor.id ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : (
+                            <Send size={14} />
+                          )}
+                          Enviar Convite
+                        </button>
+                      )}
                     </motion.div>
                   ),
                 )}
