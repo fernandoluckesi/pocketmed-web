@@ -1,9 +1,11 @@
-import { useState, useEffect, useMemo } from "react";
-import { PlusCircle, CalendarRange, Loader2, UserX, Send } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { PlusCircle, Loader2, UserX, Send, X, Clock } from "lucide-react";
 import { motion } from "motion/react";
+import { useNavigate } from "react-router-dom";
 import { MainLayout } from "../../components/MainLayout";
 import { SearchWithViewToggle } from "../../components/ui/SearchWithViewToggle";
 import { Button } from "../../components/ui/Button";
+import { useToast } from "../../contexts/ToastContext";
 import api from "../../config/api";
 
 // --- Types ---
@@ -18,6 +20,42 @@ interface Doctor {
   phone: string;
   profileImage: string | null;
   createdAt: string;
+}
+
+interface SentInvite {
+  id: string;
+  status: "pending" | "approved" | "rejected" | "cancelled" | "expired";
+  createdAt: string;
+  doctor?: {
+    id: string;
+    name: string;
+    specialty: string;
+    crm: string;
+    profileImage: string | null;
+  } | null;
+}
+
+const INVITE_STATUS_LABELS: Record<SentInvite["status"], string> = {
+  pending: "Pendente",
+  approved: "Aceito",
+  rejected: "Recusado",
+  cancelled: "Cancelado",
+  expired: "Expirado",
+};
+
+function inviteStatusStyle(status: SentInvite["status"]): string {
+  switch (status) {
+    case "approved":
+      return "bg-green-100 text-green-700";
+    case "rejected":
+    case "expired":
+      return "bg-red-100 text-red-700";
+    case "cancelled":
+      return "bg-slate-100 text-slate-600";
+    case "pending":
+    default:
+      return "bg-amber-100 text-amber-700";
+  }
 }
 
 // --- Helpers ---
@@ -40,32 +78,11 @@ function formatCrm(crm: string): string {
 
 function DoctorCard({
   doctor,
-  isAddCard,
+  onClick,
 }: {
   doctor?: Doctor;
-  isAddCard?: boolean;
+  onClick?: () => void;
 }) {
-  if (isAddCard) {
-    return (
-      <motion.div
-        whileHover={{ y: -5 }}
-        className="border-2 border-dashed border-slate-300 rounded-[2rem] p-6 flex flex-col items-center justify-center space-y-4 hover:bg-slate-50 transition-colors cursor-pointer group"
-      >
-        <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-all">
-          <CalendarRange size={32} />
-        </div>
-        <div className="text-center">
-          <p className="font-display font-bold text-slate-900">
-            Adicionar Novo Médico
-          </p>
-          <p className="text-slate-500 text-sm">
-            Cadastre um profissional na rede.
-          </p>
-        </div>
-      </motion.div>
-    );
-  }
-
   if (!doctor) return null;
 
   return (
@@ -75,8 +92,11 @@ function DoctorCard({
       whileHover={{ y: -6 }}
       className="group"
     >
-      <div className="block bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all">
-        <div className="flex items-start gap-4 mb-5">
+      <div
+        onClick={onClick}
+        className="block bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all cursor-pointer"
+      >
+        <div className="flex items-start gap-4">
           <div className="w-7 h-7 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
             {doctor.profileImage ? (
               <img
@@ -109,11 +129,18 @@ function DoctorCard({
 
 // --- List Row View ---
 
-function DoctorListRow({ doctor }: { doctor: Doctor }) {
+function DoctorListRow({
+  doctor,
+  onClick,
+}: {
+  doctor: Doctor;
+  onClick?: () => void;
+}) {
   return (
     <motion.div
       whileHover={{ y: -2 }}
-      className="bg-white p-5 rounded-2xl border border-slate-100 hover:border-primary/20 hover:shadow-xl hover:shadow-slate-200/50 transition-all flex items-center justify-between gap-6"
+      onClick={onClick}
+      className="bg-white p-5 rounded-2xl border border-slate-100 hover:border-primary/20 hover:shadow-xl hover:shadow-slate-200/50 transition-all flex items-center justify-between gap-6 cursor-pointer"
     >
       <div className="flex items-center gap-4 flex-1 min-w-0">
         <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 border-slate-100">
@@ -166,9 +193,60 @@ export default function Doctors() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [invitingDoctorId, setInvitingDoctorId] = useState<string | null>(null);
 
+  // Requests (sent invites) tab state
+  const [sentInvites, setSentInvites] = useState<SentInvite[]>([]);
+  const [invitesLoading, setInvitesLoading] = useState(false);
+  const [cancelingInviteId, setCancelingInviteId] = useState<string | null>(
+    null,
+  );
+
+  const navigate = useNavigate();
+  const toast = useToast();
+
   useEffect(() => {
     fetchDoctors();
   }, []);
+
+  const loadSentInvites = useCallback(async () => {
+    setInvitesLoading(true);
+    try {
+      const token = localStorage.getItem("pocketmed_token");
+      const response = await api.get("/clinic-association/invites/sent", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSentInvites(Array.isArray(response.data) ? response.data : []);
+    } catch {
+      setSentInvites([]);
+    } finally {
+      setInvitesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "Solicitações") {
+      loadSentInvites();
+    }
+  }, [activeTab, loadSentInvites]);
+
+  async function handleCancelInvite(inviteId: string) {
+    setCancelingInviteId(inviteId);
+    try {
+      const token = localStorage.getItem("pocketmed_token");
+      await api.patch(
+        `/clinic-association/invites/${inviteId}/cancel`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      toast.success("Solicitação cancelada com sucesso.");
+      loadSentInvites();
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message || "Erro ao cancelar solicitação.";
+      toast.error(message);
+    } finally {
+      setCancelingInviteId(null);
+    }
+  }
 
   async function fetchDoctors() {
     setLoading(true);
@@ -259,10 +337,11 @@ export default function Doctors() {
         { doctorId },
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      alert("Convite enviado com sucesso!");
+      toast.success("Solicitação enviada com sucesso!");
     } catch (err: any) {
-      const message = err?.response?.data?.message || "Erro ao enviar convite.";
-      alert(message);
+      const message =
+        err?.response?.data?.message || "Erro ao enviar solicitação.";
+      toast.error(message);
     } finally {
       setInvitingDoctorId(null);
     }
@@ -302,7 +381,12 @@ export default function Doctors() {
               Pesquise e gerencie a equipe médica da clínica.
             </p>
           </div>
-          <Button variant="primary" size="md" icon={<PlusCircle size={18} />}>
+          <Button
+            variant="primary"
+            size="md"
+            icon={<PlusCircle size={18} />}
+            onClick={() => setActiveTab("Pesquisar Médicos")}
+          >
             Adicionar Médico
           </Button>
         </div>
@@ -362,12 +446,19 @@ export default function Doctors() {
               >
                 {filteredDoctors.map((doctor) =>
                   view === "grid" ? (
-                    <DoctorCard key={doctor.id} doctor={doctor} />
+                    <DoctorCard
+                      key={doctor.id}
+                      doctor={doctor}
+                      onClick={() => navigate(`/doctors/${doctor.id}/profile`)}
+                    />
                   ) : (
-                    <DoctorListRow key={doctor.id} doctor={doctor} />
+                    <DoctorListRow
+                      key={doctor.id}
+                      doctor={doctor}
+                      onClick={() => navigate(`/doctors/${doctor.id}/profile`)}
+                    />
                   ),
                 )}
-                {view === "grid" && <DoctorCard isAddCard />}
               </div>
             )}
           </div>
@@ -537,13 +628,82 @@ export default function Doctors() {
 
         {/* Tab: Solicitações */}
         <div className={activeTab === "Solicitações" ? "" : "hidden"}>
-          <div className="text-center py-16 text-slate-400">
-            <UserX size={48} className="mx-auto mb-4 opacity-50" />
-            <p className="font-medium text-lg text-slate-600">Solicitações</p>
-            <p className="text-sm text-slate-400 mt-1">
-              Nenhuma solicitação pendente de médicos.
-            </p>
-          </div>
+          {invitesLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            </div>
+          ) : sentInvites.length === 0 ? (
+            <div className="text-center py-16 text-slate-400">
+              <Clock size={48} className="mx-auto mb-4 opacity-50" />
+              <p className="font-medium text-lg text-slate-600">Solicitações</p>
+              <p className="text-sm text-slate-400 mt-1">
+                Nenhuma solicitação enviada. Use a aba "Pesquisar Médicos" para
+                convidar um médico cadastrado na Hispora.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {sentInvites.map((invite) => (
+                <div
+                  key={invite.id}
+                  className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-6"
+                >
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 border-slate-100">
+                      {invite.doctor?.profileImage ? (
+                        <img
+                          src={invite.doctor.profileImage}
+                          alt={invite.doctor?.name || "Médico"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold text-lg">
+                          {(invite.doctor?.name || "?").charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <h5 className="font-bold text-base leading-tight text-slate-900 truncate">
+                        {invite.doctor?.name || "Médico"}
+                      </h5>
+                      <p className="text-slate-400 text-sm font-medium truncate">
+                        {invite.doctor?.specialty || "—"}
+                        {invite.doctor?.crm
+                          ? ` • CRM: ${formatCrm(invite.doctor.crm)}`
+                          : ""}
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Enviada em{" "}
+                        {new Date(invite.createdAt).toLocaleDateString("pt-BR")}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold ${inviteStatusStyle(invite.status)}`}
+                    >
+                      {INVITE_STATUS_LABELS[invite.status]}
+                    </span>
+                    {invite.status === "pending" && (
+                      <button
+                        onClick={() => handleCancelInvite(invite.id)}
+                        disabled={cancelingInviteId === invite.id}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50 transition-all cursor-pointer border-none bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {cancelingInviteId === invite.id ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <X size={14} />
+                        )}
+                        Cancelar
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </MainLayout>

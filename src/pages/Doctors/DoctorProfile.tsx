@@ -1,323 +1,296 @@
+import { useEffect, useState } from "react";
 import {
   MapPin,
-  UserPlus,
   Mail,
-  FileText,
-  ShieldCheck,
-  CheckCircle2,
-  GraduationCap,
-  Award,
-  ClipboardList,
-  Brain,
-  HeartPulse,
-  BarChart3,
-  StickyNote,
-  Building2,
+  Phone,
+  Stethoscope,
+  IdCard,
   ArrowLeft,
+  Users,
+  CalendarClock,
+  Loader2,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { MainLayout } from "../../components/MainLayout";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { api, ApiError } from "../../services/api";
 
-// --- Data ---
+// --- Types ---
 
-const verifiedItems = [
-  "Board Certified Neurologist",
-  "Active CRM (CFM Validated)",
-  "Profissional em Conformidade com a LGPD",
-];
+interface DoctorProfileAppointment {
+  id: string;
+  patientName: string;
+  dateTime: string;
+  status: string;
+  reason: string;
+}
 
-const interests = [
-  "Memory Care",
-  "Epilepsy",
-  "Sleep Disorders",
-  "Neurogenetics",
-];
+interface DoctorProfilePatient {
+  id: string;
+  name: string;
+}
 
-const education = [
-  {
-    icon: Award,
-    title: "MD – Medical Doctor",
-    school: "Universidade de São Paulo (USP)",
-    years: "2004 — 2010",
-  },
-  {
-    icon: ClipboardList,
-    title: "Neurology Residency",
-    school: "Hospital das Clínicas da USP",
-    years: "2011 — 2014",
-  },
-  {
-    icon: Brain,
-    title: "Fellowship in Neurosurgery",
-    school: "Johns Hopkins Medicine",
-    years: "2015 — 2017",
-  },
-  {
-    icon: HeartPulse,
-    title: "Board Certification",
-    school: "Brazilian Academy of Neurology",
-    years: "Certified 2014",
-  },
-  {
-    icon: BarChart3,
-    title: "Masters in Clinical Research",
-    school: "Harvard Medical School (Online)",
-    years: "2019 — 2021",
-  },
-  {
-    icon: StickyNote,
-    title: "Global Health Certification",
-    school: "World Health Organization (WHO)",
-    years: "Ongoing 2024",
-  },
-];
+interface DoctorProfileData {
+  id: string;
+  name: string;
+  email: string;
+  specialty: string;
+  crm: string;
+  rqe: string | null;
+  phone: string;
+  gender: string;
+  profileImage: string | null;
+  appointments: DoctorProfileAppointment[];
+  patients: DoctorProfilePatient[];
+}
+
+// --- Helpers ---
+
+const APPOINTMENT_STATUS_LABELS: Record<string, string> = {
+  pending: "Pendente",
+  pending_approval: "Aguardando aprovação",
+  approved: "Agendada",
+  rejected: "Recusada",
+  completed: "Concluída",
+};
+
+function getStatusLabel(status: string): string {
+  return APPOINTMENT_STATUS_LABELS[status] || status;
+}
+
+function getStatusStyle(status: string): string {
+  switch (status) {
+    case "completed":
+      return "bg-green-100 text-green-700";
+    case "rejected":
+      return "bg-red-100 text-red-700";
+    case "pending":
+    case "pending_approval":
+      return "bg-amber-100 text-amber-700";
+    default:
+      return "bg-blue-100 text-primary";
+  }
+}
+
+function formatPhone(value: string): string {
+  const digits = (value || "").replace(/\D/g, "");
+  if (digits.length === 11) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  }
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  return value;
+}
 
 // --- Components ---
 
-function ProfileHero() {
+function ProfileHero({ doctor }: { doctor: DoctorProfileData }) {
   return (
-    <section className="flex flex-col md:flex-row gap-8 items-center mb-10">
+    <section className="flex flex-col md:flex-row gap-8 items-start mb-2">
       <div className="relative group">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-primary-container/10">
-            <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvMm9gImhOUvnfTLWn-1F8e2uqSYfqOlaMxKCWmxXk8Tw61_ZlKI8r3r6CsDy6TaU_fTTOmFxlXco7wNWdzuO8B4uLaMCg8cd2IWSoOKyehXH8tRtumjycFrZcDMAd4JmRjoGhkoS5NHsV9zJ3lKDm5gNp5DCtfp-jRyQGODcbkolgXLRtsYyvLlsxsGkfYUJRxUSVDlo0DCbFnETvi6otIc_vbntwClcj5kFe8uHrHHojYqez8VIv8Q1yz-URcMM4VvFply9UWsch"
-              alt="Dra. Juliana Lima"
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-            />
+        {doctor.profileImage ? (
+          <img
+            src={doctor.profileImage}
+            alt={doctor.name}
+            referrerPolicy="no-referrer"
+            className="w-32 h-32 rounded-[1.75rem] object-cover border-4 border-white"
+          />
+        ) : (
+          <div className="w-32 h-32 rounded-[1.75rem] border-4 border-white bg-primary/10 flex items-center justify-center">
+            <span className="text-4xl font-bold text-primary">
+              {doctor.name.charAt(0).toUpperCase()}
+            </span>
           </div>
-        </motion.div>
+        )}
       </div>
 
-      <div className="flex-1 space-y-3">
-        <div className="flex gap-2">
-          <span className="bg-primary-container/10 text-primary-container border border-primary-container/20 px-3 py-1 rounded-full text-xs font-bold">
-            Neurology
+      <div className="flex-1 space-y-3 pt-1">
+        <div className="flex flex-wrap gap-2">
+          <span className="bg-primary/10 text-primary border border-primary/20 px-3 py-1 rounded-full text-xs font-bold">
+            {doctor.specialty || "Médico(a)"}
           </span>
-          <span className="bg-surface-container text-on-surface-variant px-3 py-1 rounded-full text-xs font-bold">
-            CRM 123456-RJ
+          <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold">
+            CRM {doctor.crm}
           </span>
+          {doctor.rqe && (
+            <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold">
+              RQE {doctor.rqe}
+            </span>
+          )}
         </div>
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-5xl font-display font-extrabold tracking-tight text-on-surface"
-        >
-          Dra. Juliana Lima
-        </motion.h1>
-        <div className="flex items-center gap-2 text-on-surface-variant font-medium">
-          <MapPin size={18} className="text-primary" />
-          <span>Rio de Janeiro, RJ • Private Clinic & Research Center</span>
+        <h1 className="text-4xl font-display font-extrabold tracking-tight text-on-surface">
+          {doctor.name}
+        </h1>
+        <div className="flex flex-wrap gap-6 mt-2">
+          {doctor.email && (
+            <div className="flex items-center gap-2 text-on-surface-variant font-medium">
+              <Mail size={18} className="text-primary" />
+              <span className="text-sm">{doctor.email}</span>
+            </div>
+          )}
+          {doctor.phone && (
+            <div className="flex items-center gap-2 text-on-surface-variant font-medium">
+              <Phone size={18} className="text-primary" />
+              <span className="text-sm">{formatPhone(doctor.phone)}</span>
+            </div>
+          )}
         </div>
-      </div>
-
-      <div className="flex gap-3 shrink-0">
-        <button className="bg-primary text-white font-bold py-4 px-8 rounded-2xl shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all flex items-center justify-center gap-2 active:scale-95">
-          <UserPlus size={18} />
-          <span>Enviar Convite</span>
-        </button>
-        <button className="bg-surface-container text-on-surface-variant font-bold py-4 px-8 rounded-2xl hover:bg-surface-container/60 transition-all flex items-center justify-center gap-2 active:scale-95">
-          <Mail size={18} />
-          <span>Contatar Profissional</span>
-        </button>
       </div>
     </section>
   );
 }
 
-function ProfileDetails() {
+function ProfileDetails({ doctor }: { doctor: DoctorProfileData }) {
+  const items = [
+    { icon: Stethoscope, label: "Especialidade", value: doctor.specialty },
+    { icon: IdCard, label: "CRM", value: doctor.crm },
+    { icon: IdCard, label: "RQE", value: doctor.rqe || "—" },
+    {
+      icon: MapPin,
+      label: "Gênero",
+      value: doctor.gender || "—",
+    },
+  ];
+
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
-      className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-surface-container/50"
-    >
-      <div className="flex items-center gap-3 mb-8">
-        <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
-          <FileText size={22} />
-        </div>
-        <h2 className="text-2xl font-display font-extrabold">
-          Perfil Profissional
-        </h2>
-      </div>
-
-      <div className="space-y-6 text-on-surface-variant leading-relaxed text-lg italic">
-        <p>
-          Especialista em distúrbios cognitivos e doenças neurodegenerativas com
-          mais de 12 anos de experiência clínica. Dra. Juliana é reconhecida por
-          sua abordagem integrativa no cuidado ao paciente, combinando
-          tratamentos farmacológicos de ponta com intervenções no estilo de
-          vida.
-        </p>
-        <p className="not-italic opacity-90">
-          Atualmente Pesquisadora Líder no Instituto do Cérebro do Rio de
-          Janeiro, ela é autora de mais de 40 artigos revisados por pares
-          focados na detecção precoce de Alzheimer. Sua prática é construída
-          sobre uma base de precisão clínica e comunicação empática, garantindo
-          que tanto pacientes quanto suas famílias sejam apoiados em jornadas
-          neurológicas complexas.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-8 mt-12 pt-10 border-t border-surface-container">
-        <div>
-          <p className="text-[10px] uppercase font-black text-on-surface-variant/50 tracking-[0.2em] mb-2">
-            Experiência
-          </p>
-          <p className="text-3xl font-display font-extrabold text-on-surface">
-            14+ Anos
-          </p>
-        </div>
-        <div>
-          <p className="text-[10px] uppercase font-black text-on-surface-variant/50 tracking-[0.2em] mb-2">
-            Publicações
-          </p>
-          <p className="text-3xl font-display font-extrabold text-on-surface">
-            42 Artigos Científicos
-          </p>
-        </div>
-      </div>
-    </motion.section>
-  );
-}
-
-function StatsSidebar() {
-  return (
-    <div className="space-y-6">
-      <motion.section
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.3 }}
-        className="bg-primary text-white p-8 rounded-[2.5rem] shadow-xl shadow-primary/10 overflow-hidden relative"
-      >
-        <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
-
-        <h3 className="font-display font-bold text-xl mb-6 flex items-center gap-2">
-          <ShieldCheck size={20} />
-          Status Verificado
-        </h3>
-        <ul className="space-y-4">
-          {verifiedItems.map((item, i) => (
-            <motion.li
-              key={i}
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 + i * 0.1 }}
-              className="flex items-start gap-3 text-sm bg-white/10 p-4 rounded-2xl border border-white/5 backdrop-blur-sm"
-            >
-              <CheckCircle2 size={18} className="shrink-0 mt-0.5" />
-              <span className="font-medium leading-tight">{item}</span>
-            </motion.li>
-          ))}
-        </ul>
-      </motion.section>
-
-      <motion.section
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.5 }}
-        className="bg-surface-low border border-surface-container/50 p-8 rounded-[2.5rem]"
-      >
-        <h3 className="font-display font-bold text-sm text-on-surface mb-5 uppercase tracking-wide opacity-60">
-          Áreas de Interesse
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {interests.map((tag) => (
-            <span
-              key={tag}
-              className="px-4 py-2 bg-white border border-surface-container rounded-xl text-xs font-bold text-on-surface-variant hover:border-primary/30 transition-all cursor-default"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-      </motion.section>
-    </div>
-  );
-}
-
-function EducationSectionComponent() {
-  return (
-    <motion.section
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.6 }}
-      className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-surface-container/50"
-    >
-      <div className="flex items-center gap-3 mb-10">
-        <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
-          <GraduationCap size={22} />
-        </div>
-        <h2 className="text-2xl font-display font-extrabold">
-          Educação & Formação Clínica
-        </h2>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-10 gap-x-8">
-        {education.map((item, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 + i * 0.05 }}
-            className="flex gap-5 group"
-          >
-            <div className="bg-surface-low p-4 rounded-[1.25rem] h-fit group-hover:bg-primary/5 transition-colors duration-500">
-              <item.icon size={24} className="text-primary" />
+    <section className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+      <h2 className="text-xl font-bold font-display text-slate-900 mb-6">
+        Dados profissionais
+      </h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        {items.map((item) => (
+          <div key={item.label} className="flex items-start gap-3">
+            <div className="p-2.5 bg-primary/10 rounded-xl text-primary shrink-0">
+              <item.icon size={18} />
             </div>
-            <div>
-              <p className="font-display font-bold text-on-surface text-base mb-1">
-                {item.title}
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase font-black text-slate-400 tracking-widest mb-1">
+                {item.label}
               </p>
-              <p className="text-sm text-on-surface-variant font-medium mb-2">
-                {item.school}
-              </p>
-              <p className="text-[10px] uppercase font-bold text-on-surface-variant/40 tracking-widest leading-none">
-                {item.years}
+              <p className="text-sm font-semibold text-slate-800 capitalize truncate">
+                {item.value}
               </p>
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
-    </motion.section>
+    </section>
   );
 }
 
-function InviteBanner() {
+function AppointmentsSection({
+  appointments,
+}: {
+  appointments: DoctorProfileAppointment[];
+}) {
   return (
-    <motion.section
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.8 }}
-      className="bg-surface-low p-10 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-8 border-2 border-primary/5 relative overflow-hidden"
-    >
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32" />
-
-      <div className="flex items-center gap-8 relative z-10">
-        <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center rotate-3 border border-primary/10 shadow-sm transition-transform hover:rotate-0 duration-500">
-          <Building2 className="text-primary" size={32} />
+    <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="px-8 py-6 border-b border-slate-100 flex items-center gap-3">
+        <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
+          <CalendarClock size={20} />
         </div>
         <div>
-          <h3 className="text-2xl font-display font-extrabold mb-2 tracking-tight">
-            Interessado em trabalhar com Dra. Juliana?
-          </h3>
-          <p className="text-on-surface-variant font-medium opacity-80 max-w-lg">
-            Envie um convite para que ela possa atender pacientes e compartilhar
-            relatórios dentro do Hispora.
+          <h2 className="text-xl font-bold font-display text-slate-900">
+            Consultas agendadas
+          </h2>
+          <p className="text-sm text-slate-500">
+            {appointments.length} consulta{appointments.length === 1 ? "" : "s"}
           </p>
         </div>
       </div>
 
-      <button className="whitespace-nowrap bg-primary text-white font-black px-10 py-5 rounded-2xl shadow-xl shadow-primary/20 hover:scale-[0.98] transition-all relative z-10 active:scale-95">
-        Enviar Convite
-      </button>
-    </motion.section>
+      {appointments.length === 0 ? (
+        <div className="text-center py-12 text-slate-400">
+          <CalendarClock className="w-10 h-10 mx-auto mb-3 opacity-50" />
+          <p className="font-medium">Nenhuma consulta registrada</p>
+        </div>
+      ) : (
+        <div className="divide-y divide-slate-100">
+          {appointments.map((apt) => (
+            <div
+              key={apt.id}
+              className="px-8 py-4 flex items-center justify-between gap-4"
+            >
+              <div className="min-w-0">
+                <p className="font-semibold text-slate-900 truncate">
+                  {apt.patientName}
+                </p>
+                <p className="text-xs text-slate-500 truncate">
+                  {apt.reason || "Consulta"}
+                </p>
+              </div>
+              <div className="flex items-center gap-4 shrink-0">
+                <span className="text-xs text-slate-500 whitespace-nowrap">
+                  {new Date(apt.dateTime).toLocaleString("pt-BR", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusStyle(apt.status)}`}
+                >
+                  {getStatusLabel(apt.status)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function LinkedPatientsSection({
+  patients,
+}: {
+  patients: DoctorProfilePatient[];
+}) {
+  const navigate = useNavigate();
+
+  return (
+    <section className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="px-8 py-6 border-b border-slate-100 flex items-center gap-3">
+        <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
+          <Users size={20} />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold font-display text-slate-900">
+            Pacientes atrelados
+          </h2>
+          <p className="text-sm text-slate-500">
+            {patients.length} paciente{patients.length === 1 ? "" : "s"}
+          </p>
+        </div>
+      </div>
+
+      {patients.length === 0 ? (
+        <div className="text-center py-12 text-slate-400">
+          <Users className="w-10 h-10 mx-auto mb-3 opacity-50" />
+          <p className="font-medium">Nenhum paciente atrelado</p>
+        </div>
+      ) : (
+        <div className="divide-y divide-slate-100">
+          {patients.map((patient) => (
+            <button
+              key={patient.id}
+              onClick={() => navigate(`/patients/${patient.id}`)}
+              className="w-full text-left px-8 py-4 flex items-center gap-4 hover:bg-slate-50 transition-colors cursor-pointer border-none bg-transparent"
+            >
+              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                {patient.name.charAt(0).toUpperCase()}
+              </div>
+              <span className="font-semibold text-slate-900 truncate">
+                {patient.name}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -325,32 +298,79 @@ function InviteBanner() {
 
 export default function DoctorProfile() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const [doctor, setDoctor] = useState<DoctorProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await api(`/clinic-association/doctors/${id}/profile`);
+        if (!cancelled) setDoctor(data);
+      } catch (err) {
+        if (!cancelled) {
+          if (err instanceof ApiError && err.status === 403) {
+            setError("Você não tem permissão para ver este perfil.");
+          } else if (err instanceof ApiError && err.status === 404) {
+            setError("Médico não encontrado nesta clínica.");
+          } else {
+            setError("Erro ao carregar o perfil do médico.");
+          }
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   return (
     <MainLayout>
-      <div className="space-y-10">
-        {/* Back Button */}
+      <div className="space-y-8">
         <button
-          onClick={() => navigate("/doctors")}
+          onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent"
         >
           <ArrowLeft size={20} />
-          <span>Voltar para Médicos</span>
+          <span>Voltar</span>
         </button>
 
-        <ProfileHero />
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <ProfileDetails />
+        {loading ? (
+          <div className="flex items-center justify-center py-24 text-slate-400">
+            <Loader2 className="w-6 h-6 animate-spin mr-2" />
+            Carregando perfil...
           </div>
-          <aside className="lg:col-span-1">
-            <StatsSidebar />
-          </aside>
-        </div>
-
-        <EducationSectionComponent />
-        <InviteBanner />
+        ) : error ? (
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-12 text-center text-slate-500">
+            {error}
+          </div>
+        ) : doctor ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-8"
+          >
+            <ProfileHero doctor={doctor} />
+            <ProfileDetails doctor={doctor} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+              <AppointmentsSection appointments={doctor.appointments} />
+              <LinkedPatientsSection patients={doctor.patients} />
+            </div>
+          </motion.div>
+        ) : null}
       </div>
     </MainLayout>
   );

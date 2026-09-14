@@ -14,12 +14,17 @@ import {
   Pencil,
   Trash2,
   Send,
+  Eye,
 } from "lucide-react";
 import { motion } from "motion/react";
+import { useNavigate } from "react-router-dom";
 import { MainLayout } from "../../components/MainLayout";
 import { Tooltip } from "../../components/ui/Tooltip";
 import { useDialog } from "../../components/ui/Dialog";
 import { api } from "../../services/api";
+
+// Max rows per page for members and linked patients tables.
+const ITEMS_PER_PAGE = 15;
 
 // --- Types ---
 
@@ -149,6 +154,7 @@ function MembersSection({
   onPageChange,
   onRemove,
   onEdit,
+  onViewProfile,
   onResendCode,
   resendCooldown,
 }: {
@@ -163,6 +169,7 @@ function MembersSection({
   onPageChange: (p: number) => void;
   onRemove: (membershipId: string) => void;
   onEdit: (member: Member) => void;
+  onViewProfile: (member: Member) => void;
   onResendCode: (membershipId: string) => void;
   resendCooldown: number;
 }) {
@@ -288,18 +295,30 @@ function MembersSection({
                     </td>
                     <td className="px-8 py-5">
                       {member.role === "admin" ? (
-                        <span className="px-3 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700">Ativo</span>
+                        <span className="px-3 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700">
+                          Ativo
+                        </span>
                       ) : member.isShadow ? (
-                        <span className="px-3 py-1 rounded-lg text-xs font-bold bg-amber-100 text-amber-700">Pendente</span>
+                        <span className="px-3 py-1 rounded-lg text-xs font-bold bg-amber-100 text-amber-700">
+                          Pendente
+                        </span>
                       ) : (
-                        <span className="px-3 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700">Ativo</span>
+                        <span className="px-3 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700">
+                          Ativo
+                        </span>
                       )}
                     </td>
                     <td className="px-8 py-5 text-right">
                       {member.role !== "admin" && (
                         <div className="flex items-center justify-end gap-1">
                           {member.isShadow && (
-                            <Tooltip label={resendCooldown > 0 ? `Aguarde ${resendCooldown}s` : "Reenviar código"}>
+                            <Tooltip
+                              label={
+                                resendCooldown > 0
+                                  ? `Aguarde ${resendCooldown}s`
+                                  : "Reenviar código"
+                              }
+                            >
                               <button
                                 onClick={() => onResendCode(member.id)}
                                 disabled={resendCooldown > 0}
@@ -309,14 +328,26 @@ function MembersSection({
                               </button>
                             </Tooltip>
                           )}
-                          <Tooltip label="Editar">
-                            <button
-                              onClick={() => onEdit(member)}
-                              className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-primary transition-all cursor-pointer border-none bg-transparent"
-                            >
-                              <Pencil size={16} />
-                            </button>
-                          </Tooltip>
+                          {member.role === "doctor" && member.professional && (
+                            <Tooltip label="Ver perfil">
+                              <button
+                                onClick={() => onViewProfile(member)}
+                                className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-primary transition-all cursor-pointer border-none bg-transparent"
+                              >
+                                <Eye size={16} />
+                              </button>
+                            </Tooltip>
+                          )}
+                          {member.role !== "doctor" && (
+                            <Tooltip label="Editar">
+                              <button
+                                onClick={() => onEdit(member)}
+                                className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-primary transition-all cursor-pointer border-none bg-transparent"
+                              >
+                                <Pencil size={16} />
+                              </button>
+                            </Tooltip>
+                          )}
                           <Tooltip label="Remover">
                             <button
                               onClick={() => onRemove(member.id)}
@@ -336,27 +367,40 @@ function MembersSection({
         </table>
       </div>
 
-      <div className="px-8 py-6 bg-slate-50/30 flex items-center justify-between border-t border-slate-100">
-        <p className="text-sm text-slate-500 font-medium">
-          Exibindo{" "}
-          <span className="font-bold text-slate-900">{members.length}</span> de{" "}
-          <span className="font-bold text-slate-900">{total}</span> membros
+      {/* Pagination */}
+      <div className="bg-slate-50/60 px-8 py-4 flex items-center justify-between border-t border-slate-100">
+        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+          Mostrando {members.length} de {total} membros
         </p>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => onPageChange(page - 1)}
-            className="p-2 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-30 cursor-pointer"
             disabled={page <= 1}
+            onClick={() => onPageChange(Math.max(page - 1, 1))}
+            className="p-1.5 text-slate-400 hover:text-primary transition-all disabled:opacity-30 cursor-pointer border-none bg-transparent"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <div className="px-4 py-1.5 bg-primary text-white text-xs font-bold rounded-lg shadow-sm">
-            Página {page} de {totalPages || 1}
+          <div className="flex gap-1">
+            {Array.from({ length: totalPages || 1 }, (_, i) => i + 1).map(
+              (pg) => (
+                <button
+                  key={pg}
+                  onClick={() => onPageChange(pg)}
+                  className={`w-8 h-8 rounded-lg text-xs font-bold flex items-center justify-center transition-all cursor-pointer border-none ${
+                    page === pg
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-slate-500 hover:bg-slate-200/50 bg-transparent"
+                  }`}
+                >
+                  {pg}
+                </button>
+              ),
+            )}
           </div>
           <button
-            onClick={() => onPageChange(page + 1)}
-            className="p-2 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-30 cursor-pointer"
             disabled={page >= totalPages}
+            onClick={() => onPageChange(Math.min(page + 1, totalPages))}
+            className="p-1.5 text-slate-400 hover:text-primary transition-all disabled:opacity-30 cursor-pointer border-none bg-transparent"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -367,6 +411,8 @@ function MembersSection({
 }
 
 function LinkedPatientsSection({ patients }: { patients: LinkedPatient[] }) {
+  const [currentPage, setCurrentPage] = useState(1);
+
   const getInitials = (name: string) =>
     name
       .split(" ")
@@ -374,6 +420,20 @@ function LinkedPatientsSection({ patients }: { patients: LinkedPatient[] }) {
       .map((w) => w[0])
       .join("")
       .toUpperCase();
+
+  const totalItems = patients.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+
+  // Keep the current page in range if the list shrinks.
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedPatients = patients.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE,
+  );
 
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-100">
@@ -402,7 +462,7 @@ function LinkedPatientsSection({ patients }: { patients: LinkedPatient[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {patients.length === 0 ? (
+            {paginatedPatients.length === 0 ? (
               <tr>
                 <td
                   colSpan={3}
@@ -412,7 +472,7 @@ function LinkedPatientsSection({ patients }: { patients: LinkedPatient[] }) {
                 </td>
               </tr>
             ) : (
-              patients.map((patient) => (
+              paginatedPatients.map((patient) => (
                 <tr
                   key={patient.id}
                   className="hover:bg-slate-50/50 transition-colors"
@@ -444,35 +504,43 @@ function LinkedPatientsSection({ patients }: { patients: LinkedPatient[] }) {
           </tbody>
         </table>
       </div>
-    </div>
-  );
-}
 
-function SidePanel({ overview }: { overview: Overview | null }) {
-  const totalMembers = overview?.members.total || 0;
-  const capacity =
-    totalMembers > 0 ? Math.min((totalMembers / 10) * 100, 100) : 0;
-
-  return (
-    <div className="space-y-6">
-      <div className="bg-gradient-to-br from-primary to-primary-gradient-end p-6 rounded-xl shadow-lg text-white">
-        <h3 className="font-bold font-display mb-2">Desempenho da Clínica</h3>
-        <p className="text-white/80 text-sm mb-4">
-          {overview?.clinicName || "Sua clínica"} está operando com{" "}
-          {totalMembers} membros ativos e {overview?.patients.total || 0}{" "}
-          pacientes vinculados.
+      {/* Pagination */}
+      <div className="bg-slate-50/60 px-8 py-4 flex items-center justify-between border-t border-slate-100">
+        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+          Mostrando {paginatedPatients.length} de {totalItems} pacientes
         </p>
-        <div className="w-full bg-white/20 rounded-full h-2 mb-2">
-          <motion.div
-            className="bg-white h-2 rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: `${capacity}%` }}
-            transition={{ duration: 1, ease: "easeOut" }}
-          />
+        <div className="flex items-center gap-2">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+            className="p-1.5 text-slate-400 hover:text-primary transition-all disabled:opacity-30 cursor-pointer border-none bg-transparent"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <div className="flex gap-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
+              <button
+                key={pg}
+                onClick={() => setCurrentPage(pg)}
+                className={`w-8 h-8 rounded-lg text-xs font-bold flex items-center justify-center transition-all cursor-pointer border-none ${
+                  currentPage === pg
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-slate-500 hover:bg-slate-200/50 bg-transparent"
+                }`}
+              >
+                {pg}
+              </button>
+            ))}
+          </div>
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+            className="p-1.5 text-slate-400 hover:text-primary transition-all disabled:opacity-30 cursor-pointer border-none bg-transparent"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
-        <span className="text-[10px] font-black uppercase tracking-tighter opacity-70">
-          Capacidade: {Math.round(capacity)}% ocupada
-        </span>
       </div>
     </div>
   );
@@ -482,6 +550,7 @@ function SidePanel({ overview }: { overview: Overview | null }) {
 
 export default function ClinicalManagement() {
   const dialog = useDialog();
+  const navigate = useNavigate();
   const [overview, setOverview] = useState<Overview | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [patients, setPatients] = useState<LinkedPatient[]>([]);
@@ -505,7 +574,7 @@ export default function ClinicalManagement() {
     try {
       const params = new URLSearchParams();
       params.set("page", String(page));
-      params.set("pageSize", "10");
+      params.set("pageSize", String(ITEMS_PER_PAGE));
       if (search) params.set("search", search);
       if (roleFilter) params.set("role", roleFilter);
 
@@ -518,7 +587,9 @@ export default function ClinicalManagement() {
       if (!roleFilter || roleFilter === "secretary") {
         try {
           const secretaries = await api("/secretaries");
-          secretaryMembers = (Array.isArray(secretaries) ? secretaries : []).map((s: any) => ({
+          secretaryMembers = (
+            Array.isArray(secretaries) ? secretaries : []
+          ).map((s: any) => ({
             id: s.id,
             role: "secretary",
             isActive: s.isActive,
@@ -537,9 +608,7 @@ export default function ClinicalManagement() {
       }
 
       // Filter out old secretary members from clinic_memberships to avoid duplicates
-      const clinicMembers = data.items.filter(
-        (m) => m.role !== "secretary",
-      );
+      const clinicMembers = data.items.filter((m) => m.role !== "secretary");
 
       const allMembers = [...clinicMembers, ...secretaryMembers];
 
@@ -592,7 +661,9 @@ export default function ClinicalManagement() {
       try {
         await api(`/secretaries/${removeTarget}`, { method: "DELETE" });
       } catch {
-        await api(`/clinic-admin/members/${removeTarget}`, { method: "DELETE" });
+        await api(`/clinic-admin/members/${removeTarget}`, {
+          method: "DELETE",
+        });
       }
       loadMembers();
       loadOverview();
@@ -649,7 +720,11 @@ export default function ClinicalManagement() {
     setAddError("");
     setAddSuccess("");
 
-    if (!addForm.name.trim() || !addForm.email.trim() || (!editingMember && !addForm.phone.trim())) {
+    if (
+      !addForm.name.trim() ||
+      !addForm.email.trim() ||
+      (!editingMember && !addForm.phone.trim())
+    ) {
       setAddError("Preencha todos os campos.");
       return;
     }
@@ -663,7 +738,9 @@ export default function ClinicalManagement() {
           body: {
             name: addForm.name.trim(),
             email: addForm.email.trim(),
-            ...(addForm.phone.trim() ? { phone: addForm.phone.replace(/\D/g, "") } : {}),
+            ...(addForm.phone.trim()
+              ? { phone: addForm.phone.replace(/\D/g, "") }
+              : {}),
           },
         });
         setAddSuccess("Secretário(a) atualizado(a) com sucesso!");
@@ -677,7 +754,9 @@ export default function ClinicalManagement() {
             phone: addForm.phone.replace(/\D/g, ""),
           },
         });
-        setAddSuccess("Secretário(a) cadastrado(a)! Um código de acesso foi enviado para o email informado.");
+        setAddSuccess(
+          "Secretário(a) cadastrado(a)! Um código de acesso foi enviado para o email informado.",
+        );
       }
       setAddForm({ name: "", email: "", phone: "" });
       setEditingMember(null);
@@ -686,10 +765,18 @@ export default function ClinicalManagement() {
       loadOverview();
     } catch (err: any) {
       const msg = err?.message || "";
-      if (msg.includes("already") || msg.includes("Conflict") || msg.includes("cadastrado")) {
+      if (
+        msg.includes("already") ||
+        msg.includes("Conflict") ||
+        msg.includes("cadastrado")
+      ) {
         setAddError("Este email já está cadastrado nesta clínica.");
       } else {
-        setAddError(editingMember ? "Erro ao atualizar. Tente novamente." : "Erro ao adicionar. Tente novamente.");
+        setAddError(
+          editingMember
+            ? "Erro ao atualizar. Tente novamente."
+            : "Erro ao adicionar. Tente novamente.",
+        );
       }
     } finally {
       setAddLoading(false);
@@ -724,7 +811,13 @@ export default function ClinicalManagement() {
             </p>
           </div>
           <button
-            onClick={() => { setShowAddModal(true); setAddError(""); setAddSuccess(""); setEditingMember(null); setAddForm({ name: "", email: "", phone: "" }); }}
+            onClick={() => {
+              setShowAddModal(true);
+              setAddError("");
+              setAddSuccess("");
+              setEditingMember(null);
+              setAddForm({ name: "", email: "", phone: "" });
+            }}
             className="bg-primary text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer border-none"
           >
             <UserPlus size={18} />
@@ -752,27 +845,30 @@ export default function ClinicalManagement() {
           onPageChange={setPage}
           onRemove={handleRemove}
           onEdit={handleEdit}
+          onViewProfile={(member) =>
+            navigate(`/doctors/${member.professional?.id}/profile`)
+          }
           onResendCode={handleResendCode}
           resendCooldown={resendCooldown}
         />
 
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          <div className="lg:col-span-2">
-            <LinkedPatientsSection patients={patients} />
-          </div>
-          <div className="lg:col-span-1">
-            <SidePanel overview={overview} />
-          </div>
-        </section>
+        <LinkedPatientsSection patients={patients} />
       </motion.div>
 
       {/* Add Member Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-pointer" onClick={() => setShowAddModal(false)} />
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-pointer"
+            onClick={() => setShowAddModal(false)}
+          />
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full">
             <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
-              <h2 className="text-lg font-extrabold text-slate-900">{editingMember ? "Editar Secretário(a)" : "Adicionar Secretário(a)"}</h2>
+              <h2 className="text-lg font-extrabold text-slate-900">
+                {editingMember
+                  ? "Editar Secretário(a)"
+                  : "Adicionar Secretário(a)"}
+              </h2>
               <button
                 onClick={() => setShowAddModal(false)}
                 className="p-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer border-none bg-transparent"
@@ -792,32 +888,44 @@ export default function ClinicalManagement() {
                 </div>
               )}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Nome completo</label>
+                <label className="text-sm font-medium text-slate-700">
+                  Nome completo
+                </label>
                 <input
                   type="text"
                   value={addForm.name}
-                  onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                  onChange={(e) =>
+                    setAddForm({ ...addForm, name: e.target.value })
+                  }
                   placeholder="Nome do secretário(a)"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Email</label>
+                <label className="text-sm font-medium text-slate-700">
+                  Email
+                </label>
                 <input
                   type="email"
                   value={addForm.email}
-                  onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                  onChange={(e) =>
+                    setAddForm({ ...addForm, email: e.target.value })
+                  }
                   placeholder="email@exemplo.com"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Telefone</label>
+                <label className="text-sm font-medium text-slate-700">
+                  Telefone
+                </label>
                 <input
                   type="tel"
                   value={addForm.phone}
                   onChange={(e) => {
-                    const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                    const digits = e.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 11);
                     let masked = "";
                     if (digits.length > 0) masked += `(${digits.slice(0, 2)}`;
                     if (digits.length >= 2) masked += `) `;
@@ -830,7 +938,9 @@ export default function ClinicalManagement() {
                 />
               </div>
               <p className="text-xs text-slate-500">
-                {editingMember ? "Atualize os dados do secretário(a)." : "Um código de primeiro acesso será enviado para o email informado."}
+                {editingMember
+                  ? "Atualize os dados do secretário(a)."
+                  : "Um código de primeiro acesso será enviado para o email informado."}
               </p>
               <div className="flex gap-3 pt-2">
                 <button
@@ -846,7 +956,11 @@ export default function ClinicalManagement() {
                   className="flex-1 bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary-dark transition-colors cursor-pointer border-none disabled:opacity-60 flex items-center justify-center gap-2"
                 >
                   {addLoading && <Loader2 size={16} className="animate-spin" />}
-                  {addLoading ? "Salvando..." : editingMember ? "Salvar" : "Adicionar"}
+                  {addLoading
+                    ? "Salvando..."
+                    : editingMember
+                      ? "Salvar"
+                      : "Adicionar"}
                 </button>
               </div>
             </form>
@@ -857,14 +971,20 @@ export default function ClinicalManagement() {
       {/* Remove Confirmation Dialog */}
       {removeTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-pointer" onClick={() => setRemoveTarget(null)} />
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-pointer"
+            onClick={() => setRemoveTarget(null)}
+          />
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center">
             <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-5">
               <AlertTriangle className="text-red-600" size={28} />
             </div>
-            <h3 className="text-lg font-extrabold text-slate-900 mb-2">Remover membro</h3>
+            <h3 className="text-lg font-extrabold text-slate-900 mb-2">
+              Remover membro
+            </h3>
             <p className="text-sm text-slate-600 mb-6">
-              Tem certeza que deseja remover este membro da clínica? Ele perderá o acesso à plataforma.
+              Tem certeza que deseja remover este membro da clínica? Ele perderá
+              o acesso à plataforma.
             </p>
             <div className="flex gap-3">
               <button
