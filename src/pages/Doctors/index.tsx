@@ -202,12 +202,34 @@ export default function Doctors() {
     null,
   );
 
+  // IDs of doctors that already belong to the clinic (active members),
+  // used to decide between "Ver Perfil" and "Enviar Convite" in search results.
+  const [clinicDoctorIds, setClinicDoctorIds] = useState<Set<string>>(
+    new Set(),
+  );
+
   const navigate = useNavigate();
   const toast = useToast();
 
   useEffect(() => {
     fetchDoctors();
+    fetchClinicDoctorIds();
   }, []);
+
+  async function fetchClinicDoctorIds() {
+    try {
+      const token = localStorage.getItem("pocketmed_token");
+      const response = await api.get("/clinic-admin/doctors", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const ids = (Array.isArray(response.data) ? response.data : []).map(
+        (d: { id: string }) => d.id,
+      );
+      setClinicDoctorIds(new Set(ids));
+    } catch {
+      setClinicDoctorIds(new Set());
+    }
+  }
 
   const loadSentInvites = useCallback(async () => {
     setInvitesLoading(true);
@@ -296,12 +318,14 @@ export default function Doctors() {
     } else {
       // Try general search by name/specialty/crm
       setSearchResults(
-        doctors.filter(
-          (d) =>
-            d.name.toLowerCase().includes(trimmed.toLowerCase()) ||
-            d.specialty.toLowerCase().includes(trimmed.toLowerCase()) ||
-            d.crm.toLowerCase().includes(trimmed.toLowerCase()),
-        ),
+        doctors
+          .filter(
+            (d) =>
+              d.name.toLowerCase().includes(trimmed.toLowerCase()) ||
+              d.specialty.toLowerCase().includes(trimmed.toLowerCase()) ||
+              d.crm.toLowerCase().includes(trimmed.toLowerCase()),
+          )
+          .map((d) => ({ ...d, isClinicMember: clinicDoctorIds.has(d.id) })),
       );
       setSearchError(null);
       return;
@@ -317,7 +341,14 @@ export default function Doctors() {
         params: { crm, state },
         headers: { Authorization: `Bearer ${token}` },
       });
-      setSearchResults([response.data]);
+      const found = response.data as Doctor;
+      setSearchResults([
+        {
+          ...found,
+          // Prefer the backend flag; fall back to the local clinic-member set.
+          isClinicMember: found.isClinicMember ?? clinicDoctorIds.has(found.id),
+        },
+      ]);
     } catch (err: any) {
       if (err?.response?.status === 404) {
         setSearchResults([]);

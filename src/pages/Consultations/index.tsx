@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Calendar,
-  Download,
   PlusCircle,
   CalendarDays,
   SlidersHorizontal,
@@ -13,6 +12,7 @@ import {
 } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
 import { useDialog } from "../../components/ui/Dialog";
+import { NewAppointmentModal } from "../../components/NewAppointmentModal";
 import { api } from "../../services/api";
 
 // --- Types ---
@@ -68,6 +68,7 @@ export default function Consultations() {
   const [_loading, setLoading] = useState(true);
   const [selectedConsultation, setSelectedConsultation] =
     useState<Consultation | null>(null);
+  const [showNewAppointment, setShowNewAppointment] = useState(false);
   const itemsPerPage = 10;
 
   const loadConsultations = useCallback(async () => {
@@ -147,11 +148,10 @@ export default function Consultations() {
             </p>
           </div>
           <div className="flex gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 bg-slate-100 border border-slate-200/40 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-200 transition-colors cursor-pointer">
-              <Download className="w-4 h-4 text-slate-500" />
-              Exportar
-            </button>
-            <button className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:opacity-95 shadow-md shadow-primary/10 transition-all cursor-pointer">
+            <button
+              onClick={() => setShowNewAppointment(true)}
+              className="flex items-center gap-2 px-5 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:opacity-95 shadow-md shadow-primary/10 transition-all cursor-pointer"
+            >
               <PlusCircle className="w-4 h-4" />
               Agendar Consulta
             </button>
@@ -530,6 +530,12 @@ export default function Consultations() {
           </div>
         </div>
       )}
+
+      <NewAppointmentModal
+        isOpen={showNewAppointment}
+        onClose={() => setShowNewAppointment(false)}
+        onCreated={loadConsultations}
+      />
     </MainLayout>
   );
 }

@@ -5,14 +5,19 @@ import {
   Search,
   Calendar as CalendarIcon,
   Clock,
+  UserPlus,
+  ArrowLeft,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "./ui/Button";
-import { api } from "../services/api";
+import { api, ApiError } from "../services/api";
+import { useToast } from "../contexts/ToastContext";
 
 interface NewAppointmentModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Called after an appointment is successfully created. */
+  onCreated?: () => void;
 }
 
 interface FoundPatient {
@@ -34,27 +39,51 @@ for (let h = 8; h <= 20; h++) {
   if (h < 20) TIME_SLOTS.push(`${String(h).padStart(2, "0")}:30`);
 }
 
+const GENDER_OPTIONS = [
+  { value: "Masculino", label: "Masculino" },
+  { value: "Feminino", label: "Feminino" },
+  { value: "Outro", label: "Outro" },
+];
+
 export function NewAppointmentModal({
   isOpen,
   onClose,
+  onCreated,
 }: NewAppointmentModalProps) {
-  const [searchEmail, setSearchEmail] = useState("");
+  const toast = useToast();
+
+  // Patient search
+  const [searchTerm, setSearchTerm] = useState("");
   const [searching, setSearching] = useState(false);
+  const [results, setResults] = useState<FoundPatient[]>([]);
   const [patient, setPatient] = useState<FoundPatient | null>(null);
   const [searchError, setSearchError] = useState("");
+  const [hasSearched, setHasSearched] = useState(false);
 
+  // Shadow (pre-registration) form
+  const [showShadowForm, setShowShadowForm] = useState(false);
+  const [shadowName, setShadowName] = useState("");
+  const [shadowEmail, setShadowEmail] = useState("");
+  const [shadowGender, setShadowGender] = useState("Masculino");
+  const [shadowPhone, setShadowPhone] = useState("");
+  const [shadowBirthDate, setShadowBirthDate] = useState("");
+
+  // Appointment fields
   const [doctors, setDoctors] = useState<ClinicDoctor[]>([]);
   const [selectedDoctor, setSelectedDoctor] = useState("");
   const [date, setDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("08:30");
   const [notes, setNotes] = useState("");
 
-  // Carregar médicos da clínica
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  // Carregar médicos ativos da clínica (admin)
   useEffect(() => {
     if (!isOpen) return;
     async function loadDoctors() {
       try {
-        const data = await api("/doctors");
+        const data = await api("/clinic-admin/doctors");
         setDoctors(
           (Array.isArray(data) ? data : []).map((d: any) => ({
             id: d.id,
@@ -69,38 +98,182 @@ export function NewAppointmentModal({
     loadDoctors();
   }, [isOpen]);
 
+  function resetAll() {
+    setSearchTerm("");
+    setResults([]);
+    setPatient(null);
+    setSearchError("");
+    setHasSearched(false);
+    setShowShadowForm(false);
+    setShadowName("");
+    setShadowEmail("");
+    setShadowGender("Masculino");
+    setShadowPhone("");
+    setShadowBirthDate("");
+    setSelectedDoctor("");
+    setDate("");
+    setSelectedTime("08:30");
+    setNotes("");
+    setSubmitting(false);
+    setFormError("");
+  }
+
+  function handleClose() {
+    resetAll();
+    onClose();
+  }
+
   async function handleSearchPatient() {
-    if (!searchEmail.trim()) return;
+    const term = searchTerm.trim();
+    if (term.length < 3) {
+      setSearchError("Digite ao menos 3 caracteres.");
+      return;
+    }
     setSearching(true);
     setSearchError("");
     setPatient(null);
+    setResults([]);
+    setHasSearched(true);
     try {
-      const results = await api(
-        `/patients/search?q=${encodeURIComponent(searchEmail.trim())}`,
+      const data = await api(`/patients/search?q=${encodeURIComponent(term)}`);
+      const arr = Array.isArray(data) ? data : [];
+      setResults(
+        arr.map((p: any) => ({ id: p.id, name: p.name, email: p.email })),
       );
-      const arr = Array.isArray(results) ? results : [];
-      if (arr.length > 0) {
-        setPatient({ id: arr[0].id, name: arr[0].name, email: arr[0].email });
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setSearchError(err.data?.message || "Erro ao buscar paciente.");
       } else {
-        setSearchError("Nenhum paciente encontrado com esse email.");
+        setSearchError("Erro ao buscar paciente.");
       }
-    } catch {
-      setSearchError("Erro ao buscar paciente.");
     } finally {
       setSearching(false);
     }
   }
 
-  function handleClose() {
-    setSearchEmail("");
-    setPatient(null);
-    setSearchError("");
-    setSelectedDoctor("");
-    setDate("");
-    setSelectedTime("08:30");
-    setNotes("");
-    onClose();
+  function openShadowForm() {
+    // Pre-fill the name/email fields if the user typed something useful.
+    const term = searchTerm.trim();
+    if (term.includes("@")) {
+      setShadowEmail(term);
+      setShadowName("");
+    } else {
+      setShadowName(term);
+      setShadowEmail("");
+    }
+    setShowShadowForm(true);
   }
+
+  /**
+   * Creates the shadow patient (pre-registration) tied to the selected clinic
+   * doctor. The backend grants access to the whole clinic automatically.
+   * Returns the created patient id.
+   */
+  async function createShadowPatient(doctorId: string): Promise<string> {
+    const formData = new FormData();
+    formData.append("name", shadowName.trim());
+    formData.append("email", shadowEmail.trim());
+    formData.append("gender", shadowGender);
+    formData.append("phone", shadowPhone.trim());
+    formData.append("birthDate", shadowBirthDate);
+    formData.append("doctorCreatorId", doctorId);
+
+    const res = await api("/auth/register/patient-shadow", {
+      method: "POST",
+      body: formData,
+      isFormData: true,
+    });
+    return res.user.id as string;
+  }
+
+  function buildDateTimeIso(): string | null {
+    if (!date || !selectedTime) return null;
+    // Build a local datetime and convert to ISO.
+    const dt = new Date(`${date}T${selectedTime}:00`);
+    if (Number.isNaN(dt.getTime())) return null;
+    return dt.toISOString();
+  }
+
+  async function handleSubmit() {
+    setFormError("");
+
+    if (!selectedDoctor) {
+      setFormError("Selecione o médico responsável.");
+      return;
+    }
+
+    const dateTime = buildDateTimeIso();
+    if (!dateTime) {
+      setFormError("Selecione a data e o horário da consulta.");
+      return;
+    }
+
+    const reason = notes.trim() || "Consulta";
+
+    // Determine the patient: existing selection or a new shadow.
+    let patientId = patient?.id || null;
+
+    if (!patientId && showShadowForm) {
+      if (
+        !shadowName.trim() ||
+        !shadowEmail.trim() ||
+        !shadowPhone.trim() ||
+        !shadowBirthDate
+      ) {
+        setFormError(
+          "Preencha nome, email, telefone e data de nascimento do novo paciente.",
+        );
+        return;
+      }
+    }
+
+    if (!patientId && !showShadowForm) {
+      setFormError("Selecione um paciente ou cadastre um novo.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // Create the shadow patient first, if needed.
+      if (!patientId && showShadowForm) {
+        try {
+          patientId = await createShadowPatient(selectedDoctor);
+        } catch (err) {
+          const msg =
+            err instanceof ApiError
+              ? err.data?.message || "Erro ao cadastrar paciente."
+              : "Erro ao cadastrar paciente.";
+          setFormError(String(msg));
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      await api("/appointments", {
+        method: "POST",
+        body: {
+          doctorId: selectedDoctor,
+          patientId,
+          dateTime,
+          reason,
+        },
+      });
+
+      toast.success("Consulta agendada com sucesso!");
+      onCreated?.();
+      handleClose();
+    } catch (err) {
+      const msg =
+        err instanceof ApiError
+          ? err.data?.message || "Erro ao agendar consulta."
+          : "Erro ao agendar consulta.";
+      setFormError(String(msg));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const canPickSchedule = !!patient || showShadowForm;
 
   return (
     <AnimatePresence>
@@ -123,18 +296,18 @@ export function NewAppointmentModal({
             {/* Header */}
             <div className="px-8 pt-8 pb-5 border-b border-slate-100 shrink-0">
               <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <ClipboardCheck className="w-5 h-5 text-primary" />
-                    </div>
-                    <h2 className="text-xl font-display font-extrabold text-slate-900 tracking-tight">
-                      Novo Agendamento
-                    </h2>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <ClipboardCheck className="w-5 h-5 text-primary" />
                   </div>
-                  <p className="text-slate-500 text-sm pl-10">
-                    Preencha os dados abaixo para reservar um horário.
-                  </p>
+                  <div className="space-y-1">
+                    <h2 className="text-xl font-display font-extrabold text-slate-900 tracking-tight">
+                      Agendar Consulta
+                    </h2>
+                    <p className="text-slate-500 text-sm">
+                      Preencha os dados abaixo para reservar um horário.
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={handleClose}
@@ -147,49 +320,166 @@ export function NewAppointmentModal({
 
             {/* Form */}
             <div className="px-8 py-6 space-y-5 overflow-y-auto flex-1">
-              {/* Paciente — busca por email */}
+              {/* Paciente */}
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Paciente
                 </label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+
+                {/* Selected patient */}
+                {patient ? (
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-sm">
+                        {patient.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">
+                          {patient.name}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {patient.email}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setPatient(null)}
+                      className="text-xs font-semibold text-slate-500 hover:text-slate-700 cursor-pointer border-none bg-transparent"
+                    >
+                      Trocar
+                    </button>
+                  </div>
+                ) : showShadowForm ? (
+                  /* Shadow pre-registration form */
+                  <div className="space-y-3 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                        <UserPlus className="w-4 h-4 text-primary" />
+                        Cadastrar novo paciente
+                      </div>
+                      <button
+                        onClick={() => setShowShadowForm(false)}
+                        className="flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-700 cursor-pointer border-none bg-transparent"
+                      >
+                        <ArrowLeft className="w-3 h-3" />
+                        Voltar à busca
+                      </button>
+                    </div>
                     <input
-                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all placeholder:text-slate-400 outline-none"
-                      placeholder="Pesquisar por email do paciente..."
-                      type="text"
-                      value={searchEmail}
-                      onChange={(e) => setSearchEmail(e.target.value)}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" && handleSearchPatient()
-                      }
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all placeholder:text-slate-400 outline-none"
+                      placeholder="Nome completo"
+                      value={shadowName}
+                      onChange={(e) => setShadowName(e.target.value)}
                     />
-                  </div>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={handleSearchPatient}
-                    loading={searching}
-                  >
-                    Buscar
-                  </Button>
-                </div>
-                {searchError && (
-                  <p className="text-xs text-red-500 ml-1">{searchError}</p>
-                )}
-                {patient && (
-                  <div className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-sm">
-                      {patient.name.charAt(0).toUpperCase()}
+                    <input
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all placeholder:text-slate-400 outline-none"
+                      placeholder="Email"
+                      type="email"
+                      value={shadowEmail}
+                      onChange={(e) => setShadowEmail(e.target.value)}
+                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <select
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all appearance-none cursor-pointer outline-none"
+                        value={shadowGender}
+                        onChange={(e) => setShadowGender(e.target.value)}
+                      >
+                        {GENDER_OPTIONS.map((g) => (
+                          <option key={g.value} value={g.value}>
+                            {g.label}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all placeholder:text-slate-400 outline-none"
+                        placeholder="Telefone"
+                        value={shadowPhone}
+                        onChange={(e) => setShadowPhone(e.target.value)}
+                      />
+                      <input
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer outline-none"
+                        type="date"
+                        value={shadowBirthDate}
+                        onChange={(e) => setShadowBirthDate(e.target.value)}
+                      />
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-900">
-                        {patient.name}
-                      </p>
-                      <p className="text-xs text-slate-500">{patient.email}</p>
-                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      O paciente ficará disponível para toda a clínica e
+                      receberá um convite por email.
+                    </p>
                   </div>
+                ) : (
+                  /* Search box */
+                  <>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                        <input
+                          className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all placeholder:text-slate-400 outline-none"
+                          placeholder="Pesquisar por nome ou email na Hispora..."
+                          type="text"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          onKeyDown={(e) =>
+                            e.key === "Enter" && handleSearchPatient()
+                          }
+                        />
+                      </div>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={handleSearchPatient}
+                        loading={searching}
+                      >
+                        Buscar
+                      </Button>
+                    </div>
+                    {searchError && (
+                      <p className="text-xs text-red-500 ml-1">{searchError}</p>
+                    )}
+
+                    {results.length > 0 && (
+                      <div className="border border-slate-200 rounded-xl divide-y divide-slate-100 overflow-hidden">
+                        {results.map((r) => (
+                          <button
+                            key={r.id}
+                            onClick={() => {
+                              setPatient(r);
+                              setResults([]);
+                            }}
+                            className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-slate-50 transition-colors cursor-pointer border-none bg-white"
+                          >
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                              {r.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-slate-900 truncate">
+                                {r.name}
+                              </p>
+                              <p className="text-xs text-slate-500 truncate">
+                                {r.email}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {hasSearched && !searching && results.length === 0 && (
+                      <div className="text-center py-3">
+                        <p className="text-sm text-slate-500 mb-2">
+                          Nenhum paciente encontrado.
+                        </p>
+                        <button
+                          onClick={openShadowForm}
+                          className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:opacity-80 cursor-pointer border-none bg-transparent"
+                        >
+                          <UserPlus className="w-4 h-4" />
+                          Cadastrar novo paciente
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -207,7 +497,8 @@ export function NewAppointmentModal({
                     <option value="">Selecione o médico</option>
                     {doctors.map((doc) => (
                       <option key={doc.id} value={doc.id}>
-                        {doc.name} ({doc.specialty})
+                        {doc.name}
+                        {doc.specialty ? ` (${doc.specialty})` : ""}
                       </option>
                     ))}
                   </select>
@@ -253,16 +544,20 @@ export function NewAppointmentModal({
               {/* Observações */}
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Observações Clínicas
+                  Motivo / Observações
                 </label>
                 <textarea
                   className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all placeholder:text-slate-400 resize-none outline-none"
-                  placeholder="Detalhes relevantes para o atendimento..."
+                  placeholder="Motivo da consulta ou detalhes relevantes..."
                   rows={3}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                 />
               </div>
+
+              {formError && (
+                <p className="text-sm text-red-500 font-medium">{formError}</p>
+              )}
             </div>
 
             {/* Footer */}
@@ -270,7 +565,13 @@ export function NewAppointmentModal({
               <Button variant="ghost" size="md" onClick={handleClose}>
                 Cancelar
               </Button>
-              <Button variant="primary" size="md">
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleSubmit}
+                loading={submitting}
+                disabled={!canPickSchedule}
+              >
                 Confirmar Agendamento
               </Button>
             </div>

@@ -6,9 +6,11 @@ import {
   CalendarCheck,
   AlertCircle,
   FileText,
+  CalendarCog,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { NewAppointmentModal } from "../../components/NewAppointmentModal";
+import { AvailabilityConfigModal } from "../../components/AvailabilityConfigModal";
 import { AppointmentDetailModal } from "../../components/AppointmentDetailModal";
 import { MainLayout } from "../../components/MainLayout";
 import { Button } from "../../components/ui/Button";
@@ -616,6 +618,7 @@ function CalendarView({
 export default function Schedule() {
   const [viewMode, setViewMode] = useState<"Dia" | "Semana" | "Mês">("Mês");
   const [showNewAppointment, setShowNewAppointment] = useState(false);
+  const [showAvailabilityConfig, setShowAvailabilityConfig] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showAppointmentDetail, setShowAppointmentDetail] = useState(false);
   const {
@@ -623,6 +626,7 @@ export default function Schedule() {
     upcomingAppointments,
     completedToday,
     appointments: allAppointments,
+    refetch,
   } = useScheduleAppointments();
   const [selectedAppointment, setSelectedAppointment] = useState<{
     id: string;
@@ -673,6 +677,14 @@ export default function Schedule() {
                   </button>
                 ))}
               </div>
+              <Button
+                onClick={() => setShowAvailabilityConfig(true)}
+                variant="secondary"
+                size="md"
+                icon={<CalendarCog className="w-4 h-4 cursor-pointer" />}
+              >
+                Configurar Agenda
+              </Button>
               <Button
                 onClick={() => setShowNewAppointment(true)}
                 variant="primary"
@@ -741,6 +753,11 @@ export default function Schedule() {
         <NewAppointmentModal
           isOpen={showNewAppointment}
           onClose={() => setShowNewAppointment(false)}
+          onCreated={refetch}
+        />
+        <AvailabilityConfigModal
+          isOpen={showAvailabilityConfig}
+          onClose={() => setShowAvailabilityConfig(false)}
         />
         <AppointmentDetailModal
           isOpen={showAppointmentDetail}
