@@ -71,14 +71,43 @@ const financialItems = [
   { icon: FileText, label: "Relatórios", path: "/financial/reports" },
 ];
 
-interface MainLayoutProps {
-  children: ReactNode;
+export interface NavItem {
+  icon: React.ComponentType<{ size?: number | string; className?: string }>;
+  label: string;
+  path: string;
+  adminOnly?: boolean;
 }
 
-export function MainLayout({ children }: MainLayoutProps) {
+interface MainLayoutProps {
+  children: ReactNode;
+  /** Overrides the platform menu (used by the back office shell). */
+  items?: NavItem[];
+  /** Optional section label rendered above the menu. */
+  sectionLabel?: string;
+  /** Financeiro entry and the doctor verification banner are platform-only. */
+  variant?: "platform" | "backoffice";
+  /** Label shown under the user name in the header. */
+  roleLabel?: string;
+  /** Overrides the header identity (back office uses its own session). */
+  identity?: { name?: string; email?: string; profileImage?: string };
+  /** Overrides the logout action. */
+  onLogout?: () => void;
+}
+
+export function MainLayout({
+  children,
+  items,
+  sectionLabel,
+  variant = "platform",
+  roleLabel,
+  identity,
+  onLogout,
+}: MainLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user: platformUser } = useAuth();
+  const isBackoffice = variant === "backoffice";
+  const user = identity ?? platformUser;
 
   const [avatarDropdown, setAvatarDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -100,10 +129,11 @@ export function MainLayout({ children }: MainLayoutProps) {
   // Financial submenu: show when on /financial/* OR when user manually opened it
   const isOnFinancialPage = location.pathname.startsWith("/financial");
   const [financialMenuForced, setFinancialMenuForced] = useState(false);
-  const displayFinancialMenu = isOnFinancialPage || financialMenuForced;
+  const displayFinancialMenu =
+    !isBackoffice && (isOnFinancialPage || financialMenuForced);
 
-  const isAdmin = user?.role === "admin";
-  const filteredNavItems = navItems.filter(
+  const isAdmin = platformUser?.role === "admin";
+  const filteredNavItems = (items ?? navItems).filter(
     (item) => !item.adminOnly || isAdmin,
   );
 
@@ -161,6 +191,14 @@ export function MainLayout({ children }: MainLayoutProps) {
             </>
           ) : (
             <>
+              {sectionLabel && (
+                <div className="px-4 pb-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/40">
+                    {sectionLabel}
+                  </p>
+                </div>
+              )}
+
               {/* Main Menu */}
               {filteredNavItems.map((item, idx) => {
                 const isActive =
@@ -184,7 +222,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               })}
 
               {/* Financeiro - admin only */}
-              {isAdmin && (
+              {!isBackoffice && isAdmin && (
                 <motion.div whileHover={{ x: 4 }}>
                   <button
                     onClick={() => {
@@ -216,18 +254,22 @@ export function MainLayout({ children }: MainLayoutProps) {
 
           {/* Right: Search + Actions + Profile */}
           <div className="flex items-center gap-4">
-            <div className="relative hidden lg:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Pesquisar pacientes ou registros..."
-                className="bg-slate-100 border-none rounded-full py-2 pl-10 pr-4 w-64 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none"
-              />
-            </div>
+            {!isBackoffice && (
+              <div className="relative hidden lg:block">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Pesquisar pacientes ou registros..."
+                  className="bg-slate-100 border-none rounded-full py-2 pl-10 pr-4 w-64 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none"
+                />
+              </div>
+            )}
 
-            <div className="flex gap-1">
-              <NotificationsDropdown />
-            </div>
+            {!isBackoffice && (
+              <div className="flex gap-1">
+                <NotificationsDropdown />
+              </div>
+            )}
 
             <div className="h-8 w-px bg-slate-200 mx-1"></div>
 
@@ -241,7 +283,10 @@ export function MainLayout({ children }: MainLayoutProps) {
                     {user?.name || user?.email || "Usuário"}
                   </p>
                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                    {user?.role === "admin" ? "Administrador" : "Médico"}
+                    {roleLabel ??
+                      (platformUser?.role === "admin"
+                        ? "Administrador"
+                        : "Médico")}
                   </p>
                 </div>
                 {user?.profileImage ? (
@@ -263,21 +308,25 @@ export function MainLayout({ children }: MainLayoutProps) {
               {/* Dropdown Menu */}
               {avatarDropdown && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-50">
+                  {!isBackoffice && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setAvatarDropdown(false);
+                          navigate("/account");
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors cursor-pointer border-none bg-transparent font-medium"
+                      >
+                        <User size={16} />
+                        Minha Conta
+                      </button>
+                      <div className="h-px bg-slate-100 mx-3 my-1"></div>
+                    </>
+                  )}
                   <button
                     onClick={() => {
                       setAvatarDropdown(false);
-                      navigate("/account");
-                    }}
-                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors cursor-pointer border-none bg-transparent font-medium"
-                  >
-                    <User size={16} />
-                    Minha Conta
-                  </button>
-                  <div className="h-px bg-slate-100 mx-3 my-1"></div>
-                  <button
-                    onClick={() => {
-                      setAvatarDropdown(false);
-                      logout();
+                      (onLogout ?? logout)();
                     }}
                     className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer border-none bg-transparent font-medium"
                   >
@@ -293,7 +342,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         {/* Page Content */}
         <div className="p-6 flex-1">
           {/* Verification Alert Banner */}
-          {location.pathname !== "/verification" && (
+          {!isBackoffice && location.pathname !== "/verification" && (
             <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-4">
               <div className="p-2.5 bg-amber-100 rounded-xl shrink-0">
                 <ShieldAlert className="w-5 h-5 text-amber-700" />
