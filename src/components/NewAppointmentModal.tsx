@@ -12,6 +12,14 @@ import { motion, AnimatePresence } from "motion/react";
 import { Button } from "./ui/Button";
 import { api, ApiError } from "../services/api";
 import { useToast } from "../contexts/ToastContext";
+import {
+  emptyWeekly,
+  generateSlots,
+  resolveDayAvailability,
+  type Weekly,
+  type AvailabilityRule,
+  type AvailabilityException,
+} from "../utils/availability";
 
 interface NewAppointmentModalProps {
   isOpen: boolean;
@@ -30,13 +38,6 @@ interface ClinicDoctor {
   id: string;
   name: string;
   specialty: string;
-}
-
-// Horários de 08:00 até 20:00 de 30 em 30 min
-const TIME_SLOTS: string[] = [];
-for (let h = 8; h <= 20; h++) {
-  TIME_SLOTS.push(`${String(h).padStart(2, "0")}:00`);
-  if (h < 20) TIME_SLOTS.push(`${String(h).padStart(2, "0")}:30`);
 }
 
 const GENDER_OPTIONS = [
@@ -72,8 +73,14 @@ export function NewAppointmentModal({
   const [doctors, setDoctors] = useState<ClinicDoctor[]>([]);
   const [selectedDoctor, setSelectedDoctor] = useState("");
   const [date, setDate] = useState("");
-  const [selectedTime, setSelectedTime] = useState("08:30");
+  const [selectedTime, setSelectedTime] = useState("");
   const [notes, setNotes] = useState("");
+
+  // Availability (weekly rule + specific-date exceptions)
+  const [weekly, setWeekly] = useState<Weekly>(emptyWeekly());
+  const [duration, setDuration] = useState(30);
+  const [buffer, setBuffer] = useState(0);
+  const [exceptions, setExceptions] = useState<AvailabilityException[]>([]);
 
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
@@ -98,6 +105,58 @@ export function NewAppointmentModal({
     loadDoctors();
   }, [isOpen]);
 
+  // Carregar a configuração de agenda (regra semanal + exceções por data)
+  useEffect(() => {
+    if (!isOpen) return;
+    async function loadAvailability() {
+      try {
+        const [rules, excs] = await Promise.all([
+          api("/availabilityRules") as Promise<AvailabilityRule[]>,
+          (
+            api("/availabilityExceptions") as Promise<AvailabilityException[]>
+          ).catch(() => [] as AvailabilityException[]),
+        ]);
+        const rule = Array.isArray(rules) && rules.length > 0 ? rules[0] : null;
+        if (rule) {
+          const normalized = emptyWeekly();
+          for (const key of Object.keys(normalized)) {
+            const dc = rule.weekly?.[key];
+            if (dc) {
+              normalized[key] = {
+                enabled: !!dc.enabled,
+                intervals: Array.isArray(dc.intervals) ? dc.intervals : [],
+              };
+            }
+          }
+          setWeekly(normalized);
+          setDuration(rule.duration ?? 30);
+          setBuffer(rule.buffer ?? 0);
+        }
+        setExceptions(Array.isArray(excs) ? excs : []);
+      } catch {
+        // Fallback silencioso: mantém a grade vazia até a data ser escolhida.
+      }
+    }
+    loadAvailability();
+  }, [isOpen]);
+
+  // Resolve a disponibilidade e a grade de horários para a data escolhida.
+  const dayAvailability = date
+    ? resolveDayAvailability(date, weekly, exceptions)
+    : null;
+  const timeSlots =
+    dayAvailability && dayAvailability.open
+      ? generateSlots(dayAvailability.intervals, duration, buffer)
+      : [];
+
+  // Ao trocar a data, limpa o horário se ele não existir mais na nova grade.
+  useEffect(() => {
+    if (selectedTime && !timeSlots.includes(selectedTime)) {
+      setSelectedTime("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date, timeSlots.join(",")]);
+
   function resetAll() {
     setSearchTerm("");
     setResults([]);
@@ -112,7 +171,7 @@ export function NewAppointmentModal({
     setShadowBirthDate("");
     setSelectedDoctor("");
     setDate("");
-    setSelectedTime("08:30");
+    setSelectedTime("");
     setNotes("");
     setSubmitting(false);
     setFormError("");
@@ -524,21 +583,46 @@ export function NewAppointmentModal({
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
                   <Clock className="w-3 h-3" /> Horário
                 </label>
-                <div className="grid grid-cols-5 sm:grid-cols-7 gap-2">
-                  {TIME_SLOTS.map((time) => (
-                    <button
-                      key={time}
-                      onClick={() => setSelectedTime(time)}
-                      className={`py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border-none ${
-                        selectedTime === time
-                          ? "bg-primary text-white shadow-md shadow-primary/20"
-                          : "bg-slate-100 text-slate-700 hover:bg-primary/10 hover:text-primary"
-                      }`}
-                    >
-                      {time}
-                    </button>
-                  ))}
-                </div>
+
+                {!date ? (
+                  <div className="flex items-center gap-2 py-4 px-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-sm text-slate-400">
+                    <CalendarIcon className="w-4 h-4" />
+                    Selecione uma data para ver os horários disponíveis.
+                  </div>
+                ) : !dayAvailability?.open ? (
+                  <div className="flex items-center gap-2 py-4 px-4 bg-red-50 border border-red-100 rounded-xl text-sm text-red-500">
+                    <Clock className="w-4 h-4" />
+                    {dayAvailability?.reason || "Sem atendimento nesta data."}
+                  </div>
+                ) : timeSlots.length === 0 ? (
+                  <div className="flex items-center gap-2 py-4 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-400">
+                    <Clock className="w-4 h-4" />
+                    Nenhum horário disponível para esta data.
+                  </div>
+                ) : (
+                  <>
+                    {dayAvailability.customized && (
+                      <p className="text-[11px] font-semibold text-primary">
+                        Horário personalizado para esta data.
+                      </p>
+                    )}
+                    <div className="grid grid-cols-5 sm:grid-cols-7 gap-2">
+                      {timeSlots.map((time) => (
+                        <button
+                          key={time}
+                          onClick={() => setSelectedTime(time)}
+                          className={`py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border-none ${
+                            selectedTime === time
+                              ? "bg-primary text-white shadow-md shadow-primary/20"
+                              : "bg-slate-100 text-slate-700 hover:bg-primary/10 hover:text-primary"
+                          }`}
+                        >
+                          {time}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Observações */}

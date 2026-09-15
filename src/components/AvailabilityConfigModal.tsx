@@ -1,9 +1,30 @@
 import { useEffect, useState } from "react";
-import { X, Clock, Plus, Trash2, CalendarCog, Loader2 } from "lucide-react";
+import {
+  X,
+  Clock,
+  Plus,
+  Trash2,
+  CalendarCog,
+  Loader2,
+  CalendarX,
+  CalendarPlus,
+  Ban,
+} from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "./ui/Button";
 import { api, ApiError } from "../services/api";
 import { useToast } from "../contexts/ToastContext";
+import {
+  WEEK_DAYS,
+  emptyWeekly,
+  generateSlots,
+  toMinutes,
+  weekdayKeyFromDate,
+  type Interval,
+  type Weekly,
+  type AvailabilityRule,
+  type AvailabilityException,
+} from "../utils/availability";
 
 interface AvailabilityConfigModalProps {
   isOpen: boolean;
@@ -11,80 +32,14 @@ interface AvailabilityConfigModalProps {
   onSaved?: () => void;
 }
 
-interface Interval {
-  start: string;
-  end: string;
-}
-
-interface DayConfig {
-  enabled: boolean;
-  intervals: Interval[];
-}
-
-type Weekly = Record<string, DayConfig>;
-
-interface AvailabilityRule {
-  id: string;
-  name: string | null;
-  weekly: Weekly;
-  duration: number;
-  buffer: number;
-}
-
-// Ordered list of week days (keys match the backend "weekly" object).
-const WEEK_DAYS: { key: string; label: string; short: string }[] = [
-  { key: "monday", label: "Segunda-feira", short: "Seg" },
-  { key: "tuesday", label: "Terça-feira", short: "Ter" },
-  { key: "wednesday", label: "Quarta-feira", short: "Qua" },
-  { key: "thursday", label: "Quinta-feira", short: "Qui" },
-  { key: "friday", label: "Sexta-feira", short: "Sex" },
-  { key: "saturday", label: "Sábado", short: "Sáb" },
-  { key: "sunday", label: "Domingo", short: "Dom" },
-];
-
 const DURATION_OPTIONS = [10, 15, 20, 30, 40, 45, 60];
 const BUFFER_OPTIONS = [0, 5, 10, 15, 20, 30];
 
-function emptyWeekly(): Weekly {
-  const w: Weekly = {};
-  for (const d of WEEK_DAYS) {
-    w[d.key] = { enabled: false, intervals: [] };
-  }
-  return w;
-}
-
-function toMinutes(hhmm: string): number {
-  const [h, m] = hhmm.split(":").map(Number);
-  return h * 60 + m;
-}
-
-function toHHMM(total: number): string {
-  const h = Math.floor(total / 60);
-  const m = total % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-}
-
-/**
- * Generates the bookable time-slot grid for a single day given its intervals,
- * the consultation duration and the buffer between consultations.
- */
-function generateSlots(
-  intervals: Interval[],
-  duration: number,
-  buffer: number,
-): string[] {
-  if (duration < 1) return [];
-  const slots: string[] = [];
-  const step = duration + Math.max(buffer, 0);
-  for (const interval of intervals) {
-    const start = toMinutes(interval.start);
-    const end = toMinutes(interval.end);
-    if (Number.isNaN(start) || Number.isNaN(end) || end <= start) continue;
-    for (let t = start; t + duration <= end; t += step) {
-      slots.push(toHHMM(t));
-    }
-  }
-  return slots;
+/** Formats a "YYYY-MM-DD" string as a friendly local date, e.g. "25/03/2026". */
+function formatDateBR(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-");
+  if (!y || !m || !d) return dateStr;
+  return `${d}/${m}/${y}`;
 }
 
 export function AvailabilityConfigModal({
@@ -104,6 +59,16 @@ export function AvailabilityConfigModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // --- Specific-date exceptions ---
+  const [exceptions, setExceptions] = useState<AvailabilityException[]>([]);
+  const [excDate, setExcDate] = useState("");
+  const [excMode, setExcMode] = useState<"close" | "custom">("close");
+  const [excIntervals, setExcIntervals] = useState<Interval[]>([
+    { start: "09:00", end: "12:00" },
+  ]);
+  const [excReason, setExcReason] = useState("");
+  const [savingException, setSavingException] = useState(false);
+
   useEffect(() => {
     if (!isOpen) return;
     let cancelled = false;
@@ -112,7 +77,12 @@ export function AvailabilityConfigModal({
       setLoading(true);
       setError(null);
       try {
-        const rules: AvailabilityRule[] = await api("/availabilityRules");
+        const [rules, excs] = await Promise.all([
+          api("/availabilityRules") as Promise<AvailabilityRule[]>,
+          (
+            api("/availabilityExceptions") as Promise<AvailabilityException[]>
+          ).catch(() => [] as AvailabilityException[]),
+        ]);
         const rule = Array.isArray(rules) && rules.length > 0 ? rules[0] : null;
         if (cancelled) return;
         if (rule) {
@@ -132,6 +102,7 @@ export function AvailabilityConfigModal({
           setDuration(rule.duration ?? 30);
           setBuffer(rule.buffer ?? 0);
         }
+        setExceptions(Array.isArray(excs) ? excs : []);
       } catch {
         if (!cancelled) setError("Erro ao carregar a configuração da agenda.");
       } finally {
@@ -200,6 +171,130 @@ export function AvailabilityConfigModal({
     }));
   }
 
+  // --- Specific-date exception handlers ---
+
+  function updateExcInterval(
+    index: number,
+    field: "start" | "end",
+    value: string,
+  ) {
+    setExcIntervals((prev) =>
+      prev.map((it, i) => (i === index ? { ...it, [field]: value } : it)),
+    );
+  }
+
+  function addExcInterval() {
+    setExcIntervals((prev) => [...prev, { start: "13:00", end: "17:00" }]);
+  }
+
+  function removeExcInterval(index: number) {
+    setExcIntervals((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function resetExceptionForm() {
+    setExcDate("");
+    setExcMode("close");
+    setExcIntervals([{ start: "09:00", end: "12:00" }]);
+    setExcReason("");
+  }
+
+  async function handleAddException() {
+    setError(null);
+
+    if (!excDate) {
+      setError("Selecione a data que deseja personalizar.");
+      return;
+    }
+
+    if (exceptions.some((e) => e.type === "single" && e.date === excDate)) {
+      setError("Já existe uma personalização para esta data.");
+      return;
+    }
+
+    // Custom availability: the intervals replace the weekly rule for that date.
+    let body: Record<string, unknown>;
+    if (excMode === "custom") {
+      if (excIntervals.length === 0) {
+        setError("Adicione ao menos um período de atendimento.");
+        return;
+      }
+      for (const it of excIntervals) {
+        if (toMinutes(it.end) <= toMinutes(it.start)) {
+          setError("O horário final deve ser maior que o inicial.");
+          return;
+        }
+      }
+      // The backend stores a single startTime/endTime window per exception,
+      // so we persist one exception per interval for the same date.
+      // The first one carries the reason.
+      body = {
+        type: "single",
+        date: excDate,
+        fullDay: false,
+        startTime: excIntervals[0].start,
+        endTime: excIntervals[0].end,
+        reason: excReason.trim() || null,
+      };
+    } else {
+      body = {
+        type: "single",
+        date: excDate,
+        fullDay: true,
+        reason: excReason.trim() || "Agenda fechada",
+      };
+    }
+
+    setSavingException(true);
+    try {
+      const created: AvailabilityException = await api(
+        "/availabilityExceptions",
+        { method: "POST", body },
+      );
+      let extra: AvailabilityException[] = [];
+      // Persist the remaining custom intervals as additional exceptions.
+      if (excMode === "custom" && excIntervals.length > 1) {
+        extra = await Promise.all(
+          excIntervals.slice(1).map((it) =>
+            api("/availabilityExceptions", {
+              method: "POST",
+              body: {
+                type: "single",
+                date: excDate,
+                fullDay: false,
+                startTime: it.start,
+                endTime: it.end,
+              },
+            }),
+          ),
+        );
+      }
+      setExceptions((prev) => [created, ...extra, ...prev]);
+      resetExceptionForm();
+      toast.success("Data personalizada com sucesso!");
+    } catch (err) {
+      const msg =
+        err instanceof ApiError
+          ? err.data?.message || "Erro ao personalizar a data."
+          : "Erro ao personalizar a data.";
+      setError(String(msg));
+    } finally {
+      setSavingException(false);
+    }
+  }
+
+  async function handleRemoveException(ids: string[]) {
+    try {
+      await Promise.all(
+        ids.map((id) =>
+          api(`/availabilityExceptions/${id}`, { method: "DELETE" }),
+        ),
+      );
+      setExceptions((prev) => prev.filter((e) => !ids.includes(e.id)));
+    } catch {
+      toast.error("Erro ao remover a personalização.");
+    }
+  }
+
   function validate(): string | null {
     if (duration < 1)
       return "A duração da consulta deve ser de ao menos 1 minuto.";
@@ -252,6 +347,49 @@ export function AvailabilityConfigModal({
     duration,
     buffer,
   );
+
+  // Group exceptions by date so multiple custom intervals for the same day
+  // render as a single card. A closed day (fullDay) takes precedence.
+  interface GroupedException {
+    date: string;
+    closed: boolean;
+    reason: string | null;
+    intervals: Interval[];
+    ids: string[];
+  }
+
+  const groupedExceptions: GroupedException[] = (() => {
+    const byDate = new Map<string, GroupedException>();
+    for (const exc of exceptions) {
+      const key = exc.date || exc.startDate || exc.id;
+      let group = byDate.get(key);
+      if (!group) {
+        group = {
+          date: key,
+          closed: false,
+          reason: null,
+          intervals: [],
+          ids: [],
+        };
+        byDate.set(key, group);
+      }
+      group.ids.push(exc.id);
+      if (exc.reason && !group.reason) group.reason = exc.reason;
+      if (exc.fullDay) {
+        group.closed = true;
+      } else if (exc.startTime && exc.endTime) {
+        group.intervals.push({ start: exc.startTime, end: exc.endTime });
+      }
+    }
+    return Array.from(byDate.values())
+      .map((g) => ({
+        ...g,
+        intervals: g.intervals.sort(
+          (a, b) => toMinutes(a.start) - toMinutes(b.start),
+        ),
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  })();
 
   return (
     <AnimatePresence>
@@ -470,6 +608,231 @@ export function AvailabilityConfigModal({
                           {slot}
                         </span>
                       ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Personalizar dia específico */}
+                <div className="space-y-4 border-t border-slate-100 pt-6">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <CalendarCog className="w-3.5 h-3.5 text-primary" />
+                      Personalizar dia específico
+                    </label>
+                    <p className="text-xs text-slate-400">
+                      Feche a agenda ou defina horários diferentes para uma data
+                      exata. Sobrescreve a configuração semanal.
+                    </p>
+                  </div>
+
+                  {/* New exception form */}
+                  <div className="space-y-4 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+                          Data
+                        </label>
+                        <input
+                          type="date"
+                          value={excDate}
+                          onChange={(e) => setExcDate(e.target.value)}
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer outline-none"
+                        />
+                        {excDate && (
+                          <p className="text-[11px] text-slate-400">
+                            Padrão semanal:{" "}
+                            {(() => {
+                              const key = weekdayKeyFromDate(excDate);
+                              const label = WEEK_DAYS.find(
+                                (d) => d.key === key,
+                              )?.label;
+                              return label ?? "—";
+                            })()}
+                          </p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+                          Motivo (opcional)
+                        </label>
+                        <input
+                          type="text"
+                          value={excReason}
+                          onChange={(e) => setExcReason(e.target.value)}
+                          placeholder="Ex.: Feriado, congresso..."
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all placeholder:text-slate-400 outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Mode selector */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setExcMode("close")}
+                        className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer border ${
+                          excMode === "close"
+                            ? "bg-red-50 border-red-200 text-red-600"
+                            : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
+                        }`}
+                      >
+                        <CalendarX className="w-4 h-4" />
+                        Fechar agenda
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setExcMode("custom")}
+                        className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer border ${
+                          excMode === "custom"
+                            ? "bg-primary/10 border-primary/30 text-primary"
+                            : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
+                        }`}
+                      >
+                        <CalendarPlus className="w-4 h-4" />
+                        Horários personalizados
+                      </button>
+                    </div>
+
+                    {/* Custom intervals */}
+                    {excMode === "custom" && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            Períodos de atendimento
+                          </span>
+                          <button
+                            type="button"
+                            onClick={addExcInterval}
+                            className="flex items-center gap-1 text-xs font-semibold text-primary hover:opacity-80 cursor-pointer border-none bg-transparent"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            Adicionar período
+                          </button>
+                        </div>
+                        {excIntervals.map((it, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <input
+                              type="time"
+                              value={it.start}
+                              onChange={(e) =>
+                                updateExcInterval(i, "start", e.target.value)
+                              }
+                              className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm cursor-pointer outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                            />
+                            <span className="text-slate-400 text-sm">até</span>
+                            <input
+                              type="time"
+                              value={it.end}
+                              onChange={(e) =>
+                                updateExcInterval(i, "end", e.target.value)
+                              }
+                              className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm cursor-pointer outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                            />
+                            {excIntervals.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => removeExcInterval(i)}
+                                className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors cursor-pointer border-none bg-transparent"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddException}
+                      loading={savingException}
+                    >
+                      Adicionar personalização
+                    </Button>
+                  </div>
+
+                  {/* Lista de dias personalizados */}
+                  {groupedExceptions.length > 0 && (
+                    <div className="space-y-3">
+                      <span className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        Dias personalizados
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {groupedExceptions.map((g) => (
+                          <div
+                            key={g.date}
+                            className={`rounded-xl border p-4 space-y-3 ${
+                              g.closed
+                                ? "bg-red-50/60 border-red-100"
+                                : "bg-white border-slate-200"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div
+                                  className={`p-2 rounded-lg shrink-0 ${
+                                    g.closed
+                                      ? "bg-red-100 text-red-600"
+                                      : "bg-primary/10 text-primary"
+                                  }`}
+                                >
+                                  {g.closed ? (
+                                    <Ban className="w-4 h-4" />
+                                  ) : (
+                                    <Clock className="w-4 h-4" />
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-bold text-slate-900">
+                                    {formatDateBR(g.date)}
+                                  </p>
+                                  <p
+                                    className={`text-[11px] font-semibold ${
+                                      g.closed ? "text-red-500" : "text-primary"
+                                    }`}
+                                  >
+                                    {g.closed
+                                      ? "Agenda fechada"
+                                      : "Horários personalizados"}
+                                  </p>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveException(g.ids)}
+                                className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors cursor-pointer border-none bg-transparent shrink-0"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+
+                            {!g.closed && g.intervals.length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {g.intervals.map((it, i) => (
+                                  <span
+                                    key={i}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700"
+                                  >
+                                    {it.start}
+                                    <span className="text-slate-400">–</span>
+                                    {it.end}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            {g.reason && (
+                              <p className="text-xs text-slate-500">
+                                <span className="font-semibold text-slate-400">
+                                  Motivo:{" "}
+                                </span>
+                                {g.reason}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
