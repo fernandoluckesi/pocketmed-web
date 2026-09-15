@@ -654,34 +654,17 @@ export default function Schedule() {
       <div>
         {/* Agenda Content */}
         <section>
-          <div className="flex justify-between items-end mb-8">
-            <div>
-              <h1 className="text-4xl font-display font-extrabold text-slate-900 tracking-tight">
+          <div className="flex justify-between items-center gap-4 mb-8">
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight whitespace-nowrap">
                 Agenda Médica
               </h1>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="flex space-x-1 p-1 bg-white rounded-2xl w-fit shadow-sm border border-gray-100">
-                {(["Dia", "Semana", "Mês"] as const).map((view) => (
-                  <button
-                    key={view}
-                    onClick={() => setViewMode(view)}
-                    className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
-                      view === viewMode
-                        ? "bg-primary/5 text-primary"
-                        : "text-gray-500 hover:text-gray-800 bg-transparent"
-                    }`}
-                  >
-                    {view}
-                  </button>
-                ))}
-              </div>
               <Button
                 onClick={() => setShowAvailabilityConfig(true)}
-                variant="secondary"
+                variant="outline"
                 size="md"
                 icon={<CalendarCog className="w-4 h-4 cursor-pointer" />}
+                className="whitespace-nowrap !py-2.5"
               >
                 Configurar Agenda
               </Button>
@@ -690,9 +673,26 @@ export default function Schedule() {
                 variant="primary"
                 size="md"
                 icon={<Plus className="w-4 h-4 cursor-pointer" />}
+                className="whitespace-nowrap !py-2.5"
               >
                 Novo Agendamento
               </Button>
+            </div>
+
+            <div className="flex space-x-1 p-1 bg-white rounded-2xl w-fit shadow-sm border border-gray-100">
+              {(["Dia", "Semana", "Mês"] as const).map((view) => (
+                <button
+                  key={view}
+                  onClick={() => setViewMode(view)}
+                  className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none whitespace-nowrap ${
+                    view === viewMode
+                      ? "bg-primary/5 text-primary"
+                      : "text-gray-500 hover:text-gray-800 bg-transparent"
+                  }`}
+                >
+                  {view}
+                </button>
+              ))}
             </div>
           </div>
 

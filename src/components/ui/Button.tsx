@@ -29,20 +29,16 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary:
-    "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20 active:scale-[0.98]",
-  secondary:
-    "bg-white text-primary hover:bg-slate-50 shadow-lg shadow-black/5 active:scale-[0.98]",
+  primary: "bg-primary text-white hover:bg-primary/90 active:scale-[0.98]",
+  secondary: "bg-white text-primary hover:bg-slate-50 active:scale-[0.98]",
   outline:
     "bg-transparent text-primary border-2 border-primary hover:bg-primary/5 active:scale-[0.98]",
   ghost: "bg-transparent text-primary hover:bg-primary/5 active:scale-[0.98]",
-  danger:
-    "bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-600/20 active:scale-[0.98]",
+  danger: "bg-red-600 text-white hover:bg-red-700 active:scale-[0.98]",
   "danger-outline":
     "bg-transparent text-red-600 border-2 border-red-300 hover:bg-red-50 active:scale-[0.98]",
-  success:
-    "bg-green-600 text-white hover:bg-green-700 shadow-lg shadow-green-600/20 active:scale-[0.98]",
-  dark: "bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20 active:scale-[0.98]",
+  success: "bg-green-600 text-white hover:bg-green-700 active:scale-[0.98]",
+  dark: "bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.98]",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -68,8 +64,8 @@ export function Button({
       disabled={disabled || loading}
       className={`
         inline-flex items-center justify-center font-bold transition-all duration-200
-        cursor-pointer border-none
-        disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none
+        cursor-pointer border-2 border-transparent
+        disabled:opacity-50 disabled:cursor-not-allowed
         ${variantClasses[variant]}
         ${sizeClasses[size]}
         ${fullWidth ? "w-full" : ""}
