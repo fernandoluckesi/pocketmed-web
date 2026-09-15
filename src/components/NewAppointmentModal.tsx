@@ -21,11 +21,31 @@ import {
   type AvailabilityException,
 } from "../utils/availability";
 
+/** Existing appointment rendered by the modal in view/edit mode. */
+export interface EditableAppointment {
+  id: string;
+  /** ISO datetime of the appointment. */
+  dateTime: string;
+  reason?: string;
+  doctorId?: string;
+  doctorName?: string;
+  patientName?: string;
+  patientEmail?: string;
+  isCompleted?: boolean;
+}
+
 interface NewAppointmentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  /** Called after an appointment is successfully created. */
+  /** Called after an appointment is successfully created or updated. */
   onCreated?: () => void;
+  /**
+   * When provided, the modal renders the existing appointment instead of a blank
+   * form: read-only first, switching to editable fields via the "Editar" action.
+   */
+  appointment?: EditableAppointment | null;
+  /** Called after the appointment is cancelled (deleted). */
+  onCancelled?: () => void;
 }
 
 interface FoundPatient {
@@ -50,8 +70,17 @@ export function NewAppointmentModal({
   isOpen,
   onClose,
   onCreated,
+  appointment = null,
+  onCancelled,
 }: NewAppointmentModalProps) {
   const toast = useToast();
+
+  // Existing appointment → starts read-only; "Editar" unlocks the same fields.
+  const isExisting = !!appointment;
+  const [editing, setEditing] = useState(false);
+  const readOnly = isExisting && !editing;
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   // Patient search
   const [searchTerm, setSearchTerm] = useState("");
@@ -140,6 +169,40 @@ export function NewAppointmentModal({
     loadAvailability();
   }, [isOpen]);
 
+  // Popula os campos com a consulta existente ao abrir o modal.
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (!appointment) {
+      setEditing(false);
+      setConfirmingCancel(false);
+      return;
+    }
+
+    const dt = new Date(appointment.dateTime);
+    const pad = (n: number) => String(n).padStart(2, "0");
+
+    setEditing(false);
+    setConfirmingCancel(false);
+    setSelectedDoctor(appointment.doctorId || "");
+    setNotes(appointment.reason || "");
+    if (!Number.isNaN(dt.getTime())) {
+      setDate(
+        `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`,
+      );
+      setSelectedTime(`${pad(dt.getHours())}:${pad(dt.getMinutes())}`);
+    }
+    setPatient(
+      appointment.patientName
+        ? {
+            id: "",
+            name: appointment.patientName,
+            email: appointment.patientEmail || "",
+          }
+        : null,
+    );
+  }, [isOpen, appointment]);
+
   // Resolve a disponibilidade e a grade de horários para a data escolhida.
   const dayAvailability = date
     ? resolveDayAvailability(date, weekly, exceptions)
@@ -149,13 +212,25 @@ export function NewAppointmentModal({
       ? generateSlots(dayAvailability.intervals, duration, buffer)
       : [];
 
+  /**
+   * The appointment's own time may fall outside the current availability grid
+   * (rule changed since booking), so it is always offered as a slot to avoid
+   * losing it while viewing/editing.
+   */
+  const displaySlots =
+    selectedTime && !timeSlots.includes(selectedTime)
+      ? [...timeSlots, selectedTime].sort()
+      : timeSlots;
+
   // Ao trocar a data, limpa o horário se ele não existir mais na nova grade.
+  // Em modo leitura o horário da consulta é preservado.
   useEffect(() => {
-    if (selectedTime && !timeSlots.includes(selectedTime)) {
+    if (readOnly) return;
+    if (selectedTime && !displaySlots.includes(selectedTime)) {
       setSelectedTime("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [date, timeSlots.join(",")]);
+  }, [date, displaySlots.join(","), readOnly]);
 
   function resetAll() {
     setSearchTerm("");
@@ -179,7 +254,30 @@ export function NewAppointmentModal({
 
   function handleClose() {
     resetAll();
+    setEditing(false);
+    setConfirmingCancel(false);
+    setCancelling(false);
     onClose();
+  }
+
+  async function handleCancelAppointment() {
+    if (!appointment) return;
+    setFormError("");
+    setCancelling(true);
+    try {
+      await api(`/appointments/${appointment.id}`, { method: "DELETE" });
+      toast.success("Consulta cancelada com sucesso!");
+      onCancelled?.();
+      handleClose();
+    } catch (err) {
+      const msg =
+        err instanceof ApiError
+          ? err.data?.message || "Erro ao cancelar a consulta."
+          : "Erro ao cancelar a consulta.";
+      setFormError(String(msg));
+    } finally {
+      setCancelling(false);
+    }
   }
 
   async function handleSearchPatient() {
@@ -268,6 +366,29 @@ export function NewAppointmentModal({
     }
 
     const reason = notes.trim() || "Consulta";
+
+    // Editing an existing appointment: reschedule / reassign / update reason.
+    if (appointment) {
+      setSubmitting(true);
+      try {
+        await api(`/appointments/${appointment.id}`, {
+          method: "PUT",
+          body: { dateTime, reason, doctorId: selectedDoctor },
+        });
+        toast.success("Consulta atualizada com sucesso!");
+        onCreated?.();
+        handleClose();
+      } catch (err) {
+        const msg =
+          err instanceof ApiError
+            ? err.data?.message || "Erro ao atualizar a consulta."
+            : "Erro ao atualizar a consulta.";
+        setFormError(String(msg));
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
 
     // Determine the patient: existing selection or a new shadow.
     let patientId = patient?.id || null;
@@ -361,10 +482,18 @@ export function NewAppointmentModal({
                   </div>
                   <div className="space-y-1">
                     <h2 className="text-xl font-display font-extrabold text-slate-900 tracking-tight">
-                      Agendar Consulta
+                      {!isExisting
+                        ? "Agendar Consulta"
+                        : editing
+                          ? "Editar Consulta"
+                          : "Detalhes do Agendamento"}
                     </h2>
                     <p className="text-slate-500 text-sm">
-                      Preencha os dados abaixo para reservar um horário.
+                      {!isExisting
+                        ? "Preencha os dados abaixo para reservar um horário."
+                        : editing
+                          ? "Altere os dados abaixo e salve as alterações."
+                          : "Confira os dados da consulta agendada."}
                     </p>
                   </div>
                 </div>
@@ -401,12 +530,15 @@ export function NewAppointmentModal({
                         </p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => setPatient(null)}
-                      className="text-xs font-semibold text-slate-500 hover:text-slate-700 cursor-pointer border-none bg-transparent"
-                    >
-                      Trocar
-                    </button>
+                    {/* The patient of an existing appointment cannot be swapped. */}
+                    {!isExisting && (
+                      <button
+                        onClick={() => setPatient(null)}
+                        className="text-xs font-semibold text-slate-500 hover:text-slate-700 cursor-pointer border-none bg-transparent"
+                      >
+                        Trocar
+                      </button>
+                    )}
                   </div>
                 ) : showShadowForm ? (
                   /* Shadow pre-registration form */
@@ -466,6 +598,11 @@ export function NewAppointmentModal({
                       O paciente ficará disponível para toda a clínica e
                       receberá um convite por email.
                     </p>
+                  </div>
+                ) : isExisting ? (
+                  /* Existing appointment without patient data resolved */
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-500">
+                    Paciente não informado.
                   </div>
                 ) : (
                   /* Search box */
@@ -549,11 +686,20 @@ export function NewAppointmentModal({
                     Médico Responsável
                   </label>
                   <select
-                    className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all appearance-none cursor-pointer outline-none"
+                    className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all appearance-none cursor-pointer outline-none disabled:cursor-default disabled:text-slate-600"
                     value={selectedDoctor}
                     onChange={(e) => setSelectedDoctor(e.target.value)}
+                    disabled={readOnly}
                   >
                     <option value="">Selecione o médico</option>
+                    {/* Keeps the label visible even if the doctor list is unavailable. */}
+                    {readOnly &&
+                      appointment?.doctorName &&
+                      !doctors.some((d) => d.id === selectedDoctor) && (
+                        <option value={selectedDoctor}>
+                          {appointment.doctorName}
+                        </option>
+                      )}
                     {doctors.map((doc) => (
                       <option key={doc.id} value={doc.id}>
                         {doc.name}
@@ -569,10 +715,11 @@ export function NewAppointmentModal({
                   <div className="relative">
                     <CalendarIcon className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
                     <input
-                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer outline-none"
+                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer outline-none disabled:cursor-default disabled:text-slate-600"
                       type="date"
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
+                      disabled={readOnly}
                     />
                   </div>
                 </div>
@@ -594,7 +741,7 @@ export function NewAppointmentModal({
                     <Clock className="w-4 h-4" />
                     {dayAvailability?.reason || "Sem atendimento nesta data."}
                   </div>
-                ) : timeSlots.length === 0 ? (
+                ) : displaySlots.length === 0 ? (
                   <div className="flex items-center gap-2 py-4 px-4 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-400">
                     <Clock className="w-4 h-4" />
                     Nenhum horário disponível para esta data.
@@ -607,14 +754,22 @@ export function NewAppointmentModal({
                       </p>
                     )}
                     <div className="grid grid-cols-5 sm:grid-cols-7 gap-2">
-                      {timeSlots.map((time) => (
+                      {displaySlots.map((time) => (
                         <button
                           key={time}
+                          type="button"
                           onClick={() => setSelectedTime(time)}
-                          className={`py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border-none ${
+                          disabled={readOnly}
+                          className={`py-2 rounded-xl text-xs font-bold transition-all border-none ${
+                            readOnly ? "cursor-default" : "cursor-pointer"
+                          } ${
                             selectedTime === time
                               ? "bg-primary text-white shadow-md shadow-primary/20"
-                              : "bg-slate-100 text-slate-700 hover:bg-primary/10 hover:text-primary"
+                              : `bg-slate-100 text-slate-700 ${
+                                  readOnly
+                                    ? "opacity-60"
+                                    : "hover:bg-primary/10 hover:text-primary"
+                                }`
                           }`}
                         >
                           {time}
@@ -631,11 +786,12 @@ export function NewAppointmentModal({
                   Motivo / Observações
                 </label>
                 <textarea
-                  className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all placeholder:text-slate-400 resize-none outline-none"
+                  className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all placeholder:text-slate-400 resize-none outline-none disabled:text-slate-600"
                   placeholder="Motivo da consulta ou detalhes relevantes..."
                   rows={3}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
+                  disabled={readOnly}
                 />
               </div>
 
@@ -646,18 +802,78 @@ export function NewAppointmentModal({
 
             {/* Footer */}
             <div className="px-8 py-5 flex justify-end items-center gap-3 border-t border-slate-100 shrink-0">
-              <Button variant="ghost" size="md" onClick={handleClose}>
-                Cancelar
-              </Button>
-              <Button
-                variant="primary"
-                size="md"
-                onClick={handleSubmit}
-                loading={submitting}
-                disabled={!canPickSchedule}
-              >
-                Confirmar Agendamento
-              </Button>
+              {confirmingCancel ? (
+                <>
+                  <span className="mr-auto text-sm font-medium text-slate-600">
+                    Cancelar esta consulta? Essa ação não pode ser desfeita.
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="md"
+                    onClick={() => setConfirmingCancel(false)}
+                  >
+                    Voltar
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="md"
+                    onClick={handleCancelAppointment}
+                    loading={cancelling}
+                  >
+                    Cancelar Consulta
+                  </Button>
+                </>
+              ) : readOnly ? (
+                <>
+                  <Button
+                    variant="danger-outline"
+                    size="md"
+                    onClick={() => setConfirmingCancel(true)}
+                  >
+                    Cancelar Consulta
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onClick={() => setEditing(true)}
+                  >
+                    Editar
+                  </Button>
+                </>
+              ) : isExisting ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="md"
+                    onClick={() => setEditing(false)}
+                  >
+                    Voltar
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onClick={handleSubmit}
+                    loading={submitting}
+                  >
+                    Salvar Alterações
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" size="md" onClick={handleClose}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onClick={handleSubmit}
+                    loading={submitting}
+                    disabled={!canPickSchedule}
+                  >
+                    Confirmar Agendamento
+                  </Button>
+                </>
+              )}
             </div>
           </motion.div>
         </div>

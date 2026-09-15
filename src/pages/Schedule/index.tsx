@@ -9,9 +9,11 @@ import {
   CalendarCog,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { NewAppointmentModal } from "../../components/NewAppointmentModal";
+import {
+  NewAppointmentModal,
+  type EditableAppointment,
+} from "../../components/NewAppointmentModal";
 import { AvailabilityConfigModal } from "../../components/AvailabilityConfigModal";
-import { AppointmentDetailModal } from "../../components/AppointmentDetailModal";
 import { MainLayout } from "../../components/MainLayout";
 import { Button } from "../../components/ui/Button";
 import { api } from "../../services/api";
@@ -24,8 +26,24 @@ interface APIAppointment {
   reason: string;
   status: string;
   isCompleted: boolean;
-  patient?: { name: string; profileImage?: string };
+  doctorId?: string;
+  patient?: { name: string; email?: string; profileImage?: string };
+  doctor?: { id?: string; name?: string };
   doctorName?: string;
+}
+
+/** Maps an API appointment to the shape consumed by the appointment modal. */
+function toAppointmentDetail(apt: APIAppointment): EditableAppointment {
+  return {
+    id: apt.id,
+    dateTime: apt.dateTime,
+    reason: apt.reason || "",
+    doctorId: apt.doctorId || apt.doctor?.id,
+    doctorName: apt.doctor?.name || apt.doctorName || "",
+    patientName: apt.patient?.name || "",
+    patientEmail: apt.patient?.email || "",
+    isCompleted: apt.isCompleted,
+  };
 }
 
 function useScheduleAppointments() {
@@ -94,10 +112,12 @@ function DayView({
   selectedDate,
   setSelectedDate,
   appointments,
+  onAppointmentClick,
 }: {
   selectedDate: Date;
   setSelectedDate: (d: Date) => void;
   appointments: APIAppointment[];
+  onAppointmentClick: (apt: EditableAppointment) => void;
 }) {
   const dayStart = new Date(selectedDate);
   dayStart.setHours(0, 0, 0, 0);
@@ -178,9 +198,12 @@ function DayView({
               const patientName = apt.patient?.name || "Paciente";
 
               return (
-                <div
+                <button
                   key={apt.id}
-                  className="flex items-center p-5 hover:bg-slate-50 transition-all group"
+                  type="button"
+                  onClick={() => onAppointmentClick(toAppointmentDetail(apt))}
+                  aria-label={`Ver detalhes da consulta de ${patientName} às ${time}`}
+                  className="w-full flex items-center p-5 text-left hover:bg-slate-50 transition-all group cursor-pointer bg-transparent border-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                 >
                   <div className="w-20 flex-shrink-0 text-center border-r border-slate-100 mr-5">
                     <p className="text-sm font-black text-primary">{time}</p>
@@ -198,7 +221,7 @@ function DayView({
                   >
                     {apt.isCompleted ? "Concluída" : "Agendada"}
                   </span>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -215,11 +238,13 @@ function WeekView({
   onDayClick,
   appointments,
   onWeekChange,
+  onAppointmentClick,
 }: {
   selectedDate: Date;
   onDayClick: (d: Date) => void;
   appointments: APIAppointment[];
   onWeekChange: (d: Date) => void;
+  onAppointmentClick: (apt: EditableAppointment) => void;
 }) {
   const startOfWeek = new Date(selectedDate);
   const dayOfWeek = startOfWeek.getDay();
@@ -335,18 +360,25 @@ function WeekView({
                 {dayAppts.map((apt) => {
                   const ad = new Date(apt.dateTime);
                   const time = `${ad.getHours().toString().padStart(2, "0")}:${ad.getMinutes().toString().padStart(2, "0")}`;
+                  const patientName = apt.patient?.name || "Paciente";
                   return (
-                    <div
+                    <button
                       key={apt.id}
-                      onClick={() => onDayClick(day)}
-                      className={`px-2 py-1.5 rounded-lg text-[10px] font-bold truncate cursor-pointer transition-all hover:shadow-sm ${
+                      type="button"
+                      onClick={(e) => {
+                        // Keep the day navigation on the column, open details here.
+                        e.stopPropagation();
+                        onAppointmentClick(toAppointmentDetail(apt));
+                      }}
+                      aria-label={`Ver detalhes da consulta de ${patientName} às ${time}`}
+                      className={`w-full text-left px-2 py-1.5 rounded-lg text-[10px] font-bold truncate cursor-pointer transition-all hover:shadow-sm border-solid border-t-0 border-r-0 border-b-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
                         apt.isCompleted
                           ? "bg-green-50 border-l-2 border-green-500 text-green-700"
                           : "bg-primary/5 border-l-2 border-primary text-primary"
                       }`}
                     >
                       {time} {apt.patient?.name?.split(" ")[0] || ""}
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -419,7 +451,7 @@ function CalendarView({
   onDayClick,
 }: {
   appointments: APIAppointment[];
-  onAppointmentClick: (apt: any) => void;
+  onAppointmentClick: (apt: EditableAppointment) => void;
   onDayClick?: (d: Date) => void;
 }) {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -574,21 +606,18 @@ function CalendarView({
 
                 <div className="mt-2 space-y-1 overflow-hidden">
                   {dayAppts.slice(0, 3).map((appt) => (
-                    <div
+                    <button
                       key={appt.id}
-                      onClick={() =>
-                        onAppointmentClick({
-                          id: appt.id,
-                          patientName: appt.patient?.name || "Paciente",
-                          doctorName: appt.doctorName || "",
-                          type: appt.reason || "Consulta",
-                          dateTime: new Date(appt.dateTime).toLocaleString(
-                            "pt-BR",
-                          ),
-                          status: appt.isCompleted ? "Concluída" : "Agendada",
-                        })
-                      }
-                      className={`px-2 py-1 rounded text-[9px] font-bold truncate cursor-pointer transition-all hover:shadow-sm ${
+                      type="button"
+                      onClick={(e) => {
+                        // Keep the day navigation on the cell, open details here.
+                        e.stopPropagation();
+                        onAppointmentClick(toAppointmentDetail(appt));
+                      }}
+                      aria-label={`Ver detalhes da consulta de ${
+                        appt.patient?.name || "Paciente"
+                      } às ${formatTime(appt.dateTime)}`}
+                      className={`w-full text-left px-2 py-1 rounded text-[9px] font-bold truncate cursor-pointer transition-all hover:shadow-sm border-solid border-t-0 border-r-0 border-b-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
                         appt.isCompleted
                           ? "bg-green-50 border-l-2 border-green-500 text-green-700"
                           : "bg-primary/5 border-l-2 border-primary text-primary"
@@ -596,7 +625,7 @@ function CalendarView({
                     >
                       {formatTime(appt.dateTime)}{" "}
                       {appt.patient?.name?.split(" ")[0] || ""}
-                    </div>
+                    </button>
                   ))}
                   {dayAppts.length > 3 && (
                     <span className="text-[9px] text-slate-400 font-medium">
@@ -628,23 +657,10 @@ export default function Schedule() {
     appointments: allAppointments,
     refetch,
   } = useScheduleAppointments();
-  const [selectedAppointment, setSelectedAppointment] = useState<{
-    id: string;
-    patientName: string;
-    doctorName: string;
-    type: string;
-    dateTime: string;
-    status: string;
-  } | null>(null);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<EditableAppointment | null>(null);
 
-  const handleAppointmentClick = (appointment: {
-    id: string;
-    patientName: string;
-    doctorName: string;
-    type: string;
-    dateTime: string;
-    status: string;
-  }) => {
+  const handleAppointmentClick = (appointment: EditableAppointment) => {
     setSelectedAppointment(appointment);
     setShowAppointmentDetail(true);
   };
@@ -702,6 +718,7 @@ export default function Schedule() {
               selectedDate={selectedDate}
               setSelectedDate={setSelectedDate}
               appointments={allAppointments}
+              onAppointmentClick={handleAppointmentClick}
             />
           ) : viewMode === "Semana" ? (
             <WeekView
@@ -712,6 +729,7 @@ export default function Schedule() {
               }}
               onWeekChange={(d: Date) => setSelectedDate(d)}
               appointments={allAppointments}
+              onAppointmentClick={handleAppointmentClick}
             />
           ) : (
             <>
@@ -759,10 +777,13 @@ export default function Schedule() {
           isOpen={showAvailabilityConfig}
           onClose={() => setShowAvailabilityConfig(false)}
         />
-        <AppointmentDetailModal
+        {/* Same layout as the scheduling modal, rendering the existing appointment. */}
+        <NewAppointmentModal
           isOpen={showAppointmentDetail}
           onClose={() => setShowAppointmentDetail(false)}
           appointment={selectedAppointment}
+          onCreated={refetch}
+          onCancelled={refetch}
         />
       </div>
     </MainLayout>
