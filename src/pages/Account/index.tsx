@@ -1,9 +1,10 @@
 import { useState, useRef } from "react";
-import { Camera, Save, Lock, CreditCard } from "lucide-react";
+import { Camera, Save, Lock, CreditCard, ShieldAlert } from "lucide-react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { motion } from "motion/react";
 import { MainLayout } from "../../components/MainLayout";
+import { VerificationStatusCard } from "../../components/VerificationStatusCard";
 import { Button } from "../../components/ui/Button";
 import { useAuth } from "../../contexts/AuthContext";
 import { CustomSelect } from "../../components/ui/CustomSelect";
@@ -198,6 +199,13 @@ export default function Account() {
     },
   });
 
+  // Credential fields are validated against the approved documents, so editing
+  // them sends the verification back to review (enforced by the backend).
+  const credentialsChanged =
+    profileFormik.values.crm !== (user?.crm || "") ||
+    profileFormik.values.rqe !== (user?.rqe || "") ||
+    profileFormik.values.specialty !== (user?.specialty || "");
+
   const tabs = [
     { id: "profile" as const, label: "Perfil", icon: Camera },
     { id: "security" as const, label: "Segurança", icon: Lock },
@@ -219,6 +227,10 @@ export default function Account() {
             Gerencie suas informações pessoais, segurança e assinatura.
           </p>
         </div>
+
+        {/* Verification status: shown above the tabs so it is visible on every
+            tab, since it affects the whole account. */}
+        <VerificationStatusCard />
 
         {/* Tabs */}
         <div className="flex space-x-1 p-1 bg-white rounded-2xl w-fit shadow-sm border border-gray-100">
@@ -366,7 +378,10 @@ export default function Account() {
                     name="cpf"
                     value={profileFormik.values.cpf}
                     onChange={(e) => {
-                      profileFormik.setFieldValue("cpf", maskCpf(e.target.value));
+                      profileFormik.setFieldValue(
+                        "cpf",
+                        maskCpf(e.target.value),
+                      );
                     }}
                     className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
                     placeholder="000.000.000-00"
@@ -469,6 +484,20 @@ export default function Account() {
                   />
                 </div>
               </div>
+
+              {/* Warns before saving: changing credential data reopens the
+                  verification, so it should not come as a surprise. */}
+              {credentialsChanged && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
+                  <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-800">
+                    Você alterou dados profissionais (CRM, RQE ou
+                    especialidade). Ao salvar, seus documentos voltarão para
+                    análise da nossa equipe.
+                  </p>
+                </div>
+              )}
+
               <Button
                 type="submit"
                 disabled={saving}

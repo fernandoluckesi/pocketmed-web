@@ -20,6 +20,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { logout } from "../services/auth";
+import { getVerificationStatus } from "../services/doctorDocuments";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "../components/ui/Button";
 import { NotificationsDropdown } from "./NotificationsDropdown";
@@ -106,6 +107,32 @@ export function MainLayout({ children }: MainLayoutProps) {
   const filteredNavItems = navItems.filter(
     (item) => !item.adminOnly || isAdmin,
   );
+
+  // Verification banner state. Secretaries have no credentials of their own.
+  const [verificationStatus, setVerificationStatus] = useState<string | null>(
+    null,
+  );
+  const isProfessional = user?.type === "doctor" && user?.role !== "secretary";
+
+  useEffect(() => {
+    if (!isProfessional) return;
+    let cancelled = false;
+    getVerificationStatus()
+      .then((result) => {
+        if (!cancelled) setVerificationStatus(result.verificationStatus);
+      })
+      .catch(() => {
+        // Keep the banner hidden if the status cannot be resolved.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isProfessional]);
+
+  const showVerificationBanner =
+    isProfessional &&
+    location.pathname !== "/verification" &&
+    (verificationStatus === "PENDING" || verificationStatus === "REJECTED");
 
   return (
     <div className="min-h-screen flex bg-surface text-on-surface">
@@ -292,28 +319,68 @@ export function MainLayout({ children }: MainLayoutProps) {
 
         {/* Page Content */}
         <div className="p-6 flex-1">
-          {/* Verification Alert Banner */}
-          {location.pathname !== "/verification" && (
-            <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-4">
-              <div className="p-2.5 bg-amber-100 rounded-xl shrink-0">
-                <ShieldAlert className="w-5 h-5 text-amber-700" />
+          {/* Verification banner: only while there is something to act on.
+              Previously it was hardcoded and kept nagging verified doctors. */}
+          {showVerificationBanner && (
+            <div
+              className={`mb-6 rounded-2xl p-4 flex items-center gap-4 border ${
+                verificationStatus === "REJECTED"
+                  ? "bg-rose-50 border-rose-200"
+                  : "bg-amber-50 border-amber-200"
+              }`}
+            >
+              <div
+                className={`p-2.5 rounded-xl shrink-0 ${
+                  verificationStatus === "REJECTED"
+                    ? "bg-rose-100"
+                    : "bg-amber-100"
+                }`}
+              >
+                <ShieldAlert
+                  className={`w-5 h-5 ${
+                    verificationStatus === "REJECTED"
+                      ? "text-rose-700"
+                      : "text-amber-700"
+                  }`}
+                />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-bold text-amber-900">
-                  Verificação pendente
+                <p
+                  className={`text-sm font-bold ${
+                    verificationStatus === "REJECTED"
+                      ? "text-rose-900"
+                      : "text-amber-900"
+                  }`}
+                >
+                  {verificationStatus === "REJECTED"
+                    ? "Documentos precisam de ajuste"
+                    : "Verificação pendente"}
                 </p>
-                <p className="text-xs text-amber-700">
-                  Envie seus documentos profissionais para ativar todas as
-                  funcionalidades da plataforma.
+                <p
+                  className={`text-xs ${
+                    verificationStatus === "REJECTED"
+                      ? "text-rose-700"
+                      : "text-amber-700"
+                  }`}
+                >
+                  {verificationStatus === "REJECTED"
+                    ? "Um ou mais documentos foram recusados. Veja o motivo e reenvie."
+                    : "Envie seus documentos profissionais para ativar todas as funcionalidades da plataforma."}
                 </p>
               </div>
               <Button
                 onClick={() => navigate("/verification")}
                 variant="primary"
                 size="sm"
-                className="shrink-0 bg-amber-600 hover:bg-amber-700 shadow-none cursor-pointer"
+                className={`shrink-0 shadow-none cursor-pointer ${
+                  verificationStatus === "REJECTED"
+                    ? "bg-rose-600 hover:bg-rose-700"
+                    : "bg-amber-600 hover:bg-amber-700"
+                }`}
               >
-                Completar Verificação
+                {verificationStatus === "REJECTED"
+                  ? "Corrigir documentos"
+                  : "Completar Verificação"}
               </Button>
             </div>
           )}
