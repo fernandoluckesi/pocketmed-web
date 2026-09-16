@@ -31,6 +31,7 @@ import {
   useSearchPatients,
   useAccessRequests,
   useCancelAccessRequest,
+  useRequestAccess,
   useCreateShadowPatient,
 } from "../../hooks/usePatients";
 import type { AccessRequest } from "../../hooks/usePatients";
@@ -261,10 +262,14 @@ function RequestsTable({
   requests,
   loading,
   onCancel,
+  onRequestAgain,
+  requestingId,
 }: {
   requests: AccessRequest[];
   loading: boolean;
   onCancel: (request: AccessRequest) => void;
+  onRequestAgain: (request: AccessRequest) => void;
+  requestingId: string | null;
 }) {
   const statusMap: Record<
     string,
@@ -432,10 +437,13 @@ function RequestsTable({
                       )}
                       {req.status === "rejected" && (
                         <button
-                          onClick={() => onCancel(req)}
-                          className="text-xs font-semibold text-primary hover:text-primary/80 hover:underline cursor-pointer border-none bg-transparent"
+                          onClick={() => onRequestAgain(req)}
+                          disabled={requestingId === req.id}
+                          className="text-xs font-semibold text-primary hover:text-primary/80 hover:underline cursor-pointer border-none bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Solicitar novamente
+                          {requestingId === req.id
+                            ? "Solicitando..."
+                            : "Solicitar novamente"}
                         </button>
                       )}
                       {req.status === "approved" && (
@@ -976,7 +984,9 @@ function SearchTabContent({
 function SolicitacoesTabContent({ active }: { active: boolean }) {
   const { requests, loading, refetch } = useAccessRequests();
   const { cancelRequest, loading: cancelLoading } = useCancelAccessRequest();
+  const { requestAccess } = useRequestAccess();
   const [cancelTarget, setCancelTarget] = useState<AccessRequest | null>(null);
+  const [requestingId, setRequestingId] = useState<string | null>(null);
   const toast = useToast();
 
   useEffect(() => {
@@ -996,6 +1006,30 @@ function SolicitacoesTabContent({ active }: { active: boolean }) {
     }
   };
 
+  // Sends a brand-new access request for a previously rejected one. The backend
+  // only blocks a new request while another is PENDING, so a new row is created
+  // and the rejected history is preserved.
+  const handleRequestAgain = async (req: AccessRequest) => {
+    setRequestingId(req.id);
+    try {
+      await requestAccess(req.patientId);
+      toast.success("Nova solicitação enviada");
+      refetch();
+    } catch (err) {
+      // Surface the backend validation message (e.g. access already granted or
+      // a request already pending) instead of a generic one.
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : "Não foi possível reenviar a solicitação. Tente novamente.";
+      toast.error(message);
+      // Refresh so the list reflects the real current state.
+      refetch();
+    } finally {
+      setRequestingId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <motion.div
@@ -1007,6 +1041,8 @@ function SolicitacoesTabContent({ active }: { active: boolean }) {
           requests={requests}
           loading={loading}
           onCancel={(req) => setCancelTarget(req)}
+          onRequestAgain={handleRequestAgain}
+          requestingId={requestingId}
         />
       </motion.div>
       <motion.div
