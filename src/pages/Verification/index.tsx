@@ -109,9 +109,11 @@ export default function Verification() {
       const msg =
         err instanceof ApiError
           ? err.data?.message || "Erro ao enviar o documento."
-          : "Erro ao enviar o documento.";
+          : "Erro ao enviar o documento. Verifique sua conexão.";
       setError(String(msg));
       toast.error(String(msg));
+      // Re-sync with the server so the UI never shows a file that was not saved.
+      await load();
     } finally {
       setUploadingType(null);
       // Clear the input so selecting the same file again still triggers change.
