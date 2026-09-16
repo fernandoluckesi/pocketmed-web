@@ -30,10 +30,6 @@ import Costs from "../pages/Financial/Costs";
 import DRE from "../pages/Financial/DRE";
 import Reports from "../pages/Financial/Reports";
 import { ProtectedRoute } from "../components/ProtectedRoute";
-import { BackofficeProtectedRoute } from "../components/BackofficeProtectedRoute";
-import BackofficeLogin from "../pages/Backoffice/Login";
-import BackofficeDoctorVerification from "../pages/Backoffice/DoctorVerification";
-import BackofficeAudit from "../pages/Backoffice/Audit";
 
 export default function AppRoutes() {
   return (
@@ -219,29 +215,6 @@ export default function AppRoutes() {
           <ProtectedRoute>
             <Reports />
           </ProtectedRoute>
-        }
-      />
-
-      {/* Backoffice (internal Hispora staff) — separate session and guard */}
-      <Route path="/backoffice/login" element={<BackofficeLogin />} />
-      <Route
-        path="/backoffice"
-        element={<Navigate to="/backoffice/doctor-verification" replace />}
-      />
-      <Route
-        path="/backoffice/doctor-verification"
-        element={
-          <BackofficeProtectedRoute>
-            <BackofficeDoctorVerification />
-          </BackofficeProtectedRoute>
-        }
-      />
-      <Route
-        path="/backoffice/audit"
-        element={
-          <BackofficeProtectedRoute>
-            <BackofficeAudit />
-          </BackofficeProtectedRoute>
         }
       />
 

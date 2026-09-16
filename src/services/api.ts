@@ -7,13 +7,6 @@ interface ApiOptions {
   body?: unknown;
   headers?: Record<string, string>;
   isFormData?: boolean;
-  /**
-   * localStorage key holding the bearer token. Defaults to the platform session;
-   * the back office passes its own key so the two sessions stay independent.
-   */
-  tokenKey?: string;
-  /** Where to send the user on 401. Defaults to the platform login. */
-  loginPath?: string;
 }
 
 export class ApiError extends Error {
@@ -31,8 +24,7 @@ export class ApiError extends Error {
 }
 
 export async function api(path: string, options: ApiOptions = {}) {
-  const tokenKey = options.tokenKey || "pocketmed_token";
-  const token = localStorage.getItem(tokenKey);
+  const token = localStorage.getItem("pocketmed_token");
 
   const headers: Record<string, string> = {
     ...(options.isFormData ? {} : { "Content-Type": "application/json" }),
@@ -58,16 +50,11 @@ export async function api(path: string, options: ApiOptions = {}) {
 
   if (response.status === 401) {
     // Only redirect to login if we're not already on a public auth route
-    const isAuthRoute =
-      path.startsWith("/auth/") || path.startsWith("/backoffice/auth/");
+    const isAuthRoute = path.startsWith("/auth/");
     if (!isAuthRoute) {
-      localStorage.removeItem(tokenKey);
-      localStorage.removeItem(
-        tokenKey === "pocketmed_token"
-          ? "pocketmed_user"
-          : "hispora_backoffice_user",
-      );
-      window.location.href = options.loginPath || "/login";
+      localStorage.removeItem("pocketmed_token");
+      localStorage.removeItem("pocketmed_user");
+      window.location.href = "/login";
     }
     const data = await response
       .json()
