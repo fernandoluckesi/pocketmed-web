@@ -78,6 +78,12 @@ export default function Verification() {
   const [loading, setLoading] = useState(true);
   const [uploadingType, setUploadingType] = useState<DocumentType | null>(null);
   const [error, setError] = useState("");
+  // Files chosen by the user but NOT yet uploaded. They are only sent to the
+  // backend when the user clicks "Enviar documentos" at the bottom.
+  const [pendingFiles, setPendingFiles] = useState<
+    Partial<Record<DocumentType, File>>
+  >({});
+  const [submitting, setSubmitting] = useState(false);
 
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
@@ -96,30 +102,65 @@ export default function Verification() {
     load();
   }, [load]);
 
-  async function handleFileSelected(type: DocumentType, file: File | null) {
+  // Only stages the chosen file locally — nothing is sent until the user
+  // submits all documents at once.
+  function handleFileSelected(type: DocumentType, file: File | null) {
     if (!file) return;
-    setUploadingType(type);
     setError("");
-    try {
-      await uploadDocument(type, file);
-      toast.success(`${DOCUMENT_LABELS[type]} enviado para análise.`);
-      // Reload so the persisted status/filename is what gets rendered.
-      await load();
-    } catch (err) {
-      const msg =
-        err instanceof ApiError
-          ? err.data?.message || "Erro ao enviar o documento."
-          : "Erro ao enviar o documento. Verifique sua conexão.";
-      setError(String(msg));
-      toast.error(String(msg));
-      // Re-sync with the server so the UI never shows a file that was not saved.
-      await load();
-    } finally {
-      setUploadingType(null);
-      // Clear the input so selecting the same file again still triggers change.
-      const input = fileRefs.current[type];
-      if (input) input.value = "";
+    setPendingFiles((prev) => ({ ...prev, [type]: file }));
+    // Clear the input so selecting the same file again still triggers change.
+    const input = fileRefs.current[type];
+    if (input) input.value = "";
+  }
+
+  function removePendingFile(type: DocumentType) {
+    setPendingFiles((prev) => {
+      const next = { ...prev };
+      delete next[type];
+      return next;
+    });
+  }
+
+  // Uploads every staged file in sequence, then reloads the verification state.
+  async function handleSubmitAll() {
+    const entries = Object.entries(pendingFiles) as [DocumentType, File][];
+    if (entries.length === 0) return;
+
+    setSubmitting(true);
+    setError("");
+    const failed: DocumentType[] = [];
+
+    for (const [type, file] of entries) {
+      setUploadingType(type);
+      try {
+        await uploadDocument(type, file);
+      } catch (err) {
+        failed.push(type);
+        const msg =
+          err instanceof ApiError
+            ? err.data?.message || `Erro ao enviar ${DOCUMENT_LABELS[type]}.`
+            : `Erro ao enviar ${DOCUMENT_LABELS[type]}. Verifique sua conexão.`;
+        setError(String(msg));
+      }
     }
+    setUploadingType(null);
+
+    // Keep only the files that failed so the user can retry just those.
+    setPendingFiles((prev) => {
+      const next: Partial<Record<DocumentType, File>> = {};
+      for (const type of failed) if (prev[type]) next[type] = prev[type];
+      return next;
+    });
+
+    if (failed.length === 0) {
+      toast.success("Documentos enviados para análise.");
+    } else {
+      toast.error("Alguns documentos não puderam ser enviados. Tente novamente.");
+    }
+
+    // Re-sync with the server so the UI reflects what was actually saved.
+    await load();
+    setSubmitting(false);
   }
 
   const documents: DocumentState[] = state?.documents ?? [];
@@ -129,7 +170,7 @@ export default function Verification() {
 
   return (
     <MainLayout>
-      <div className="space-y-8 max-w-4xl">
+      <div className="space-y-8 w-full">
         <button
           onClick={() => navigate("/dashboard")}
           className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent"
@@ -219,6 +260,7 @@ export default function Verification() {
               {documents.map((doc) => {
                 const isUploading = uploadingType === doc.type;
                 const locked = !doc.canReplace;
+                const pendingFile = pendingFiles[doc.type];
 
                 return (
                   <div
@@ -288,6 +330,29 @@ export default function Verification() {
                       </div>
                     )}
 
+                    {/* Newly selected file, staged for submission */}
+                    {pendingFile && (
+                      <div className="flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
+                        <FileUp className="w-4 h-4 text-primary shrink-0" />
+                        <span className="text-sm text-slate-700 font-medium truncate flex-1">
+                          {pendingFile.name}
+                        </span>
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary shrink-0">
+                          A enviar
+                        </span>
+                        {!submitting && (
+                          <button
+                            type="button"
+                            onClick={() => removePendingFile(doc.type)}
+                            aria-label="Remover arquivo selecionado"
+                            className="shrink-0 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer border-none bg-transparent"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+
                     <input
                       ref={(el) => {
                         fileRefs.current[doc.type] = el;
@@ -303,33 +368,60 @@ export default function Verification() {
                       }
                     />
 
-                    {/* Upload / replace action */}
+                    {/* Choose / replace action (staging only — no upload yet) */}
                     {!locked && (
                       <button
                         type="button"
-                        disabled={isUploading}
+                        disabled={isUploading || submitting}
                         onClick={() => fileRefs.current[doc.type]?.click()}
                         className="w-full flex items-center justify-center gap-2 bg-slate-50 rounded-xl px-4 py-3 text-sm text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer border border-dashed border-slate-300 disabled:opacity-60 disabled:cursor-not-allowed"
                       >
-                        {isUploading ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Enviando...
-                          </>
-                        ) : (
-                          <>
-                            <FileUp className="w-4 h-4 text-slate-400" />
-                            {doc.uploaded
-                              ? "Substituir arquivo (PDF, JPG ou PNG)"
-                              : "Selecionar arquivo (PDF, JPG ou PNG)"}
-                          </>
-                        )}
+                        <FileUp className="w-4 h-4 text-slate-400" />
+                        {pendingFile
+                          ? "Trocar arquivo selecionado"
+                          : doc.uploaded
+                            ? "Substituir arquivo (PDF, JPG ou PNG)"
+                            : "Selecionar arquivo (PDF, JPG ou PNG)"}
                       </button>
                     )}
                   </div>
                 );
               })}
             </div>
+
+            {/* Submit all staged documents at once */}
+            {(() => {
+              const pendingCount = Object.keys(pendingFiles).length;
+              return (
+                <div className="flex flex-col items-stretch gap-2 pt-2">
+                  <button
+                    type="button"
+                    disabled={pendingCount === 0 || submitting}
+                    onClick={handleSubmitAll}
+                    className="w-full flex items-center justify-center gap-2 bg-primary text-white rounded-xl px-6 py-3.5 text-sm font-bold hover:opacity-90 transition-opacity cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Enviando documentos...
+                      </>
+                    ) : (
+                      <>
+                        <FileUp className="w-4 h-4" />
+                        {pendingCount > 0
+                          ? `Enviar ${pendingCount} documento${pendingCount > 1 ? "s" : ""} para análise`
+                          : "Enviar documentos para análise"}
+                      </>
+                    )}
+                  </button>
+                  {pendingCount === 0 && (
+                    <p className="text-xs text-slate-400 text-center">
+                      Selecione ao menos um documento acima para habilitar o envio.
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
           </>
         )}
       </div>
