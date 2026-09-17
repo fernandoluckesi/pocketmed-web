@@ -20,7 +20,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { logout } from "../services/auth";
-import { getVerificationStatus } from "../services/doctorDocuments";
+import { useDoctorVerification } from "../hooks/useDoctorVerification";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "../components/ui/Button";
 import { NotificationsDropdown } from "./NotificationsDropdown";
@@ -109,25 +109,8 @@ export function MainLayout({ children }: MainLayoutProps) {
   );
 
   // Verification banner state. Secretaries have no credentials of their own.
-  const [verificationStatus, setVerificationStatus] = useState<string | null>(
-    null,
-  );
-  const isProfessional = user?.type === "doctor" && user?.role !== "secretary";
-
-  useEffect(() => {
-    if (!isProfessional) return;
-    let cancelled = false;
-    getVerificationStatus()
-      .then((result) => {
-        if (!cancelled) setVerificationStatus(result.verificationStatus);
-      })
-      .catch(() => {
-        // Keep the banner hidden if the status cannot be resolved.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [isProfessional]);
+  const { status: verificationStatus, applicable: isProfessional } =
+    useDoctorVerification();
 
   const showVerificationBanner =
     isProfessional &&

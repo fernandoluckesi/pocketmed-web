@@ -41,6 +41,8 @@ import { Skeleton } from "../../components/Skeleton";
 import { EmptyState } from "../../components/EmptyState";
 import { useToast } from "../../contexts/ToastContext";
 import { useAuth } from "../../contexts/AuthContext";
+import { useDoctorVerification } from "../../hooks/useDoctorVerification";
+import { DemoPatients } from "./DemoPatients";
 
 // --- Types ---
 
@@ -1337,6 +1339,7 @@ export default function Patients() {
   const [activeTab, setActiveTab] = useState<TabType>("Meus Pacientes");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const refetchPatientsRef = useRef<(() => void) | null>(null);
+  const { isApproved, loading: verificationLoading } = useDoctorVerification();
 
   const handlePatientCreated = () => {
     refetchPatientsRef.current?.();
@@ -1347,6 +1350,38 @@ export default function Patients() {
     "Pesquisar Pacientes",
     "Solicitações",
   ];
+
+  // Doctors pending verification never reach the real search/list/requests
+  // flow — they get a fixed, clearly-labeled fictitious patient instead.
+  if (verificationLoading) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen bg-surface selection:bg-primary/10 space-y-8">
+          <Skeleton variant="card" count={3} />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (!isApproved) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen bg-surface selection:bg-primary/10">
+          <div className="space-y-12">
+            <div className="space-y-1">
+              <h2 className="text-4xl font-extrabold font-display tracking-tight text-gray-900 leading-none">
+                Gestão de Pacientes
+              </h2>
+              <p className="text-gray-500 font-medium">
+                Pesquise e gerencie sua base de pacientes global.
+              </p>
+            </div>
+            <DemoPatients />
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>

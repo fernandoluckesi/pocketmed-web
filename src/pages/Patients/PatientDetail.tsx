@@ -38,6 +38,11 @@ import { SearchableSelect } from "../../components/ui/SearchableSelect";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 import { EXAM_CATALOG } from "../../data/exam-catalog";
 import { useAuth } from "../../contexts/AuthContext";
+import { useDoctorVerification } from "../../hooks/useDoctorVerification";
+import {
+  DEMO_PATIENT_ID,
+  DEMO_DEPENDENT_ID,
+} from "../../mocks/demoPatientApi";
 import {
   generateExamPdf,
   generatePrescriptionPdf,
@@ -4060,6 +4065,7 @@ export default function PatientDetail() {
   );
   const [showEditPatientModal, setShowEditPatientModal] = useState(false);
   const { user } = useAuth();
+  const { isApproved, loading: verificationLoading } = useDoctorVerification();
 
   const isDependent = (patient as any)?.isDependent === true;
   const responsibles = (patient as any)?.responsibles || [];
@@ -4068,6 +4074,18 @@ export default function PatientDetail() {
   useEffect(() => {
     setActiveTab("consultas");
   }, [id]);
+
+  // Doctors pending verification can only reach the fictitious demo patient
+  // and its one example dependent (fully mocked on the front, see
+  // src/mocks/demoPatientApi.ts). A direct URL to a real patient bounces
+  // back — the backend already rejects the API calls, this just avoids the
+  // error screen.
+  const isDemoPatient = id === DEMO_PATIENT_ID || id === DEMO_DEPENDENT_ID;
+  useEffect(() => {
+    if (!verificationLoading && !isApproved && !isDemoPatient) {
+      navigate("/patients", { replace: true });
+    }
+  }, [verificationLoading, isApproved, isDemoPatient, navigate]);
 
   // Loading state
   if (loading) {

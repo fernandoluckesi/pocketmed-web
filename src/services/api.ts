@@ -1,3 +1,10 @@
+import {
+  DEMO_PATIENT_ACTION_BLOCKED_MESSAGE,
+  isDemoPatientId,
+  isDemoPatientPath,
+  resolveDemoPatientGet,
+} from "../mocks/demoPatientApi";
+
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "https://pocketmed-backend-production.up.railway.app";
@@ -24,6 +31,29 @@ export class ApiError extends Error {
 }
 
 export async function api(path: string, options: ApiOptions = {}) {
+  const method = options.method || "GET";
+
+  // The demo patient is fully mocked on the front — doctors pending
+  // verification browse it through the real PatientDetail screen, but no
+  // request for it ever reaches the backend. Reads return canned data,
+  // writes are rejected so nothing is falsely persisted.
+  const bodyPatientId =
+    !options.isFormData &&
+    options.body &&
+    typeof options.body === "object" &&
+    "patientId" in (options.body as Record<string, unknown>)
+      ? (options.body as Record<string, unknown>).patientId
+      : undefined;
+  const targetsDemoPatient =
+    isDemoPatientPath(path) || isDemoPatientId(bodyPatientId);
+
+  if (targetsDemoPatient) {
+    if (method === "GET") {
+      return resolveDemoPatientGet(path);
+    }
+    throw new ApiError(403, { message: DEMO_PATIENT_ACTION_BLOCKED_MESSAGE });
+  }
+
   const token = localStorage.getItem("pocketmed_token");
 
   const headers: Record<string, string> = {
@@ -43,7 +73,7 @@ export async function api(path: string, options: ApiOptions = {}) {
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: options.method || "GET",
+    method,
     headers,
     body,
   });
