@@ -30,6 +30,10 @@ interface APIAppointment {
   patient?: { name: string; email?: string; profileImage?: string };
   doctor?: { id?: string; name?: string };
   doctorName?: string;
+  visitType?: string;
+  paymentType?: string;
+  convenioId?: string;
+  convenio?: { id?: string; name?: string };
 }
 
 /** Maps an API appointment to the shape consumed by the appointment modal. */
@@ -43,6 +47,10 @@ function toAppointmentDetail(apt: APIAppointment): EditableAppointment {
     patientName: apt.patient?.name || "",
     patientEmail: apt.patient?.email || "",
     isCompleted: apt.isCompleted,
+    visitType: apt.visitType,
+    paymentType: apt.paymentType,
+    convenioId: apt.convenioId || apt.convenio?.id,
+    convenioName: apt.convenio?.name,
   };
 }
 

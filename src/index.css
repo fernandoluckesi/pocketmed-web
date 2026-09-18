@@ -145,6 +145,15 @@
   transition: all 0.2s ease;
 }
 
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge legacy */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Edge */
+}
+
 .shadow-soft {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }

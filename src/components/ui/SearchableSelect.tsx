@@ -34,7 +34,12 @@ export function SearchableSelect({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setQuery(value);
+    // Show the option's label when `value` is an id that maps to one (e.g. a
+    // foreign key), otherwise fall back to the raw value (free-text usage).
+    const matched = options.find((opt) => opt.value === value);
+    setQuery(matched ? matched.label : value);
+    // Only re-sync when the external value changes, not on every options fetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   useEffect(() => {

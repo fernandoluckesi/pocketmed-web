@@ -1,16 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import {
-  Bell,
-  CheckCircle,
-  XCircle,
-  Calendar,
-  UserCheck,
-  CreditCard,
-  FileText,
-  Users,
-  Check,
-  Loader2,
-} from "lucide-react";
+import { Bell, Check, Loader2 } from "lucide-react";
 import { api } from "../services/api";
 
 interface NotificationItem {
@@ -22,32 +11,6 @@ interface NotificationItem {
   createdAt: string;
   data?: Record<string, unknown> | null;
   relatedEntityId?: string | null;
-}
-
-function getNotificationIcon(type: string) {
-  switch (type) {
-    case "ACCESS_REQUEST_RESPONDED":
-    case "ACCESS_REQUEST_APPROVED":
-      return <CheckCircle className="w-4 h-4 text-green-500" />;
-    case "ACCESS_REQUEST_REJECTED":
-      return <XCircle className="w-4 h-4 text-red-500" />;
-    case "ACCESS_REQUEST_CREATED":
-      return <UserCheck className="w-4 h-4 text-blue-500" />;
-    case "APPOINTMENT_SCHEDULED":
-    case "APPOINTMENT_APPROVED":
-    case "APPOINTMENT_CANCELLED":
-    case "APPOINTMENT_COMPLETION_REQUESTED":
-      return <Calendar className="w-4 h-4 text-primary" />;
-    case "PLAN_EXPIRING":
-    case "PLAN_EXPIRED":
-      return <CreditCard className="w-4 h-4 text-amber-500" />;
-    case "EXAM_RESULT_AVAILABLE":
-      return <FileText className="w-4 h-4 text-indigo-500" />;
-    case "CLINIC_MEMBER_JOINED":
-      return <Users className="w-4 h-4 text-emerald-500" />;
-    default:
-      return <Bell className="w-4 h-4 text-slate-400" />;
-  }
 }
 
 function timeAgo(dateStr: string): string {
@@ -206,11 +169,6 @@ export function NotificationsDropdown() {
                     !notification.isRead ? "bg-primary/[0.02]" : ""
                   }`}
                 >
-                  {/* Icon */}
-                  <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0 mt-0.5">
-                    {getNotificationIcon(notification.type)}
-                  </div>
-
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <p

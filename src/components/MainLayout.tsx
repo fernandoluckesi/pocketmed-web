@@ -45,6 +45,12 @@ const navItems = [
     path: "/consultations",
     adminOnly: false,
   },
+  {
+    icon: ICONS.Certificates,
+    label: "Atestados",
+    path: "/atestados",
+    adminOnly: false,
+  },
   { icon: ICONS.Doctors, label: "Médicos", path: "/doctors", adminOnly: true },
   {
     icon: ICONS.Schedule,
@@ -218,7 +224,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="ml-64 flex-grow flex flex-col min-h-screen">
+      <main className="ml-64 flex-grow flex flex-col min-h-screen min-w-0">
         {/* Top Bar */}
         <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 flex justify-between items-center px-8 py-4">
           {/* Left: empty spacer */}
@@ -301,7 +307,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         </header>
 
         {/* Page Content */}
-        <div className="p-6 flex-1">
+        <div className="p-6 flex-1 min-w-0">
           {/* Verification banner: only while there is something to act on.
               Previously it was hardcoded and kept nagging verified doctors. */}
           {showVerificationBanner && (

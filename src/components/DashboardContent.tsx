@@ -2,6 +2,7 @@ import { ICONS } from "../constants";
 import { motion } from "motion/react";
 import { PromoBanner } from "./PromoBanner";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 
 const containerVariants = {
@@ -31,15 +32,29 @@ interface Appointment {
 }
 
 export const DashboardContent = () => {
+  const navigate = useNavigate();
   const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([]);
   const [upcomingAppointments, setUpcomingAppointments] = useState<
     Appointment[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const [certificatesCount, setCertificatesCount] = useState<number | null>(
+    null,
+  );
 
   useEffect(() => {
     loadAppointments();
+    loadCertificatesCount();
   }, []);
+
+  async function loadCertificatesCount() {
+    try {
+      const data = await api("/certificates");
+      setCertificatesCount(Array.isArray(data) ? data.length : 0);
+    } catch {
+      setCertificatesCount(null);
+    }
+  }
 
   async function loadAppointments() {
     try {
@@ -140,6 +155,24 @@ export const DashboardContent = () => {
       variants={containerVariants}
     >
       <PromoBanner />
+
+      <motion.div
+        variants={itemVariants}
+        onClick={() => navigate("/atestados")}
+        className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 flex items-center justify-between cursor-pointer hover:shadow-md transition-shadow max-w-sm"
+      >
+        <div>
+          <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">
+            Atestados Emitidos
+          </p>
+          <h3 className="text-3xl font-bold text-on-surface font-manrope">
+            {certificatesCount ?? "—"}
+          </h3>
+        </div>
+        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+          <ICONS.Certificates size={22} />
+        </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Consultas de Hoje */}

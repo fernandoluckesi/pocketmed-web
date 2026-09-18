@@ -10,7 +10,10 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "./ui/Button";
+import { SegmentedToggle } from "./ui/SegmentedToggle";
+import { SearchableSelect } from "./ui/SearchableSelect";
 import { api, ApiError } from "../services/api";
+import { financialApi, type Convenio } from "../services/financial";
 import { useToast } from "../contexts/ToastContext";
 import {
   emptyWeekly,
@@ -32,6 +35,10 @@ export interface EditableAppointment {
   patientName?: string;
   patientEmail?: string;
   isCompleted?: boolean;
+  visitType?: string;
+  paymentType?: string;
+  convenioId?: string;
+  convenioName?: string;
 }
 
 interface NewAppointmentModalProps {
@@ -104,6 +111,15 @@ export function NewAppointmentModal({
   const [date, setDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [notes, setNotes] = useState("");
+  const [visitType, setVisitType] = useState<"consulta" | "retorno">(
+    "consulta",
+  );
+  const [paymentType, setPaymentType] = useState<"particular" | "convenio">(
+    "particular",
+  );
+  const [convenioId, setConvenioId] = useState("");
+  const [convenioName, setConvenioName] = useState("");
+  const [convenios, setConvenios] = useState<Convenio[]>([]);
 
   // Availability (weekly rule + specific-date exceptions)
   const [weekly, setWeekly] = useState<Weekly>(emptyWeekly());
@@ -132,6 +148,22 @@ export function NewAppointmentModal({
       }
     }
     loadDoctors();
+  }, [isOpen]);
+
+  // Carregar convênios ativos da clínica (para o select de forma de pagamento)
+  useEffect(() => {
+    if (!isOpen) return;
+    async function loadConvenios() {
+      try {
+        const data = await financialApi.listConvenios();
+        setConvenios(
+          (Array.isArray(data) ? data : []).filter((c: Convenio) => c.active),
+        );
+      } catch {
+        setConvenios([]);
+      }
+    }
+    loadConvenios();
   }, [isOpen]);
 
   // Carregar a configuração de agenda (regra semanal + exceções por data)
@@ -186,6 +218,12 @@ export function NewAppointmentModal({
     setConfirmingCancel(false);
     setSelectedDoctor(appointment.doctorId || "");
     setNotes(appointment.reason || "");
+    setVisitType(appointment.visitType === "retorno" ? "retorno" : "consulta");
+    setPaymentType(
+      appointment.paymentType === "convenio" ? "convenio" : "particular",
+    );
+    setConvenioId(appointment.convenioId || "");
+    setConvenioName(appointment.convenioName || "");
     if (!Number.isNaN(dt.getTime())) {
       setDate(
         `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`,
@@ -248,6 +286,10 @@ export function NewAppointmentModal({
     setDate("");
     setSelectedTime("");
     setNotes("");
+    setVisitType("consulta");
+    setPaymentType("particular");
+    setConvenioId("");
+    setConvenioName("");
     setSubmitting(false);
     setFormError("");
   }
@@ -365,6 +407,11 @@ export function NewAppointmentModal({
       return;
     }
 
+    if (paymentType === "convenio" && !convenioId) {
+      setFormError("Selecione o convênio.");
+      return;
+    }
+
     const reason = notes.trim() || "Consulta";
 
     // Editing an existing appointment: reschedule / reassign / update reason.
@@ -373,7 +420,14 @@ export function NewAppointmentModal({
       try {
         await api(`/appointments/${appointment.id}`, {
           method: "PUT",
-          body: { dateTime, reason, doctorId: selectedDoctor },
+          body: {
+            dateTime,
+            reason,
+            doctorId: selectedDoctor,
+            visitType,
+            paymentType,
+            convenioId: paymentType === "convenio" ? convenioId : undefined,
+          },
         });
         toast.success("Consulta atualizada com sucesso!");
         onCreated?.();
@@ -436,6 +490,9 @@ export function NewAppointmentModal({
           patientId,
           dateTime,
           reason,
+          visitType,
+          paymentType,
+          convenioId: paymentType === "convenio" ? convenioId : undefined,
         },
       });
 
@@ -724,6 +781,58 @@ export function NewAppointmentModal({
                   </div>
                 </div>
               </div>
+
+              {/* Tipo de Visita + Forma de Pagamento */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <SegmentedToggle
+                  label="Tipo de Visita"
+                  value={visitType}
+                  onChange={setVisitType}
+                  disabled={readOnly}
+                  options={[
+                    { value: "consulta", label: "Consulta" },
+                    { value: "retorno", label: "Retorno" },
+                  ]}
+                />
+                <SegmentedToggle
+                  label="Forma de Pagamento"
+                  value={paymentType}
+                  onChange={(v) => {
+                    setPaymentType(v);
+                    if (v === "particular") {
+                      setConvenioId("");
+                      setConvenioName("");
+                    }
+                  }}
+                  disabled={readOnly}
+                  options={[
+                    { value: "particular", label: "Particular" },
+                    { value: "convenio", label: "Convênio" },
+                  ]}
+                />
+              </div>
+
+              {paymentType === "convenio" &&
+                (readOnly ? (
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Convênio
+                    </label>
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-sm text-slate-600">
+                      {convenioName || "—"}
+                    </div>
+                  </div>
+                ) : (
+                  <SearchableSelect
+                    label="Convênio"
+                    name="convenioId"
+                    value={convenioId}
+                    onChange={setConvenioId}
+                    options={convenios.map((c) => ({ value: c.id, label: c.name }))}
+                    placeholder="Selecione o convênio"
+                    allowFreeText={false}
+                  />
+                ))}
 
               {/* Horário */}
               <div className="space-y-2">

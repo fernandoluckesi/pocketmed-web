@@ -47,6 +47,9 @@ export interface Appointment {
   notes?: string;
   instructions?: string;
   lockedByDoctor?: boolean;
+  visitType?: string;
+  paymentType?: string;
+  convenioId?: string;
 }
 
 export interface Medication {
@@ -199,6 +202,9 @@ export function usePatientDetail(id: string | undefined) {
               notes: apt.doctorFeedback || apt.notes || undefined,
               instructions: apt.doctorInstructions || undefined,
               lockedByDoctor: apt.lockedByDoctor || false,
+              visitType: apt.visitType || undefined,
+              paymentType: apt.paymentType || undefined,
+              convenioId: apt.convenioId || undefined,
             })) || [],
             medications: medicalRecord?.medications?.map((med: any) => ({
               id: med.id,

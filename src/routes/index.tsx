@@ -12,6 +12,8 @@ import SupportPage from "../pages/Institutional/SupportPage";
 import Verification from "../pages/Verification";
 import Dashboard from "../pages/Dashboard";
 import Consultations from "../pages/Consultations";
+import Atestados from "../pages/Atestados";
+import AtestadoDetail from "../pages/Atestados/AtestadoDetail";
 import Patients from "../pages/Patients";
 import PatientDetail from "../pages/Patients/PatientDetail";
 import Doctors from "../pages/Doctors";
@@ -84,6 +86,22 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute>
             <Consultations />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/atestados"
+        element={
+          <ProtectedRoute>
+            <Atestados />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/atestados/:id"
+        element={
+          <ProtectedRoute>
+            <AtestadoDetail />
           </ProtectedRoute>
         }
       />

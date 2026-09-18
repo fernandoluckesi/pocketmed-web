@@ -38,12 +38,13 @@ export async function api(path: string, options: ApiOptions = {}) {
   // request for it ever reaches the backend. Reads return canned data,
   // writes are rejected so nothing is falsely persisted.
   const bodyPatientId =
-    !options.isFormData &&
-    options.body &&
-    typeof options.body === "object" &&
-    "patientId" in (options.body as Record<string, unknown>)
-      ? (options.body as Record<string, unknown>).patientId
-      : undefined;
+    options.isFormData && options.body instanceof FormData
+      ? (options.body.get("patientId") ?? undefined)
+      : options.body &&
+          typeof options.body === "object" &&
+          "patientId" in (options.body as Record<string, unknown>)
+        ? (options.body as Record<string, unknown>).patientId
+        : undefined;
   const targetsDemoPatient =
     isDemoPatientPath(path) || isDemoPatientId(bodyPatientId);
 

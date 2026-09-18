@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import type { ReactNode } from "react";
 import {
   Calendar,
   User,
@@ -11,6 +12,7 @@ import {
   Plus,
   Edit,
   ArrowLeft,
+  ChevronLeft,
   ChevronRight,
   Loader2,
   Mail,
@@ -18,6 +20,7 @@ import {
   Info,
   Download,
   X,
+  FileCheck,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { MainLayout } from "../../components/MainLayout";
@@ -35,7 +38,9 @@ import {
   FormActions,
 } from "../../components/ui/FormField";
 import { SearchableSelect } from "../../components/ui/SearchableSelect";
+import { SegmentedToggle } from "../../components/ui/SegmentedToggle";
 import { CustomSelect } from "../../components/ui/CustomSelect";
+import { financialApi, type Convenio } from "../../services/financial";
 import { EXAM_CATALOG } from "../../data/exam-catalog";
 import { useAuth } from "../../contexts/AuthContext";
 import { useDoctorVerification } from "../../hooks/useDoctorVerification";
@@ -48,6 +53,7 @@ import {
   generatePrescriptionPdf,
 } from "../../utils/generate-pdf";
 import { api } from "../../services/api";
+import { AtestadoForm, type CertificateRecord } from "../Atestados/AtestadoForm";
 import { Snackbar } from "../../components/Snackbar";
 import {
   canEditRecord,
@@ -59,6 +65,97 @@ import {
 // --- Types ---
 
 // --- Helpers ---
+
+/**
+ * Horizontally-scrollable container for the tabs bar. Hides the native
+ * scrollbar and shows a soft fade on whichever edge still has hidden
+ * content, so overflow is contained here instead of the whole page.
+ */
+function TabsScrollArea({ children }: { children: ReactNode }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showLeftFade, setShowLeftFade] = useState(false);
+  const [showRightFade, setShowRightFade] = useState(false);
+
+  const updateFades = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setShowLeftFade(el.scrollLeft > 4);
+    setShowRightFade(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    updateFades();
+    window.addEventListener("resize", updateFades);
+    return () => window.removeEventListener("resize", updateFades);
+  }, [updateFades]);
+
+  function scrollByStep(direction: "left" | "right") {
+    const el = scrollRef.current;
+    if (!el) return;
+    const step = Math.round(el.clientWidth * 0.6);
+    el.scrollBy({
+      left: direction === "left" ? -step : step,
+      behavior: "smooth",
+    });
+  }
+
+  return (
+    <div className="relative mb-8">
+      <div
+        ref={scrollRef}
+        onScroll={updateFades}
+        className="scrollbar-hide flex space-x-1 p-1 bg-white rounded-2xl max-w-full shadow-sm border border-gray-100 overflow-x-auto"
+      >
+        {children}
+      </div>
+      {showLeftFade && (
+        <>
+          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-10 rounded-l-2xl bg-gradient-to-r from-white to-transparent" />
+          <button
+            type="button"
+            aria-label="Rolar abas para a esquerda"
+            onClick={() => scrollByStep("left")}
+            className="absolute left-1 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary/30 transition-colors cursor-pointer"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+        </>
+      )}
+      {showRightFade && (
+        <>
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 rounded-r-2xl bg-gradient-to-l from-white to-transparent" />
+          <button
+            type="button"
+            aria-label="Rolar abas para a direita"
+            onClick={() => scrollByStep("right")}
+            className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary/30 transition-colors cursor-pointer"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Active insurance plans ("convênios") of the doctor's clinic, for the
+ * payment-type select in the consultation form. */
+function useActiveConvenios() {
+  const [convenios, setConvenios] = useState<Convenio[]>([]);
+
+  useEffect(() => {
+    financialApi
+      .listConvenios()
+      .then((data) =>
+        setConvenios(
+          (Array.isArray(data) ? data : []).filter((c: Convenio) => c.active),
+        ),
+      )
+      .catch(() => setConvenios([]));
+  }, []);
+
+  return convenios;
+}
 
 function formatPhone(value: string): string {
   const digits = value.replace(/\D/g, "");
@@ -1046,6 +1143,14 @@ function ConsultaForm({
   const [finalizada, setFinalizada] = useState(false);
   const [diagnostico, setDiagnostico] = useState("");
   const [orientações, setorientações] = useState("");
+  const [visitType, setVisitType] = useState<"consulta" | "retorno">(
+    "consulta",
+  );
+  const [paymentType, setPaymentType] = useState<"particular" | "convenio">(
+    "particular",
+  );
+  const [convenioId, setConvenioId] = useState("");
+  const convenios = useActiveConvenios();
   const [saving, setSaving] = useState(false);
   const [addMedication, setAddMedication] = useState(false);
   const [addExam, setAddExam] = useState(false);
@@ -1119,6 +1224,9 @@ function ConsultaForm({
           diagnosis: finalizada ? diagnostico || undefined : undefined,
           prescription: finalizada ? orientações || undefined : undefined,
           completed: finalizada,
+          visitType,
+          paymentType,
+          convenioId: paymentType === "convenio" ? convenioId : undefined,
         },
       });
 
@@ -1226,6 +1334,43 @@ function ConsultaForm({
           />
         </div>
       </div>
+
+      <div className="grid grid-cols-2 gap-6">
+        <SegmentedToggle
+          label="Tipo de Visita"
+          value={visitType}
+          onChange={setVisitType}
+          options={[
+            { value: "consulta", label: "Consulta" },
+            { value: "retorno", label: "Retorno" },
+          ]}
+        />
+        <SegmentedToggle
+          label="Forma de Pagamento"
+          value={paymentType}
+          onChange={(v) => {
+            setPaymentType(v);
+            if (v === "particular") setConvenioId("");
+          }}
+          options={[
+            { value: "particular", label: "Particular" },
+            { value: "convenio", label: "Convênio" },
+          ]}
+        />
+      </div>
+
+      {paymentType === "convenio" && (
+        <SearchableSelect
+          label="Convênio"
+          name="consulta-convenio"
+          value={convenioId}
+          onChange={setConvenioId}
+          options={convenios.map((c) => ({ value: c.id, label: c.name }))}
+          placeholder="Selecione o convênio"
+          allowFreeText={false}
+        />
+      )}
+
       <Textarea
         label="Sintomas / Motivo"
         name="consulta-sintomas"
@@ -1475,6 +1620,14 @@ function EditConsultaForm({
   const [orientações, setorientações] = useState(
     consultation.instructions || "",
   );
+  const [visitType, setVisitType] = useState<"consulta" | "retorno">(
+    consultation.visitType === "retorno" ? "retorno" : "consulta",
+  );
+  const [paymentType, setPaymentType] = useState<"particular" | "convenio">(
+    consultation.paymentType === "convenio" ? "convenio" : "particular",
+  );
+  const [convenioId, setConvenioId] = useState(consultation.convenioId || "");
+  const convenios = useActiveConvenios();
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -1490,6 +1643,9 @@ function EditConsultaForm({
           diagnosis: finalizada ? diagnostico || undefined : undefined,
           prescription: finalizada ? orientações || undefined : undefined,
           completed: finalizada,
+          visitType,
+          paymentType,
+          convenioId: paymentType === "convenio" ? convenioId : undefined,
         },
       });
       onSaved();
@@ -1527,6 +1683,43 @@ function EditConsultaForm({
           />
         </div>
       </div>
+
+      <div className="grid grid-cols-2 gap-6">
+        <SegmentedToggle
+          label="Tipo de Visita"
+          value={visitType}
+          onChange={setVisitType}
+          options={[
+            { value: "consulta", label: "Consulta" },
+            { value: "retorno", label: "Retorno" },
+          ]}
+        />
+        <SegmentedToggle
+          label="Forma de Pagamento"
+          value={paymentType}
+          onChange={(v) => {
+            setPaymentType(v);
+            if (v === "particular") setConvenioId("");
+          }}
+          options={[
+            { value: "particular", label: "Particular" },
+            { value: "convenio", label: "Convênio" },
+          ]}
+        />
+      </div>
+
+      {paymentType === "convenio" && (
+        <SearchableSelect
+          label="Convênio"
+          name="edit-consulta-convenio"
+          value={convenioId}
+          onChange={setConvenioId}
+          options={convenios.map((c) => ({ value: c.id, label: c.name }))}
+          placeholder="Selecione o convênio"
+          allowFreeText={false}
+        />
+      )}
+
       <Textarea
         label="Sintomas / Motivo"
         name="edit-consulta-sintomas"
@@ -3596,6 +3789,227 @@ interface Vaccine {
   createdAt: string;
 }
 
+// --- Certificates ("Atestados") Section ---
+
+function AtestadoDetailView({
+  certificate,
+  onClose,
+  onEdit,
+}: {
+  certificate: CertificateRecord;
+  onClose: () => void;
+  onEdit: () => void;
+}) {
+  return (
+    <div className="p-8 pt-0 space-y-6">
+      <div className="space-y-5">
+        <div>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+            CRM do Médico
+          </p>
+          <p className="text-sm font-semibold text-slate-800">
+            {certificate.crm}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+            CID
+          </p>
+          <p className="text-sm font-semibold text-slate-800">
+            {certificate.cid || "—"}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+            Dias de Afastamento
+          </p>
+          <p className="text-sm font-semibold text-slate-800">
+            {certificate.daysOff != null ? `${certificate.daysOff} dia(s)` : "—"}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+            Data do Atestado
+          </p>
+          <p className="text-sm font-semibold text-slate-800">
+            {certificate.issueDate
+              ? new Date(certificate.issueDate).toLocaleDateString("pt-BR")
+              : "—"}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+            Descrição
+          </p>
+          <p className="text-sm font-semibold text-slate-800 whitespace-pre-wrap">
+            {certificate.description || "—"}
+          </p>
+        </div>
+        {certificate.fileUrl && (
+          <a
+            href={certificate.fileUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary underline underline-offset-2"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Baixar anexo
+          </a>
+        )}
+      </div>
+
+      <div className="flex justify-end pt-[24px]">
+        <button
+          type="button"
+          onClick={onEdit}
+          className="flex items-center gap-1.5 text-sm font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0 text-primary"
+        >
+          <Edit className="w-3.5 h-3.5" />
+          Editar atestado
+        </button>
+      </div>
+
+      <div className="pt-4 border-t border-slate-100">
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full py-3 bg-slate-100 rounded-full font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer border-none"
+        >
+          Fechar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function AtestadosSection({ patientId }: { patientId: string }) {
+  const [certificates, setCertificates] = useState<CertificateRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [viewing, setViewing] = useState<CertificateRecord | null>(null);
+  const [editing, setEditing] = useState(false);
+
+  async function loadCertificates() {
+    try {
+      const data = await api(`/patients/${patientId}/certificates`);
+      setCertificates(Array.isArray(data) ? data : []);
+    } catch {
+      setCertificates([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useState(() => {
+    loadCertificates();
+  });
+
+  if (loading)
+    return <div className="text-center py-8 text-slate-400">Carregando...</div>;
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="font-bold text-xl font-display tracking-tight">
+          Atestados
+        </h3>
+        <Button
+          onClick={() => setShowCreateModal(true)}
+          variant="primary"
+          size="sm"
+          icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
+        >
+          Adicionar Atestado
+        </Button>
+      </div>
+
+      {certificates.length === 0 ? (
+        <div className="text-center py-8 text-slate-400">
+          <FileCheck className="w-10 h-10 mx-auto mb-3 opacity-50" />
+          <p className="font-medium">Nenhum atestado registrado</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {certificates.map((cert) => (
+            <div
+              key={cert.id}
+              onClick={() => setViewing(cert)}
+              className="group bg-white hover:bg-slate-50 rounded-2xl p-6 flex items-center gap-6 border border-slate-100 shadow-sm cursor-pointer transition-all"
+            >
+              <div className="flex-grow min-w-0">
+                <h4 className="font-bold text-lg text-slate-900">
+                  {cert.cid || "Atestado"}
+                </h4>
+                <p className="text-xs text-slate-500 mt-1">
+                  {cert.issueDate
+                    ? new Date(cert.issueDate).toLocaleDateString("pt-BR")
+                    : new Date(cert.createdAt).toLocaleDateString("pt-BR")}
+                </p>
+              </div>
+              {cert.daysOff != null && (
+                <span className="px-3 py-1 rounded-full text-xs font-bold shrink-0 bg-blue-100 text-primary">
+                  {cert.daysOff} dia(s)
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        label="Novo Registro"
+        title="Adicionar Atestado"
+        maxWidth="max-w-2xl"
+      >
+        <AtestadoForm
+          patientId={patientId}
+          onClose={() => setShowCreateModal(false)}
+          onSaved={() => {
+            loadCertificates();
+            setShowCreateModal(false);
+          }}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={!!viewing}
+        onClose={() => {
+          setViewing(null);
+          setEditing(false);
+        }}
+        label="Atestado"
+        title={editing ? "Editar Atestado" : "Detalhes do Atestado"}
+        maxWidth="max-w-2xl"
+      >
+        {viewing && editing && (
+          <AtestadoForm
+            patientId={patientId}
+            initial={viewing}
+            onClose={() => setEditing(false)}
+            onSaved={() => {
+              loadCertificates();
+              setViewing(null);
+              setEditing(false);
+            }}
+          />
+        )}
+        {viewing && !editing && (
+          <AtestadoDetailView
+            certificate={viewing}
+            onClose={() => {
+              setViewing(null);
+              setEditing(false);
+            }}
+            onEdit={() => setEditing(true)}
+          />
+        )}
+      </Modal>
+    </div>
+  );
+}
+
 // --- Dependents Section ---
 
 interface DependentItem {
@@ -4055,6 +4469,7 @@ export default function PatientDetail() {
     | "alergias"
     | "vacinas"
     | "cirurgias"
+    | "atestados"
     | "dependentes"
   >("consultas");
   const [showConsultaModal, setShowConsultaModal] = useState(false);
@@ -4146,9 +4561,9 @@ export default function PatientDetail() {
           />
 
           {/* Tabs Navigation */}
-          <div className="flex space-x-1 p-1 bg-white rounded-2xl w-fit shadow-sm border border-gray-100 mb-8">
+          <TabsScrollArea>
             <button
-              className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
+              className={`shrink-0 px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
                 activeTab === "consultas"
                   ? "bg-primary/5 text-primary"
                   : "text-gray-500 hover:text-gray-800"
@@ -4158,7 +4573,7 @@ export default function PatientDetail() {
               Consultas
             </button>
             <button
-              className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
+              className={`shrink-0 px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
                 activeTab === "medicamentos"
                   ? "bg-primary/5 text-primary"
                   : "text-gray-500 hover:text-gray-800"
@@ -4168,7 +4583,7 @@ export default function PatientDetail() {
               Medicamentos
             </button>
             <button
-              className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
+              className={`shrink-0 px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
                 activeTab === "exames"
                   ? "bg-primary/5 text-primary"
                   : "text-gray-500 hover:text-gray-800"
@@ -4178,7 +4593,7 @@ export default function PatientDetail() {
               Exames
             </button>
             <button
-              className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
+              className={`shrink-0 px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
                 activeTab === "doencas"
                   ? "bg-primary/5 text-primary"
                   : "text-gray-500 hover:text-gray-800"
@@ -4188,7 +4603,7 @@ export default function PatientDetail() {
               Doenças
             </button>
             <button
-              className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
+              className={`shrink-0 px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
                 activeTab === "alergias"
                   ? "bg-primary/5 text-primary"
                   : "text-gray-500 hover:text-gray-800"
@@ -4198,7 +4613,7 @@ export default function PatientDetail() {
               Alergias
             </button>
             <button
-              className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
+              className={`shrink-0 px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
                 activeTab === "vacinas"
                   ? "bg-primary/5 text-primary"
                   : "text-gray-500 hover:text-gray-800"
@@ -4208,7 +4623,7 @@ export default function PatientDetail() {
               Vacinas
             </button>
             <button
-              className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
+              className={`shrink-0 px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
                 activeTab === "cirurgias"
                   ? "bg-primary/5 text-primary"
                   : "text-gray-500 hover:text-gray-800"
@@ -4218,7 +4633,17 @@ export default function PatientDetail() {
               Cirurgias
             </button>
             <button
-              className={`px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
+              className={`shrink-0 px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
+                activeTab === "atestados"
+                  ? "bg-primary/5 text-primary"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+              onClick={() => setActiveTab("atestados")}
+            >
+              Atestados
+            </button>
+            <button
+              className={`shrink-0 px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
                 activeTab === "dependentes"
                   ? "bg-primary/5 text-primary"
                   : "text-gray-500 hover:text-gray-800"
@@ -4228,7 +4653,7 @@ export default function PatientDetail() {
             >
               Dependentes
             </button>
-          </div>
+          </TabsScrollArea>
 
           {/* Tab Content from API */}
           {activeTab === "consultas" && (
@@ -4310,6 +4735,12 @@ export default function PatientDetail() {
             style={{ display: activeTab === "cirurgias" ? "block" : "none" }}
           >
             <SurgeriesSection patientId={patient.id} />
+          </div>
+
+          <div
+            style={{ display: activeTab === "atestados" ? "block" : "none" }}
+          >
+            <AtestadosSection patientId={patient.id} />
           </div>
 
           <div
