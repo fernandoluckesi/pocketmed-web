@@ -126,7 +126,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   return (
     <div className="min-h-screen flex bg-surface text-on-surface">
       {/* Sidebar */}
-      <aside className="h-screen w-64 fixed left-0 top-0 bg-slate-100 flex flex-col p-6 space-y-8 z-50">
+      <aside className="h-screen w-64 fixed left-0 top-0 bg-slate-100 border-r border-slate-200 flex flex-col p-6 space-y-8 z-50">
         <div className="flex items-center px-2">
           <img
             src={logoHorizontal}

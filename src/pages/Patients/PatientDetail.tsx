@@ -1658,7 +1658,10 @@ function EditConsultaForm({
   }
 
   return (
-    <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
+    <form
+      className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5"
+      onSubmit={handleSubmit}
+    >
       <div className="grid grid-cols-2 gap-6">
         <DateInput
           label="Data"
@@ -1842,7 +1845,7 @@ function ConsultaDetailView({
   }
 
   return (
-    <div className="p-8 pt-0 space-y-6">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-6">
       {/* Doctor lock chip */}
       {consultation.lockedByDoctor && (
         <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-100">
@@ -4656,28 +4659,49 @@ export default function PatientDetail() {
           </TabsScrollArea>
 
           {/* Tab Content from API */}
-          {activeTab === "consultas" && (
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="font-bold text-xl font-display tracking-tight">
-                  Histórico de Consultas
-                </h3>
-                <Button
-                  data-testid="btn-nova-consulta"
-                  onClick={() => setShowConsultaModal(true)}
-                  variant="primary"
-                  size="sm"
-                  icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
+          {activeTab === "consultas" &&
+            (editingConsulta ? (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setEditingConsulta(null)}
+                  className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent mb-4 p-0"
                 >
-                  Nova Consulta
-                </Button>
+                  <ArrowLeft size={18} />
+                  <span>Voltar para Consultas</span>
+                </button>
+                <ConsultaDetailView
+                  consultation={editingConsulta}
+                  patientId={patient.id}
+                  onClose={() => setEditingConsulta(null)}
+                  onSaved={() => {
+                    refetch();
+                    setEditingConsulta(null);
+                  }}
+                />
               </div>
-              <AppointmentsSection
-                appointments={patient.appointments}
-                onSelect={setEditingConsulta}
-              />
-            </div>
-          )}
+            ) : (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="font-bold text-xl font-display tracking-tight">
+                    Histórico de Consultas
+                  </h3>
+                  <Button
+                    data-testid="btn-nova-consulta"
+                    onClick={() => setShowConsultaModal(true)}
+                    variant="primary"
+                    size="sm"
+                    icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
+                  >
+                    Nova Consulta
+                  </Button>
+                </div>
+                <AppointmentsSection
+                  appointments={patient.appointments}
+                  onSelect={setEditingConsulta}
+                />
+              </div>
+            ))}
           {activeTab === "medicamentos" && (
             <div>
               <div className="flex justify-between items-center mb-6">
@@ -4793,27 +4817,6 @@ export default function PatientDetail() {
               patientId={patient.id}
               onSaved={refetch}
             />
-          </Modal>
-
-          {/* Edit Consultation Modal */}
-          <Modal
-            isOpen={!!editingConsulta}
-            onClose={() => setEditingConsulta(null)}
-            label="Consulta"
-            title="Detalhes da Consulta"
-            maxWidth="max-w-2xl"
-          >
-            {editingConsulta && (
-              <ConsultaDetailView
-                consultation={editingConsulta}
-                patientId={patient.id}
-                onClose={() => setEditingConsulta(null)}
-                onSaved={() => {
-                  refetch();
-                  setEditingConsulta(null);
-                }}
-              />
-            )}
           </Modal>
 
           {/* Edit Patient Modal */}
