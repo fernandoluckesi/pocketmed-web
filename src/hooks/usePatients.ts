@@ -60,6 +60,10 @@ export interface Medication {
   startDate?: string;
   endDate?: string;
   active: boolean;
+  instructions?: string;
+  times?: string[];
+  lockedByDoctor?: boolean;
+  doctorId?: string;
 }
 
 export interface Exam {
@@ -73,6 +77,7 @@ export interface Exam {
   batchId?: string;
   completedAt?: string;
   resultFiles?: string[];
+  doctorId?: string;
 }
 
 export interface PatientStats {
@@ -214,6 +219,10 @@ export function usePatientDetail(id: string | undefined) {
               startDate: med.startDate,
               endDate: med.endDate,
               active: med.isActive ?? med.active ?? true,
+              instructions: med.instructions || undefined,
+              times: Array.isArray(med.times) ? med.times : undefined,
+              lockedByDoctor: med.lockedByDoctor || false,
+              doctorId: med.doctorId || undefined,
             })) || [],
             exams: medicalRecord?.exams?.map((exam: any) => ({
               id: exam.id,
@@ -226,6 +235,7 @@ export function usePatientDetail(id: string | undefined) {
               batchId: exam.batchId || undefined,
               completedAt: exam.completedAt || undefined,
               resultFiles: exam.resultFiles || undefined,
+              doctorId: exam.doctorId || undefined,
             })) || [],
           };
           setPatient(merged);

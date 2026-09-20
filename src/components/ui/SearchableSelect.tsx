@@ -126,7 +126,7 @@ export function SearchableSelect({
           <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
             {loading && (
               <div className="px-4 py-3 text-xs text-slate-400 text-center">
-                Buscando exames...
+                Buscando...
               </div>
             )}
 

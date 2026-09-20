@@ -214,3 +214,46 @@ export async function generatePrescriptionPdf(
 
   doc.save(`receita_${data.patient.name.replace(/\s+/g, "_")}.pdf`);
 }
+
+// --- Vaccine Prescription PDF ---
+
+export interface VaccinePdfData {
+  doctor: DoctorInfo;
+  patient: PatientInfo;
+  vaccines: { name: string; notes?: string }[];
+}
+
+export async function generateVaccinePrescriptionPdf(
+  data: VaccinePdfData,
+): Promise<void> {
+  const doc = new jsPDF("portrait", "mm", "a4");
+
+  drawHeader(doc, data.doctor);
+  drawPatientInfo(doc, data.patient);
+  drawDatetime(doc);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.text("Indicação de Vacina(s)", 20, 85);
+
+  let y = 98;
+  data.vaccines.forEach((vaccine, index) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text(`${index + 1}. ${vaccine.name}`, 20, y);
+    y += 6;
+
+    if (vaccine.notes) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.text(`  ${vaccine.notes}`, 20, y);
+      y += 6;
+    }
+
+    y += 4;
+  });
+
+  await drawFooter(doc, data.doctor);
+
+  doc.save(`receita_vacina_${data.patient.name.replace(/\s+/g, "_")}.pdf`);
+}

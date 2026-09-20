@@ -26,7 +26,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import { MainLayout } from "../../components/MainLayout";
 import { Button } from "../../components/ui/Button";
 import { usePatientDetail } from "../../hooks/usePatients";
-import type { PatientFromAPI, Appointment } from "../../hooks/usePatients";
+import type {
+  PatientFromAPI,
+  Appointment,
+  Medication,
+  Exam,
+} from "../../hooks/usePatients";
 import { Skeleton } from "../../components/Skeleton";
 import { Modal } from "../../components/ui/Modal";
 import {
@@ -42,6 +47,7 @@ import { SegmentedToggle } from "../../components/ui/SegmentedToggle";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 import { financialApi, type Convenio } from "../../services/financial";
 import { EXAM_CATALOG } from "../../data/exam-catalog";
+import { VACCINE_CATALOG } from "../../data/vaccine-catalog";
 import { useAuth } from "../../contexts/AuthContext";
 import { useDoctorVerification } from "../../hooks/useDoctorVerification";
 import {
@@ -51,6 +57,7 @@ import {
 import {
   generateExamPdf,
   generatePrescriptionPdf,
+  generateVaccinePrescriptionPdf,
 } from "../../utils/generate-pdf";
 import { api } from "../../services/api";
 import { AtestadoForm, type CertificateRecord } from "../Atestados/AtestadoForm";
@@ -430,8 +437,10 @@ function AppointmentsSection({
 
 function MedicationsSection({
   medications,
+  onSelect,
 }: {
   medications: PatientFromAPI["medications"];
+  onSelect: (med: Medication) => void;
 }) {
   if (!medications || medications.length === 0) {
     return (
@@ -447,7 +456,8 @@ function MedicationsSection({
       {medications.map((med) => (
         <div
           key={med.id}
-          className={`bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-start gap-4 border-l-4 ${
+          onClick={() => onSelect(med)}
+          className={`group bg-white hover:bg-slate-50 rounded-2xl p-5 border border-slate-200 shadow-sm flex items-start gap-4 cursor-pointer transition-all border-l-4 ${
             med.active ? "border-l-green-500" : "border-l-slate-300"
           }`}
         >
@@ -486,14 +496,454 @@ function MedicationsSection({
   );
 }
 
+const MEDICATION_FREQUENCY_OPTIONS = [
+  { value: "once_daily", label: "1x ao dia" },
+  { value: "twice_daily", label: "2x ao dia" },
+  { value: "three_times_daily", label: "3x ao dia" },
+  { value: "four_times_daily", label: "4x ao dia" },
+  { value: "every_6_hours", label: "A cada 6 horas" },
+  { value: "every_8_hours", label: "A cada 8 horas" },
+  { value: "every_12_hours", label: "A cada 12 horas" },
+  { value: "as_needed", label: "Se necessário" },
+];
+
+function getMedicationFrequencyLabel(value: string): string {
+  return (
+    MEDICATION_FREQUENCY_OPTIONS.find((opt) => opt.value === value)?.label ||
+    value
+  );
+}
+
+function getMedicationTimeSlots(frequency: string): number {
+  switch (frequency) {
+    case "once_daily":
+      return 1;
+    case "twice_daily":
+      return 2;
+    case "three_times_daily":
+      return 3;
+    case "four_times_daily":
+      return 4;
+    case "every_6_hours":
+      return 4;
+    case "every_8_hours":
+      return 3;
+    case "every_12_hours":
+      return 2;
+    case "as_needed":
+      return 0;
+    default:
+      return 1;
+  }
+}
+
+/** Debounced remote search against the ANVISA-backed medication catalog
+ * (GET /medication-catalog), for the "Nome do Medicamento" searchable select. */
+function useMedicationCatalogSearch() {
+  const [options, setOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const [loading, setLoading] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const search = useCallback((query: string) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (!query || query.trim().length < 2) {
+      setOptions([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    timeoutRef.current = setTimeout(async () => {
+      try {
+        const data = await api(
+          `/medication-catalog?search=${encodeURIComponent(query.trim())}&limit=50`,
+        );
+        const items = Array.isArray(data?.data) ? data.data : [];
+        const seen = new Set<string>();
+        const opts: { value: string; label: string }[] = [];
+        for (const item of items) {
+          if (!item.product || seen.has(item.product)) continue;
+          seen.add(item.product);
+          opts.push({
+            value: item.product,
+            label:
+              item.substance && item.substance !== item.product
+                ? `${item.product} (${item.substance})`
+                : item.product,
+          });
+        }
+        setOptions(opts);
+      } catch {
+        setOptions([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 400);
+  }, []);
+
+  return { options, loading, search };
+}
+
+function MedicationForm({
+  onClose,
+  onSaved,
+  initial,
+  variant = "modal",
+}: {
+  onClose: () => void;
+  onSaved: () => void;
+  initial: Medication;
+  variant?: "modal" | "inline";
+}) {
+  const [name, setName] = useState(initial.name || "");
+  const medicationSearch = useMedicationCatalogSearch();
+  const [dosage, setDosage] = useState(initial.dosage || "");
+  const [frequency, setFrequency] = useState(initial.frequency || "once_daily");
+  const [times, setTimes] = useState<string[]>(
+    initial.times && initial.times.length > 0 ? initial.times : [],
+  );
+  const [startDate, setStartDate] = useState(
+    initial.startDate?.split("T")[0] || "",
+  );
+  const [endDate, setEndDate] = useState(initial.endDate?.split("T")[0] || "");
+  const [instructions, setInstructions] = useState(
+    initial.instructions || "",
+  );
+  const [active, setActive] = useState<"true" | "false">(
+    initial.active ? "true" : "false",
+  );
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function handleFrequencyChange(value: string) {
+    setFrequency(value);
+    const count = getMedicationTimeSlots(value);
+    setTimes(count > 0 ? generateDistributedTimes(count) : []);
+  }
+
+  function updateTime(index: number, value: string) {
+    const updated = [...times];
+    updated[index] = value;
+    setTimes(updated);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim() || !dosage.trim() || !startDate) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await api(`/medications/${initial.id}`, {
+        method: "PUT",
+        body: {
+          name: name.trim(),
+          dosage: dosage.trim(),
+          frequency,
+          times: times.length > 0 ? times : undefined,
+          startDate,
+          endDate: endDate || undefined,
+          instructions: instructions.trim() || undefined,
+          isActive: active === "true",
+        },
+      });
+      onSaved();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Erro ao salvar medicamento. Tente novamente.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form
+      className={
+        variant === "inline"
+          ? "bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5"
+          : "p-8 pt-0 space-y-5"
+      }
+      onSubmit={handleSubmit}
+    >
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium">
+          {error}
+        </div>
+      )}
+      <SearchableSelect
+        label="Nome do Medicamento"
+        name="med-name"
+        value={name}
+        onChange={setName}
+        options={medicationSearch.options}
+        onSearch={medicationSearch.search}
+        loading={medicationSearch.loading}
+        placeholder="Pesquise o medicamento (base ANVISA)"
+        allowFreeText
+      />
+      <TextInput
+        label="Dosagem / Apresentação"
+        name="med-dosage"
+        value={dosage}
+        onChange={setDosage}
+        placeholder="Ex: 50mg, Comprimido"
+      />
+      <div className="space-y-1.5">
+        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+          Frequência
+        </label>
+        <CustomSelect
+          name="med-frequency"
+          value={frequency}
+          onChange={handleFrequencyChange}
+          options={MEDICATION_FREQUENCY_OPTIONS}
+          placeholder="Selecione a frequência"
+        />
+      </div>
+      {times.length > 0 && (
+        <div className="space-y-1.5">
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+            Horários
+          </label>
+          <div className="flex flex-wrap gap-3">
+            {times.map((t, idx) => (
+              <input
+                key={idx}
+                type="time"
+                value={t}
+                onChange={(e) => updateTime(idx, e.target.value)}
+                className="bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-900 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+      <div className="grid grid-cols-2 gap-6">
+        <DateInput
+          label="Data de Início"
+          name="med-start"
+          value={startDate}
+          onChange={setStartDate}
+        />
+        <DateInput
+          label="Data de Fim"
+          name="med-end"
+          value={endDate}
+          onChange={setEndDate}
+        />
+      </div>
+      <Textarea
+        label="Posologia / Instruções"
+        name="med-instructions"
+        value={instructions}
+        onChange={setInstructions}
+        placeholder="Ex: Tomar 1 comprimido ao dia após o café"
+        rows={2}
+      />
+      <SegmentedToggle
+        label="Status"
+        value={active}
+        onChange={setActive}
+        options={[
+          { value: "true", label: "Ativo" },
+          { value: "false", label: "Inativo" },
+        ]}
+      />
+      <FormActions
+        onCancel={onClose}
+        loading={saving}
+        submitLabel="Salvar Alterações"
+      />
+    </form>
+  );
+}
+
+function MedicationDetailView({
+  medication,
+  onClose,
+  onSaved,
+}: {
+  medication: Medication;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const { user } = useAuth();
+  const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const isOwner = !!user?.userId && user.userId === medication.doctorId;
+
+  async function handleDelete() {
+    if (!window.confirm("Tem certeza que deseja excluir este medicamento?"))
+      return;
+    setDeleting(true);
+    try {
+      await api(`/medications/${medication.id}`, { method: "DELETE" });
+      onSaved();
+    } catch (err) {
+      console.error("Erro ao excluir medicamento:", err);
+      setDeleting(false);
+    }
+  }
+
+  if (editing) {
+    return (
+      <MedicationForm
+        onClose={() => setEditing(false)}
+        onSaved={onSaved}
+        initial={medication}
+        variant="inline"
+      />
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-6">
+      {medication.lockedByDoctor && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-100">
+          <Stethoscope className="w-3.5 h-3.5 text-primary" />
+          <span className="text-xs font-medium text-blue-700">
+            Registro médico — preenchido pelo profissional de saúde
+          </span>
+        </div>
+      )}
+
+      <div className="space-y-5">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Medicamento
+            </p>
+            <p className="text-lg font-bold text-slate-900">
+              {medication.name}
+            </p>
+          </div>
+          <span
+            className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase shrink-0 ${
+              medication.active
+                ? "text-green-700 bg-green-100"
+                : "text-slate-500 bg-slate-100"
+            }`}
+          >
+            {medication.active ? "Ativo" : "Inativo"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Dosagem
+            </p>
+            <p className="text-sm font-medium text-slate-800">
+              {medication.dosage || "—"}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Frequência
+            </p>
+            <p className="text-sm font-medium text-slate-800">
+              {medication.frequency
+                ? getMedicationFrequencyLabel(medication.frequency)
+                : "—"}
+            </p>
+          </div>
+        </div>
+
+        {medication.times && medication.times.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Horários
+            </p>
+            <p className="text-sm font-medium text-slate-800">
+              {medication.times.join(", ")}
+            </p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Início
+            </p>
+            <p className="text-sm font-medium text-slate-800">
+              {medication.startDate
+                ? new Date(medication.startDate).toLocaleDateString("pt-BR")
+                : "—"}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Fim
+            </p>
+            <p className="text-sm font-medium text-slate-800">
+              {medication.endDate
+                ? new Date(medication.endDate).toLocaleDateString("pt-BR")
+                : "—"}
+            </p>
+          </div>
+        </div>
+
+        {medication.instructions && (
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Posologia / Instruções
+            </p>
+            <p className="text-sm text-slate-700 leading-relaxed">
+              {medication.instructions}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {isOwner && (
+        <div className="flex items-center justify-between pt-[24px]">
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleting}
+            className="flex items-center gap-1.5 text-sm font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0 disabled:opacity-50 text-red-600"
+          >
+            <X className="w-3.5 h-3.5" />
+            {deleting ? "Excluindo..." : "Excluir medicamento"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="flex items-center gap-1.5 text-sm font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0 text-primary"
+          >
+            <Edit className="w-3.5 h-3.5" />
+            Editar medicamento
+          </button>
+        </div>
+      )}
+
+      <div className="pt-4 border-t border-slate-100">
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full py-3 bg-slate-100 rounded-full font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer border-none"
+        >
+          Fechar
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ExamsSection({
   exams,
   patientId: _pid,
   onRefresh,
+  onSelect,
 }: {
   exams: PatientFromAPI["exams"];
   patientId: string;
   onRefresh: () => void;
+  onSelect: (exam: Exam) => void;
 }) {
   const [openBatch, setOpenBatch] = useState<string | null>(null);
   const [resultModal, setResultModal] = useState<{
@@ -608,7 +1058,8 @@ function ExamsSection({
                   {group.exams.map((exam) => (
                     <div
                       key={exam.id}
-                      className="flex items-center justify-between py-2"
+                      onClick={() => onSelect(exam)}
+                      className="flex items-center justify-between py-2 cursor-pointer rounded-lg hover:bg-slate-50 transition-colors px-2 -mx-2"
                     >
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-slate-700">
@@ -623,12 +1074,13 @@ function ExamsSection({
                       {exam.status !== "completed" && (
                         <button
                           type="button"
-                          onClick={() =>
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setResultModal({
                               examId: exam.id,
                               examName: exam.title,
-                            })
-                          }
+                            });
+                          }}
                           className="text-xs font-semibold text-primary hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
                         >
                           Inserir resultado
@@ -664,6 +1116,323 @@ function ExamsSection({
         />
       )}
     </>
+  );
+}
+
+const EXAM_TYPE_OPTIONS = [
+  { value: "blood_test", label: "Exame de Sangue" },
+  { value: "urine_test", label: "Exame de Urina" },
+  { value: "xray", label: "Raio-X" },
+  { value: "ct_scan", label: "Tomografia" },
+  { value: "mri", label: "Ressonância Magnética" },
+  { value: "ultrasound", label: "Ultrassonografia" },
+  { value: "ecg", label: "Eletrocardiograma" },
+  { value: "endoscopy", label: "Endoscopia" },
+  { value: "colonoscopy", label: "Colonoscopia" },
+  { value: "biopsy", label: "Biópsia" },
+  { value: "other", label: "Outro" },
+];
+
+const EXAM_STATUS_OPTIONS = [
+  { value: "scheduled", label: "Agendado" },
+  { value: "completed", label: "Realizado" },
+  { value: "cancelled", label: "Cancelado" },
+];
+
+function getExamTypeLabel(value: string): string {
+  return EXAM_TYPE_OPTIONS.find((opt) => opt.value === value)?.label || value;
+}
+
+function ExamForm({
+  onClose,
+  onSaved,
+  initial,
+  variant = "modal",
+}: {
+  onClose: () => void;
+  onSaved: () => void;
+  initial: Exam;
+  variant?: "modal" | "inline";
+}) {
+  const [title, setTitle] = useState(initial.title || "");
+  const [type, setType] = useState(initial.type || "other");
+  const [description, setDescription] = useState(initial.description || "");
+  const [date, setDate] = useState(initial.date?.split("T")[0] || "");
+  const [status, setStatus] = useState(initial.status || "scheduled");
+  const [source, setSource] = useState(initial.source || "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim()) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await api(`/exams/${initial.id}`, {
+        method: "PUT",
+        body: {
+          name: title.trim(),
+          type,
+          description: description.trim() || undefined,
+          scheduledDate: date || undefined,
+          status,
+          laboratory: source.trim() || undefined,
+        },
+      });
+      onSaved();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Erro ao salvar exame. Tente novamente.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form
+      className={
+        variant === "inline"
+          ? "bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5"
+          : "p-8 pt-0 space-y-5"
+      }
+      onSubmit={handleSubmit}
+    >
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium">
+          {error}
+        </div>
+      )}
+      <TextInput
+        label="Nome do Exame"
+        name="exam-title"
+        value={title}
+        onChange={setTitle}
+        placeholder="Ex: Hemograma Completo"
+      />
+      <div className="space-y-1.5">
+        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+          Tipo
+        </label>
+        <CustomSelect
+          name="exam-type"
+          value={type}
+          onChange={setType}
+          options={EXAM_TYPE_OPTIONS}
+          placeholder="Selecione o tipo"
+        />
+      </div>
+      <Textarea
+        label="Descrição"
+        name="exam-description"
+        value={description}
+        onChange={setDescription}
+        placeholder="Descrição ou observações sobre o exame"
+        rows={2}
+      />
+      <div className="grid grid-cols-2 gap-6">
+        <DateInput
+          label="Data"
+          name="exam-date"
+          value={date}
+          onChange={setDate}
+        />
+        <div className="space-y-1.5">
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+            Status
+          </label>
+          <CustomSelect
+            name="exam-status"
+            value={status}
+            onChange={setStatus}
+            options={EXAM_STATUS_OPTIONS}
+            placeholder="Selecione o status"
+          />
+        </div>
+      </div>
+      <TextInput
+        label="Laboratório / Origem"
+        name="exam-source"
+        value={source}
+        onChange={setSource}
+        placeholder="Ex: Laboratório São Lucas"
+      />
+      <FormActions
+        onCancel={onClose}
+        loading={saving}
+        submitLabel="Salvar Alterações"
+      />
+    </form>
+  );
+}
+
+function ExamDetailView({
+  exam,
+  onClose,
+  onSaved,
+}: {
+  exam: Exam;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const { user } = useAuth();
+  const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const isOwner = !!user?.userId && user.userId === exam.doctorId;
+  const completed = exam.status === "completed";
+
+  async function handleDelete() {
+    if (!window.confirm("Tem certeza que deseja excluir este exame?")) return;
+    setDeleting(true);
+    try {
+      await api(`/exams/${exam.id}`, { method: "DELETE" });
+      onSaved();
+    } catch (err) {
+      console.error("Erro ao excluir exame:", err);
+      setDeleting(false);
+    }
+  }
+
+  if (editing) {
+    return (
+      <ExamForm
+        onClose={() => setEditing(false)}
+        onSaved={onSaved}
+        initial={exam}
+        variant="inline"
+      />
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-6">
+      <div className="space-y-5">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Exame
+            </p>
+            <p className="text-lg font-bold text-slate-900">{exam.title}</p>
+          </div>
+          <span
+            className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase shrink-0 ${
+              completed
+                ? "text-green-700 bg-green-100"
+                : "text-amber-700 bg-amber-100"
+            }`}
+          >
+            {completed ? "Realizado" : "Pendente"}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Tipo
+            </p>
+            <p className="text-sm font-medium text-slate-800">
+              {exam.type ? getExamTypeLabel(exam.type) : "—"}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Data
+            </p>
+            <p className="text-sm font-medium text-slate-800">
+              {exam.date
+                ? new Date(exam.date).toLocaleDateString("pt-BR")
+                : "—"}
+            </p>
+          </div>
+        </div>
+        {exam.source && (
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Laboratório / Origem
+            </p>
+            <p className="text-sm font-medium text-slate-800">
+              {exam.source}
+            </p>
+          </div>
+        )}
+        {exam.completedAt && (
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Realizado em
+            </p>
+            <p className="text-sm font-medium text-slate-800">
+              {new Date(exam.completedAt).toLocaleDateString("pt-BR")}
+            </p>
+          </div>
+        )}
+        {exam.description && (
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Descrição
+            </p>
+            <p className="text-sm text-slate-700 leading-relaxed">
+              {exam.description}
+            </p>
+          </div>
+        )}
+        {exam.resultFiles && exam.resultFiles.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              Arquivos de Resultado
+            </p>
+            <div className="space-y-2">
+              {exam.resultFiles.map((file, idx) => (
+                <a
+                  key={idx}
+                  href={file}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+                >
+                  <FileText className="w-4 h-4 shrink-0" />
+                  <span>Arquivo {idx + 1}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {isOwner && (
+        <div className="flex items-center justify-between pt-[24px]">
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleting}
+            className="flex items-center gap-1.5 text-sm font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0 disabled:opacity-50 text-red-600"
+          >
+            <X className="w-3.5 h-3.5" />
+            {deleting ? "Excluindo..." : "Excluir exame"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="flex items-center gap-1.5 text-sm font-semibold underline underline-offset-2 hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0 text-primary"
+          >
+            <Edit className="w-3.5 h-3.5" />
+            Editar exame
+          </button>
+        </div>
+      )}
+
+      <div className="pt-4 border-t border-slate-100">
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full py-3 bg-slate-100 rounded-full font-bold text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer border-none"
+        >
+          Fechar
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -757,11 +1526,13 @@ function ExamRequestForm({
   patientName,
   patientId,
   onSaved,
+  variant = "modal",
 }: {
   onClose: () => void;
   patientName: string;
   patientId: string;
   onSaved: () => void;
+  variant?: "modal" | "inline";
 }) {
   const { user } = useAuth();
   const [examNames, setExamNames] = useState<string[]>([""]);
@@ -833,7 +1604,14 @@ function ExamRequestForm({
   }
 
   return (
-    <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
+    <form
+      className={
+        variant === "inline"
+          ? "bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5"
+          : "p-8 pt-0 space-y-5"
+      }
+      onSubmit={handleSubmit}
+    >
       {examNames.map((name, index) => (
         <SearchableSelect
           key={index}
@@ -952,11 +1730,14 @@ function generateDistributedTimes(count: number): string[] {
 function PrescriptionForm({
   onClose,
   patientName,
+  variant = "modal",
 }: {
   onClose: () => void;
   patientName: string;
+  variant?: "modal" | "inline";
 }) {
   const { user } = useAuth();
+  const medicationSearch = useMedicationCatalogSearch();
   const [medications, setMedications] = useState<MedFormItem[]>([
     {
       name: "",
@@ -1028,7 +1809,11 @@ function PrescriptionForm({
 
   return (
     <form
-      className="p-8 pt-0 space-y-5"
+      className={
+        variant === "inline"
+          ? "bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5"
+          : "p-8 pt-0 space-y-5"
+      }
       onSubmit={(e) => {
         e.preventDefault();
         onClose();
@@ -1037,14 +1822,18 @@ function PrescriptionForm({
       {medications.map((med, index) => (
         <div key={index} className="space-y-4">
           {index > 0 && <div className="h-px bg-slate-100" />}
-          <TextInput
+          <SearchableSelect
             label={
               index === 0 ? "Nome do Medicamento" : `Medicamento ${index + 1}`
             }
             name={`med-nome-${index}`}
             value={med.name}
             onChange={(val) => updateMed(index, "name", val)}
-            placeholder="Ex: Losartana Potássica"
+            options={medicationSearch.options}
+            onSearch={medicationSearch.search}
+            loading={medicationSearch.loading}
+            placeholder="Pesquise o medicamento (base ANVISA)"
+            allowFreeText
           />
           <TextInput
             label="Dosagem / Apresentação"
@@ -1132,10 +1921,12 @@ function ConsultaForm({
   onClose,
   patientId,
   onSaved,
+  variant = "modal",
 }: {
   onClose: () => void;
   patientId: string;
   onSaved: () => void;
+  variant?: "modal" | "inline";
 }) {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
@@ -1151,6 +1942,7 @@ function ConsultaForm({
   );
   const [convenioId, setConvenioId] = useState("");
   const convenios = useActiveConvenios();
+  const medicationSearch = useMedicationCatalogSearch();
   const [saving, setSaving] = useState(false);
   const [addMedication, setAddMedication] = useState(false);
   const [addExam, setAddExam] = useState(false);
@@ -1289,7 +2081,14 @@ function ConsultaForm({
   }
 
   return (
-    <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
+    <form
+      className={
+        variant === "inline"
+          ? "bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5"
+          : "p-8 pt-0 space-y-5"
+      }
+      onSubmit={handleSubmit}
+    >
       {submissionErrors.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 relative">
           <button
@@ -1443,14 +2242,18 @@ function ConsultaForm({
               {medications.map((med, index) => (
                 <div key={index} className="space-y-3">
                   {index > 0 && <div className="h-px bg-slate-200" />}
-                  <TextInput
+                  <SearchableSelect
                     label="Nome do Medicamento"
                     name={`med-name-${index}`}
                     value={med.name}
                     onChange={(val) =>
                       handleMedicationChange(index, "name", val)
                     }
-                    placeholder="Ex: Losartana 50mg"
+                    options={medicationSearch.options}
+                    onSearch={medicationSearch.search}
+                    loading={medicationSearch.loading}
+                    placeholder="Pesquise o medicamento (base ANVISA)"
+                    allowFreeText
                   />
                   <TextInput
                     label="Dosagem"
@@ -2137,7 +2940,7 @@ function DiseasesSection({
 }) {
   const [diseases, setDiseases] = useState<Disease[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [adding, setAdding] = useState(false);
   const [viewingDisease, setViewingDisease] = useState<Disease | null>(null);
 
   async function loadDiseases() {
@@ -2159,6 +2962,54 @@ function DiseasesSection({
     return <div className="text-center py-8 text-slate-400">Carregando...</div>;
   }
 
+  if (viewingDisease) {
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => setViewingDisease(null)}
+          className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent mb-4 p-0"
+        >
+          <ArrowLeft size={18} />
+          <span>Voltar para Doenças</span>
+        </button>
+        <DiseaseDetailView
+          disease={viewingDisease}
+          patientId={patientId}
+          onClose={() => setViewingDisease(null)}
+          onSaved={() => {
+            loadDiseases();
+            setViewingDisease(null);
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (adding) {
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => setAdding(false)}
+          className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent mb-4 p-0"
+        >
+          <ArrowLeft size={18} />
+          <span>Voltar para Doenças</span>
+        </button>
+        <DiseaseForm
+          patientId={patientId}
+          onClose={() => setAdding(false)}
+          onSaved={() => {
+            loadDiseases();
+            setAdding(false);
+          }}
+          variant="inline"
+        />
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -2166,7 +3017,7 @@ function DiseasesSection({
           Condições e Doenças
         </h3>
         <Button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => setAdding(true)}
           variant="primary"
           size="sm"
           icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
@@ -2213,45 +3064,6 @@ function DiseasesSection({
           ))}
         </div>
       )}
-
-      {/* Create Modal */}
-      <Modal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        label="Novo Registro"
-        title="Adicionar Doença"
-        maxWidth="max-w-2xl"
-      >
-        <DiseaseForm
-          patientId={patientId}
-          onClose={() => setShowCreateModal(false)}
-          onSaved={() => {
-            loadDiseases();
-            setShowCreateModal(false);
-          }}
-        />
-      </Modal>
-
-      {/* View/Edit Modal */}
-      <Modal
-        isOpen={!!viewingDisease}
-        onClose={() => setViewingDisease(null)}
-        label="Condição"
-        title="Detalhes da Doença"
-        maxWidth="max-w-2xl"
-      >
-        {viewingDisease && (
-          <DiseaseDetailView
-            disease={viewingDisease}
-            patientId={patientId}
-            onClose={() => setViewingDisease(null)}
-            onSaved={() => {
-              loadDiseases();
-              setViewingDisease(null);
-            }}
-          />
-        )}
-      </Modal>
     </div>
   );
 }
@@ -2261,11 +3073,13 @@ function DiseaseForm({
   onClose,
   onSaved,
   initial,
+  variant = "modal",
 }: {
   patientId: string;
   onClose: () => void;
   onSaved: () => void;
   initial?: Disease;
+  variant?: "modal" | "inline";
 }) {
   const [name, setName] = useState(initial?.name || "");
   const [description, setDescription] = useState(initial?.description || "");
@@ -2314,7 +3128,14 @@ function DiseaseForm({
   }
 
   return (
-    <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
+    <form
+      className={
+        variant === "inline"
+          ? "bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5"
+          : "p-8 pt-0 space-y-5"
+      }
+      onSubmit={handleSubmit}
+    >
       <TextInput
         label="Nome da Doença"
         name="disease-name"
@@ -2412,12 +3233,13 @@ function DiseaseDetailView({
         onClose={() => setEditing(false)}
         onSaved={onSaved}
         initial={disease}
+        variant="inline"
       />
     );
   }
 
   return (
-    <div className="p-8 pt-0 space-y-6">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-6">
       <div className="space-y-5">
         <div>
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
@@ -2636,7 +3458,7 @@ function getSurgeryBorderStyle(status: string): string {
 function SurgeriesSection({ patientId }: { patientId: string }) {
   const [surgeries, setSurgeries] = useState<Surgery[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [adding, setAdding] = useState(false);
   const [viewingSurgery, setViewingSurgery] = useState<Surgery | null>(null);
 
   async function loadSurgeries() {
@@ -2658,6 +3480,54 @@ function SurgeriesSection({ patientId }: { patientId: string }) {
     return <div className="text-center py-8 text-slate-400">Carregando...</div>;
   }
 
+  if (viewingSurgery) {
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => setViewingSurgery(null)}
+          className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent mb-4 p-0"
+        >
+          <ArrowLeft size={18} />
+          <span>Voltar para Cirurgias</span>
+        </button>
+        <SurgeryDetailView
+          surgery={viewingSurgery}
+          patientId={patientId}
+          onClose={() => setViewingSurgery(null)}
+          onSaved={() => {
+            loadSurgeries();
+            setViewingSurgery(null);
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (adding) {
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => setAdding(false)}
+          className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent mb-4 p-0"
+        >
+          <ArrowLeft size={18} />
+          <span>Voltar para Cirurgias</span>
+        </button>
+        <SurgeryForm
+          patientId={patientId}
+          onClose={() => setAdding(false)}
+          onSaved={() => {
+            loadSurgeries();
+            setAdding(false);
+          }}
+          variant="inline"
+        />
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -2665,7 +3535,7 @@ function SurgeriesSection({ patientId }: { patientId: string }) {
           Cirurgias
         </h3>
         <Button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => setAdding(true)}
           variant="primary"
           size="sm"
           icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
@@ -2715,43 +3585,6 @@ function SurgeriesSection({ patientId }: { patientId: string }) {
           ))}
         </div>
       )}
-
-      <Modal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        label="Novo Registro"
-        title="Adicionar Cirurgia"
-        maxWidth="max-w-2xl"
-      >
-        <SurgeryForm
-          patientId={patientId}
-          onClose={() => setShowCreateModal(false)}
-          onSaved={() => {
-            loadSurgeries();
-            setShowCreateModal(false);
-          }}
-        />
-      </Modal>
-
-      <Modal
-        isOpen={!!viewingSurgery}
-        onClose={() => setViewingSurgery(null)}
-        label="Cirurgia"
-        title="Detalhes da Cirurgia"
-        maxWidth="max-w-2xl"
-      >
-        {viewingSurgery && (
-          <SurgeryDetailView
-            surgery={viewingSurgery}
-            patientId={patientId}
-            onClose={() => setViewingSurgery(null)}
-            onSaved={() => {
-              loadSurgeries();
-              setViewingSurgery(null);
-            }}
-          />
-        )}
-      </Modal>
     </div>
   );
 }
@@ -2761,11 +3594,13 @@ function SurgeryForm({
   onClose,
   onSaved,
   initial,
+  variant = "modal",
 }: {
   patientId: string;
   onClose: () => void;
   onSaved: () => void;
   initial?: Surgery;
+  variant?: "modal" | "inline";
 }) {
   const [name, setName] = useState(initial?.name || "");
   const [status, setStatus] = useState(initial?.status || "PLANNED");
@@ -2921,7 +3756,14 @@ function SurgeryForm({
   }
 
   return (
-    <form className="p-8 pt-0 space-y-6" onSubmit={handleSubmit}>
+    <form
+      className={
+        variant === "inline"
+          ? "bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-6"
+          : "p-8 pt-0 space-y-6"
+      }
+      onSubmit={handleSubmit}
+    >
       {/* Informações */}
       <div className="space-y-5">
         <p className="text-xs font-bold text-primary uppercase tracking-wider">
@@ -3253,6 +4095,7 @@ function SurgeryDetailView({
         onClose={() => setEditing(false)}
         onSaved={onSaved}
         initial={surgery}
+        variant="inline"
       />
     );
   }
@@ -3260,7 +4103,7 @@ function SurgeryDetailView({
   const isPerformed = surgery.status === "PERFORMED";
 
   return (
-    <div className="p-8 pt-0 space-y-6">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-6">
       <div className="space-y-5">
         <div>
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
@@ -3468,7 +4311,7 @@ function getSeverityLabel(severity: string): string {
 function AllergiesSection({ patientId }: { patientId: string }) {
   const [allergies, setAllergies] = useState<Allergy[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [adding, setAdding] = useState(false);
   const [viewingAllergy, setViewingAllergy] = useState<Allergy | null>(null);
 
   async function loadAllergies() {
@@ -3489,6 +4332,54 @@ function AllergiesSection({ patientId }: { patientId: string }) {
   if (loading)
     return <div className="text-center py-8 text-slate-400">Carregando...</div>;
 
+  if (viewingAllergy) {
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => setViewingAllergy(null)}
+          className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent mb-4 p-0"
+        >
+          <ArrowLeft size={18} />
+          <span>Voltar para Alergias</span>
+        </button>
+        <AllergyDetailView
+          allergy={viewingAllergy}
+          patientId={patientId}
+          onClose={() => setViewingAllergy(null)}
+          onSaved={() => {
+            loadAllergies();
+            setViewingAllergy(null);
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (adding) {
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => setAdding(false)}
+          className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent mb-4 p-0"
+        >
+          <ArrowLeft size={18} />
+          <span>Voltar para Alergias</span>
+        </button>
+        <AllergyForm
+          patientId={patientId}
+          onClose={() => setAdding(false)}
+          onSaved={() => {
+            loadAllergies();
+            setAdding(false);
+          }}
+          variant="inline"
+        />
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -3496,7 +4387,7 @@ function AllergiesSection({ patientId }: { patientId: string }) {
           Alergias
         </h3>
         <Button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => setAdding(true)}
           variant="primary"
           size="sm"
           icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
@@ -3537,43 +4428,6 @@ function AllergiesSection({ patientId }: { patientId: string }) {
           ))}
         </div>
       )}
-
-      <Modal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        label="Novo Registro"
-        title="Adicionar Alergia"
-        maxWidth="max-w-2xl"
-      >
-        <AllergyForm
-          patientId={patientId}
-          onClose={() => setShowCreateModal(false)}
-          onSaved={() => {
-            loadAllergies();
-            setShowCreateModal(false);
-          }}
-        />
-      </Modal>
-
-      <Modal
-        isOpen={!!viewingAllergy}
-        onClose={() => setViewingAllergy(null)}
-        label="Alergia"
-        title="Detalhes da Alergia"
-        maxWidth="max-w-2xl"
-      >
-        {viewingAllergy && (
-          <AllergyDetailView
-            allergy={viewingAllergy}
-            patientId={patientId}
-            onClose={() => setViewingAllergy(null)}
-            onSaved={() => {
-              loadAllergies();
-              setViewingAllergy(null);
-            }}
-          />
-        )}
-      </Modal>
     </div>
   );
 }
@@ -3583,11 +4437,13 @@ function AllergyForm({
   onClose,
   onSaved,
   initial,
+  variant = "modal",
 }: {
   patientId: string;
   onClose: () => void;
   onSaved: () => void;
   initial?: Allergy;
+  variant?: "modal" | "inline";
 }) {
   const [name, setName] = useState(initial?.name || "");
   const [severity, setSeverity] = useState(initial?.severity || "moderate");
@@ -3626,7 +4482,14 @@ function AllergyForm({
   }
 
   return (
-    <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
+    <form
+      className={
+        variant === "inline"
+          ? "bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5"
+          : "p-8 pt-0 space-y-5"
+      }
+      onSubmit={handleSubmit}
+    >
       <TextInput
         label="Nome da Alergia"
         name="allergy-name"
@@ -3721,12 +4584,13 @@ function AllergyDetailView({
         onClose={() => setEditing(false)}
         onSaved={onSaved}
         initial={allergy}
+        variant="inline"
       />
     );
   }
 
   return (
-    <div className="p-8 pt-0 space-y-6">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-6">
       <div className="space-y-5">
         <div>
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
@@ -3804,7 +4668,7 @@ function AtestadoDetailView({
   onEdit: () => void;
 }) {
   return (
-    <div className="p-8 pt-0 space-y-6">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-6">
       <div className="space-y-5">
         <div>
           <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
@@ -3888,7 +4752,7 @@ function AtestadoDetailView({
 function AtestadosSection({ patientId }: { patientId: string }) {
   const [certificates, setCertificates] = useState<CertificateRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [adding, setAdding] = useState(false);
   const [viewing, setViewing] = useState<CertificateRecord | null>(null);
   const [editing, setEditing] = useState(false);
 
@@ -3910,6 +4774,70 @@ function AtestadosSection({ patientId }: { patientId: string }) {
   if (loading)
     return <div className="text-center py-8 text-slate-400">Carregando...</div>;
 
+  if (viewing) {
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => {
+            setViewing(null);
+            setEditing(false);
+          }}
+          className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent mb-4 p-0"
+        >
+          <ArrowLeft size={18} />
+          <span>Voltar para Atestados</span>
+        </button>
+        {editing ? (
+          <AtestadoForm
+            patientId={patientId}
+            initial={viewing}
+            onClose={() => setEditing(false)}
+            onSaved={() => {
+              loadCertificates();
+              setViewing(null);
+              setEditing(false);
+            }}
+            variant="inline"
+          />
+        ) : (
+          <AtestadoDetailView
+            certificate={viewing}
+            onClose={() => {
+              setViewing(null);
+              setEditing(false);
+            }}
+            onEdit={() => setEditing(true)}
+          />
+        )}
+      </div>
+    );
+  }
+
+  if (adding) {
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => setAdding(false)}
+          className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent mb-4 p-0"
+        >
+          <ArrowLeft size={18} />
+          <span>Voltar para Atestados</span>
+        </button>
+        <AtestadoForm
+          patientId={patientId}
+          onClose={() => setAdding(false)}
+          onSaved={() => {
+            loadCertificates();
+            setAdding(false);
+          }}
+          variant="inline"
+        />
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -3917,7 +4845,7 @@ function AtestadosSection({ patientId }: { patientId: string }) {
           Atestados
         </h3>
         <Button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => setAdding(true)}
           variant="primary"
           size="sm"
           icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
@@ -3958,57 +4886,6 @@ function AtestadosSection({ patientId }: { patientId: string }) {
           ))}
         </div>
       )}
-
-      <Modal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        label="Novo Registro"
-        title="Adicionar Atestado"
-        maxWidth="max-w-2xl"
-      >
-        <AtestadoForm
-          patientId={patientId}
-          onClose={() => setShowCreateModal(false)}
-          onSaved={() => {
-            loadCertificates();
-            setShowCreateModal(false);
-          }}
-        />
-      </Modal>
-
-      <Modal
-        isOpen={!!viewing}
-        onClose={() => {
-          setViewing(null);
-          setEditing(false);
-        }}
-        label="Atestado"
-        title={editing ? "Editar Atestado" : "Detalhes do Atestado"}
-        maxWidth="max-w-2xl"
-      >
-        {viewing && editing && (
-          <AtestadoForm
-            patientId={patientId}
-            initial={viewing}
-            onClose={() => setEditing(false)}
-            onSaved={() => {
-              loadCertificates();
-              setViewing(null);
-              setEditing(false);
-            }}
-          />
-        )}
-        {viewing && !editing && (
-          <AtestadoDetailView
-            certificate={viewing}
-            onClose={() => {
-              setViewing(null);
-              setEditing(false);
-            }}
-            onEdit={() => setEditing(true)}
-          />
-        )}
-      </Modal>
     </div>
   );
 }
@@ -4121,10 +4998,21 @@ function DependentsSection({
   );
 }
 
-function VaccinesSection({ patientId }: { patientId: string }) {
+const VACCINE_OPTIONS = [...VACCINE_CATALOG]
+  .sort((a, b) => a.localeCompare(b, "pt-BR"))
+  .map((name) => ({ value: name, label: name }));
+
+function VaccinesSection({
+  patientId,
+  patientName,
+}: {
+  patientId: string;
+  patientName: string;
+}) {
   const [vaccines, setVaccines] = useState<Vaccine[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [addMode, setAddMode] = useState<"registro" | "receita">("registro");
   const [viewingVaccine, setViewingVaccine] = useState<Vaccine | null>(null);
 
   async function loadVaccines() {
@@ -4145,6 +5033,73 @@ function VaccinesSection({ patientId }: { patientId: string }) {
   if (loading)
     return <div className="text-center py-8 text-slate-400">Carregando...</div>;
 
+  if (viewingVaccine) {
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => setViewingVaccine(null)}
+          className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent mb-4 p-0"
+        >
+          <ArrowLeft size={18} />
+          <span>Voltar para Vacinas</span>
+        </button>
+        <VaccineDetailView
+          vaccine={viewingVaccine}
+          patientId={patientId}
+          onClose={() => setViewingVaccine(null)}
+          onSaved={() => {
+            loadVaccines();
+            setViewingVaccine(null);
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (adding) {
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => setAdding(false)}
+          className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent mb-4 p-0"
+        >
+          <ArrowLeft size={18} />
+          <span>Voltar para Vacinas</span>
+        </button>
+        <div className="mb-5">
+          <SegmentedToggle
+            label="Tipo de Registro"
+            value={addMode}
+            onChange={setAddMode}
+            options={[
+              { value: "registro", label: "Vacina Já Tomada" },
+              { value: "receita", label: "Receita / Indicação" },
+            ]}
+          />
+        </div>
+        {addMode === "registro" ? (
+          <VaccineForm
+            patientId={patientId}
+            onClose={() => setAdding(false)}
+            onSaved={() => {
+              loadVaccines();
+              setAdding(false);
+            }}
+            variant="inline"
+          />
+        ) : (
+          <VaccinePrescriptionForm
+            onClose={() => setAdding(false)}
+            patientName={patientName}
+            variant="inline"
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -4152,7 +5107,7 @@ function VaccinesSection({ patientId }: { patientId: string }) {
           Vacinas
         </h3>
         <Button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => setAdding(true)}
           variant="primary"
           size="sm"
           icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
@@ -4195,43 +5150,6 @@ function VaccinesSection({ patientId }: { patientId: string }) {
           ))}
         </div>
       )}
-
-      <Modal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        label="Novo Registro"
-        title="Adicionar Vacina"
-        maxWidth="max-w-2xl"
-      >
-        <VaccineForm
-          patientId={patientId}
-          onClose={() => setShowCreateModal(false)}
-          onSaved={() => {
-            loadVaccines();
-            setShowCreateModal(false);
-          }}
-        />
-      </Modal>
-
-      <Modal
-        isOpen={!!viewingVaccine}
-        onClose={() => setViewingVaccine(null)}
-        label="Vacina"
-        title="Detalhes da Vacina"
-        maxWidth="max-w-2xl"
-      >
-        {viewingVaccine && (
-          <VaccineDetailView
-            vaccine={viewingVaccine}
-            patientId={patientId}
-            onClose={() => setViewingVaccine(null)}
-            onSaved={() => {
-              loadVaccines();
-              setViewingVaccine(null);
-            }}
-          />
-        )}
-      </Modal>
     </div>
   );
 }
@@ -4241,11 +5159,13 @@ function VaccineForm({
   onClose,
   onSaved,
   initial,
+  variant = "modal",
 }: {
   patientId: string;
   onClose: () => void;
   onSaved: () => void;
   initial?: Vaccine;
+  variant?: "modal" | "inline";
 }) {
   const [name, setName] = useState(initial?.name || "");
   const [dose, setDose] = useState(initial?.dose || "");
@@ -4292,13 +5212,22 @@ function VaccineForm({
   }
 
   return (
-    <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
-      <TextInput
+    <form
+      className={
+        variant === "inline"
+          ? "bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5"
+          : "p-8 pt-0 space-y-5"
+      }
+      onSubmit={handleSubmit}
+    >
+      <SearchableSelect
         label="Nome da Vacina"
         name="vaccine-name"
         value={name}
         onChange={setName}
-        placeholder="Ex: COVID-19 Pfizer, Gripe"
+        options={VACCINE_OPTIONS}
+        placeholder="Pesquise ou digite o nome da vacina"
+        allowFreeText
       />
       <TextInput
         label="Dose"
@@ -4341,6 +5270,117 @@ function VaccineForm({
         submitLabel={initial ? "Salvar Alterações" : "Adicionar"}
         loading={saving}
       />
+    </form>
+  );
+}
+
+interface VaccineFormItem {
+  name: string;
+  notes: string;
+}
+
+function VaccinePrescriptionForm({
+  onClose,
+  patientName,
+  variant = "modal",
+}: {
+  onClose: () => void;
+  patientName: string;
+  variant?: "modal" | "inline";
+}) {
+  const { user } = useAuth();
+  const [vaccines, setVaccines] = useState<VaccineFormItem[]>([
+    { name: "", notes: "" },
+  ]);
+
+  function updateVaccine(
+    index: number,
+    field: keyof VaccineFormItem,
+    value: string,
+  ) {
+    const updated = [...vaccines];
+    updated[index] = { ...updated[index], [field]: value };
+    setVaccines(updated);
+  }
+
+  function addVaccine() {
+    setVaccines([...vaccines, { name: "", notes: "" }]);
+  }
+
+  async function handleGeneratePdf() {
+    const validVaccines = vaccines.filter((v) => v.name.trim());
+    if (validVaccines.length === 0) return;
+
+    await generateVaccinePrescriptionPdf({
+      doctor: {
+        name: user?.name || "Médico",
+        crm: user?.crm || "",
+        specialty: user?.specialty,
+        rqe: user?.rqe || undefined,
+      },
+      patient: { name: patientName },
+      vaccines: validVaccines.map((v) => ({
+        name: v.name,
+        notes: v.notes || undefined,
+      })),
+    });
+  }
+
+  return (
+    <form
+      className={
+        variant === "inline"
+          ? "bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5"
+          : "p-8 pt-0 space-y-5"
+      }
+      onSubmit={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+    >
+      {vaccines.map((vaccine, index) => (
+        <div key={index} className="space-y-4">
+          {index > 0 && <div className="h-px bg-slate-100" />}
+          <SearchableSelect
+            label={index === 0 ? "Nome da Vacina" : `Vacina ${index + 1}`}
+            name={`vaccine-rx-name-${index}`}
+            value={vaccine.name}
+            onChange={(val) => updateVaccine(index, "name", val)}
+            options={VACCINE_OPTIONS}
+            placeholder="Pesquise ou digite o nome da vacina"
+            allowFreeText
+          />
+          <TextInput
+            label="Observações"
+            name={`vaccine-rx-notes-${index}`}
+            value={vaccine.notes}
+            onChange={(val) => updateVaccine(index, "notes", val)}
+            placeholder="Ex: 2ª dose, aplicar em 30 dias"
+          />
+        </div>
+      ))}
+
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          onClick={addVaccine}
+          className="flex items-center gap-1 text-primary text-xs font-semibold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Adicionar outra vacina
+        </button>
+      </div>
+
+      <button
+        type="button"
+        onClick={handleGeneratePdf}
+        className="flex items-center gap-2 text-primary text-sm font-bold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
+      >
+        <Download className="w-4 h-4" />
+        Gerar PDF da Indicação
+      </button>
+
+      <FormActions onCancel={onClose} submitLabel="Concluir" />
     </form>
   );
 }
@@ -4396,12 +5436,13 @@ function VaccineDetailView({
         onClose={() => setEditing(false)}
         onSaved={onSaved}
         initial={vaccine}
+        variant="inline"
       />
     );
   }
 
   return (
-    <div className="p-8 pt-0 space-y-6">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-6">
       <div className="space-y-5">
         <VaccineDetailField label="Dose" value={vaccine.dose} />
         <VaccineDetailField
@@ -4475,12 +5516,15 @@ export default function PatientDetail() {
     | "atestados"
     | "dependentes"
   >("consultas");
-  const [showConsultaModal, setShowConsultaModal] = useState(false);
-  const [showMedicamentoModal, setShowMedicamentoModal] = useState(false);
-  const [showDocumentoModal, setShowDocumentoModal] = useState(false);
+  const [addingConsulta, setAddingConsulta] = useState(false);
+  const [addingMedicamento, setAddingMedicamento] = useState(false);
+  const [addingExame, setAddingExame] = useState(false);
   const [editingConsulta, setEditingConsulta] = useState<Appointment | null>(
     null,
   );
+  const [viewingMedication, setViewingMedication] =
+    useState<Medication | null>(null);
+  const [viewingExam, setViewingExam] = useState<Exam | null>(null);
   const [showEditPatientModal, setShowEditPatientModal] = useState(false);
   const { user } = useAuth();
   const { isApproved, loading: verificationLoading } = useDoctorVerification();
@@ -4680,6 +5724,26 @@ export default function PatientDetail() {
                   }}
                 />
               </div>
+            ) : addingConsulta ? (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setAddingConsulta(false)}
+                  className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent mb-4 p-0"
+                >
+                  <ArrowLeft size={18} />
+                  <span>Voltar para Consultas</span>
+                </button>
+                <ConsultaForm
+                  onClose={() => setAddingConsulta(false)}
+                  patientId={patient.id}
+                  onSaved={() => {
+                    refetch();
+                    setAddingConsulta(false);
+                  }}
+                  variant="inline"
+                />
+              </div>
             ) : (
               <div>
                 <div className="flex justify-between items-center mb-6">
@@ -4688,7 +5752,7 @@ export default function PatientDetail() {
                   </h3>
                   <Button
                     data-testid="btn-nova-consulta"
-                    onClick={() => setShowConsultaModal(true)}
+                    onClick={() => setAddingConsulta(true)}
                     variant="primary"
                     size="sm"
                     icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
@@ -4702,46 +5766,127 @@ export default function PatientDetail() {
                 />
               </div>
             ))}
-          {activeTab === "medicamentos" && (
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="font-bold text-xl font-display tracking-tight">
-                  Prescrições Ativas
-                </h3>
-                <Button
-                  onClick={() => setShowMedicamentoModal(true)}
-                  variant="primary"
-                  size="sm"
-                  icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
+          {activeTab === "medicamentos" &&
+            (viewingMedication ? (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setViewingMedication(null)}
+                  className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent mb-4 p-0"
                 >
-                  Adicionar Medicamento
-                </Button>
+                  <ArrowLeft size={18} />
+                  <span>Voltar para Medicamentos</span>
+                </button>
+                <MedicationDetailView
+                  medication={viewingMedication}
+                  onClose={() => setViewingMedication(null)}
+                  onSaved={() => {
+                    refetch();
+                    setViewingMedication(null);
+                  }}
+                />
               </div>
-              <MedicationsSection medications={patient.medications} />
-            </div>
-          )}
-          {activeTab === "exames" && (
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="font-bold text-xl font-display tracking-tight">
-                  Exames Recentes
-                </h3>
-                <Button
-                  onClick={() => setShowDocumentoModal(true)}
-                  variant="primary"
-                  size="sm"
-                  icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
+            ) : addingMedicamento ? (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setAddingMedicamento(false)}
+                  className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent mb-4 p-0"
                 >
-                  Solicitar Exame
-                </Button>
+                  <ArrowLeft size={18} />
+                  <span>Voltar para Medicamentos</span>
+                </button>
+                <PrescriptionForm
+                  onClose={() => setAddingMedicamento(false)}
+                  patientName={patient.name}
+                  variant="inline"
+                />
               </div>
-              <ExamsSection
-                exams={patient.exams}
-                patientId={patient.id}
-                onRefresh={refetch}
-              />
-            </div>
-          )}
+            ) : (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="font-bold text-xl font-display tracking-tight">
+                    Prescrições Ativas
+                  </h3>
+                  <Button
+                    onClick={() => setAddingMedicamento(true)}
+                    variant="primary"
+                    size="sm"
+                    icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
+                  >
+                    Adicionar Medicamento
+                  </Button>
+                </div>
+                <MedicationsSection
+                  medications={patient.medications}
+                  onSelect={setViewingMedication}
+                />
+              </div>
+            ))}
+          {activeTab === "exames" &&
+            (viewingExam ? (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setViewingExam(null)}
+                  className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent mb-4 p-0"
+                >
+                  <ArrowLeft size={18} />
+                  <span>Voltar para Exames</span>
+                </button>
+                <ExamDetailView
+                  exam={viewingExam}
+                  onClose={() => setViewingExam(null)}
+                  onSaved={() => {
+                    refetch();
+                    setViewingExam(null);
+                  }}
+                />
+              </div>
+            ) : addingExame ? (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setAddingExame(false)}
+                  className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent mb-4 p-0"
+                >
+                  <ArrowLeft size={18} />
+                  <span>Voltar para Exames</span>
+                </button>
+                <ExamRequestForm
+                  onClose={() => setAddingExame(false)}
+                  patientName={patient.name}
+                  patientId={patient.id}
+                  onSaved={() => {
+                    refetch();
+                    setAddingExame(false);
+                  }}
+                  variant="inline"
+                />
+              </div>
+            ) : (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="font-bold text-xl font-display tracking-tight">
+                    Exames Recentes
+                  </h3>
+                  <Button
+                    onClick={() => setAddingExame(true)}
+                    variant="primary"
+                    size="sm"
+                    icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
+                  >
+                    Solicitar Exame
+                  </Button>
+                </div>
+                <ExamsSection
+                  exams={patient.exams}
+                  patientId={patient.id}
+                  onRefresh={refetch}
+                  onSelect={setViewingExam}
+                />
+              </div>
+            ))}
 
           <div style={{ display: activeTab === "doencas" ? "block" : "none" }}>
             <DiseasesSection patientId={patient.id} onRefresh={refetch} />
@@ -4752,7 +5897,7 @@ export default function PatientDetail() {
           </div>
 
           <div style={{ display: activeTab === "vacinas" ? "block" : "none" }}>
-            <VaccinesSection patientId={patient.id} />
+            <VaccinesSection patientId={patient.id} patientName={patient.name} />
           </div>
 
           <div
@@ -4775,49 +5920,6 @@ export default function PatientDetail() {
               onSelectDependent={(depId) => navigate(`/patients/${depId}`)}
             />
           </div>
-
-          {/* Modals */}
-          <Modal
-            isOpen={showConsultaModal}
-            onClose={() => setShowConsultaModal(false)}
-            label="Novo Registro"
-            title="Nova Consulta"
-            maxWidth="max-w-2xl"
-          >
-            <ConsultaForm
-              onClose={() => setShowConsultaModal(false)}
-              patientId={patient.id}
-              onSaved={refetch}
-            />
-          </Modal>
-
-          <Modal
-            isOpen={showMedicamentoModal}
-            onClose={() => setShowMedicamentoModal(false)}
-            label="Nova Prescrição"
-            title="Prescrever Medicamento"
-            maxWidth="max-w-2xl"
-          >
-            <PrescriptionForm
-              onClose={() => setShowMedicamentoModal(false)}
-              patientName={patient.name}
-            />
-          </Modal>
-
-          <Modal
-            isOpen={showDocumentoModal}
-            onClose={() => setShowDocumentoModal(false)}
-            label="Novo Agendamento"
-            title="Solicitar Exame"
-            maxWidth="max-w-2xl"
-          >
-            <ExamRequestForm
-              onClose={() => setShowDocumentoModal(false)}
-              patientName={patient.name}
-              patientId={patient.id}
-              onSaved={refetch}
-            />
-          </Modal>
 
           {/* Edit Patient Modal */}
           <Modal

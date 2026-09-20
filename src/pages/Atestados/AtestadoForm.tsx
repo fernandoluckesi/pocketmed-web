@@ -35,6 +35,7 @@ interface AtestadoFormProps {
   initial?: CertificateRecord;
   onClose: () => void;
   onSaved: () => void;
+  variant?: "modal" | "inline";
 }
 
 export function AtestadoForm({
@@ -44,6 +45,7 @@ export function AtestadoForm({
   initial,
   onClose,
   onSaved,
+  variant = "modal",
 }: AtestadoFormProps) {
   const { user } = useAuth();
   const [crm, setCrm] = useState(initial?.crm || user?.crm || "");
@@ -104,7 +106,14 @@ export function AtestadoForm({
   }
 
   return (
-    <form className="p-8 pt-0 space-y-5" onSubmit={handleSubmit}>
+    <form
+      className={
+        variant === "inline"
+          ? "bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5"
+          : "p-8 pt-0 space-y-5"
+      }
+      onSubmit={handleSubmit}
+    >
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium">
           {error}
