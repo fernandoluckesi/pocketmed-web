@@ -89,7 +89,7 @@ export default function DRE() {
             <BarChart3 className="w-5 h-5 text-blue-600" />
             <div>
               <h2 className="text-lg font-bold text-slate-900 tracking-tight leading-none">
-                DRE — Demonstrativo de Resultado
+                DRE, Demonstrativo de Resultado
               </h2>
               <p className="text-xs text-slate-500 mt-1 font-medium">
                 Visão mensal do resultado financeiro

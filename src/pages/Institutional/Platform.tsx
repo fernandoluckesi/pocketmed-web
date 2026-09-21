@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import {
   Monitor,
   Users,
+  Users2,
   Calendar,
   FileText,
   BarChart3,
@@ -14,6 +15,9 @@ import {
   UserPlus,
   Bell,
   PieChart,
+  HeartPulse,
+  Scissors,
+  FileCheck,
 } from "lucide-react";
 import { InstitutionalFooter } from "./InstitutionalFooter";
 import { InstitutionalHeader } from "./InstitutionalHeader";
@@ -48,7 +52,7 @@ export default function InstitutionalPlatform() {
             <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-6 sm:mb-8">
               A plataforma web do Hispora oferece aos médicos e clínicas todas
               as ferramentas necessárias para gestão de pacientes, prontuários
-              eletrônicos, agendamentos, equipe médica e financeiro — tudo em um
+              eletrônicos, agendamentos, equipe médica e financeiro, tudo em um
               painel moderno e intuitivo.
             </p>
             <Link
@@ -67,7 +71,7 @@ export default function InstitutionalPlatform() {
           Funcionalidades da Plataforma
         </h2>
         <p className="text-base sm:text-lg text-slate-600 text-center max-w-2xl mx-auto mb-12 sm:mb-16">
-          Tudo o que um profissional de saúde precisa para gerenciar sua pratica
+          Tudo o que um profissional de saúde precisa para gerenciar sua prática
           clínica de forma eficiente e segura.
         </p>
 
@@ -76,12 +80,12 @@ export default function InstitutionalPlatform() {
             {
               icon: Users,
               title: "Gestão de Pacientes",
-              desc: "Cadastro completo de pacientes com prontuário universal. Histórico médico, alergias, vacinas, doenças e dependentes.",
+              desc: "Cadastro completo de pacientes com prontuário universal: histórico médico, alergias, vacinas, doenças, cirurgias, atestados e dependentes.",
             },
             {
               icon: Calendar,
               title: "Agenda e Consultas",
-              desc: "Agendamento de consultas com visualizacao por dia, semana e mes. Notificações automáticas para pacientes.",
+              desc: "Agendamento de consultas com visualização por dia, semana e mês. Notificações automáticas para pacientes.",
             },
             {
               icon: ClipboardList,
@@ -89,24 +93,44 @@ export default function InstitutionalPlatform() {
               desc: "Registro de evoluções clínicas, diagnósticos, prescrições e encaminhamentos. Tudo organizado por consulta.",
             },
             {
+              icon: HeartPulse,
+              title: "Doenças e Condições",
+              desc: "Histórico de diagnósticos e condições crônicas do paciente, com status do tratamento sempre à mão antes da consulta.",
+            },
+            {
+              icon: Scissors,
+              title: "Cirurgias",
+              desc: "Histórico cirúrgico detalhado: datas, hospitais, técnicas, anestesia e implantes permanentes do paciente.",
+            },
+            {
+              icon: FileCheck,
+              title: "Atestados",
+              desc: "Emita atestados digitais em segundos. Anexe o documento e o CRM, CID, dias de afastamento e data são preenchidos automaticamente.",
+            },
+            {
               icon: Stethoscope,
-              title: "Equipe Medica",
+              title: "Equipe Médica",
               desc: "Gestão de múltiplos profissionais na clínica. Perfis de admin, médico e secretário(a) com permissões diferenciadas.",
             },
             {
               icon: FileText,
               title: "Exames e Resultados",
-              desc: "Solicitacao de exames, upload de resultados e acompanhamento do histórico laboratorial do paciente.",
+              desc: "Solicitação de exames, upload de resultados e acompanhamento do histórico laboratorial do paciente.",
+            },
+            {
+              icon: Users2,
+              title: "Dependentes",
+              desc: "Visualize o histórico de dependentes vinculados ao paciente responsável, com o mesmo nível de detalhe do titular.",
             },
             {
               icon: PieChart,
               title: "Financeiro",
-              desc: "Dashboard financeiro completo com receitas, despesas, repasses médicos, convenios e DRE.",
+              desc: "Dashboard financeiro completo com receitas, despesas, repasses médicos, convênios e DRE.",
             },
             {
               icon: Building2,
               title: "Gestão de Clínica",
-              desc: "Cadastro de clínica, membros, especialidades e configuracoes. Visão completa do negocio.",
+              desc: "Cadastro de clínica, membros, especialidades e configurações. Visão completa do negócio.",
             },
             {
               icon: Bell,
@@ -137,6 +161,54 @@ export default function InstitutionalPlatform() {
         </div>
       </section>
 
+      {/* Valor do histórico */}
+      <section className="bg-primary/5 py-14 sm:py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-4">
+              Um histórico completo muda a qualidade do atendimento
+            </h2>
+            <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto">
+              Doenças, cirurgias, alergias, vacinas e atestados não são só
+              registros, são o contexto clínico que ajuda você a decidir
+              melhor e mais rápido.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
+            {[
+              {
+                title: "Decisões com contexto completo",
+                desc: "Veja o histórico de doenças, cirurgias e alergias do paciente antes mesmo da consulta começar, sem depender do que ele lembra de contar.",
+              },
+              {
+                title: "Menos exames repetidos",
+                desc: "Com o histórico laboratorial e cirúrgico sempre acessível, evite solicitar de novo exames que o paciente já fez em outro atendimento.",
+              },
+              {
+                title: "Continuidade do cuidado",
+                desc: "O prontuário é do paciente, não do médico. Mesmo trocando de profissional ou clínica, o histórico completo nunca se perde.",
+              },
+              {
+                title: "Atestados prontos em segundos",
+                desc: "Anexe o documento e deixe a leitura automática preencher CRM, CID e dias de afastamento, sem digitação manual.",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-100 shadow-sm"
+              >
+                <h4 className="font-bold text-slate-900 mb-2">
+                  {item.title}
+                </h4>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Diferenciais */}
       <section className="bg-slate-50 py-14 sm:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -151,11 +223,11 @@ export default function InstitutionalPlatform() {
               },
               {
                 title: "Multi-clínica",
-                desc: "Um profissional pode fazer parte de multiplas clínicas com perfis e permissões independentes.",
+                desc: "Um profissional pode fazer parte de múltiplas clínicas com perfis e permissões independentes.",
               },
               {
                 title: "Auditoria Completa",
-                desc: "Todas as operações sobre dados sensiveis sao registradas com rastreabilidade total (quem, quando, o que).",
+                desc: "Todas as operações sobre dados sensíveis são registradas com rastreabilidade total (quem, quando, o que).",
               },
               {
                 title: "Integração Mobile",
@@ -211,7 +283,7 @@ export default function InstitutionalPlatform() {
                 "Gestão de membros da clínica",
                 "Painel financeiro completo",
                 "Cadastro de médicos e secretários(as)",
-                "Configuracoes da clínica",
+                "Configurações da clínica",
                 "Visão geral de pacientes",
               ],
             },
@@ -220,9 +292,9 @@ export default function InstitutionalPlatform() {
               role: "Secretário(a)",
               perms: [
                 "Agendamento de consultas",
-                "Visualizacao basica de pacientes",
+                "Visualização básica de pacientes",
                 "Gestão de agenda dos médicos",
-                "Sem acesso a dados clinicos",
+                "Sem acesso a dados clínicos",
                 "Perfil de suporte administrativo",
               ],
             },
@@ -265,14 +337,14 @@ export default function InstitutionalPlatform() {
           </h2>
           <p className="text-slate-400 text-base sm:text-lg max-w-2xl mx-auto mb-10 sm:mb-12">
             O Hispora foi projetado desde o início com segurança como
-            prioridade. Todos os dados sao protegidos e rastreados.
+            prioridade. Todos os dados são protegidos e rastreados.
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 max-w-4xl mx-auto">
             {[
               "Conformidade LGPD",
               "Criptografia SSL/TLS",
-              "Auditoria de Operacoes",
-              "Controle de Permissoes",
+              "Auditoria de Operações",
+              "Controle de Permissões",
             ].map((item) => (
               <div
                 key={item}

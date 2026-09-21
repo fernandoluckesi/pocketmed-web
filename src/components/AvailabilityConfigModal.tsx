@@ -815,7 +815,7 @@ export function AvailabilityConfigModal({
                                     className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700"
                                   >
                                     {it.start}
-                                    <span className="text-slate-400">–</span>
+                                    <span className="text-slate-400">às</span>
                                     {it.end}
                                   </span>
                                 ))}

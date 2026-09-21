@@ -286,7 +286,7 @@ function WeekView({
     onWeekChange(new Date());
   };
 
-  const weekLabel = `${startOfWeek.getDate()} de ${startOfWeek.toLocaleDateString("pt-BR", { month: "long" })} — ${endOfWeek.getDate()} de ${endOfWeek.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}`;
+  const weekLabel = `${startOfWeek.getDate()} de ${startOfWeek.toLocaleDateString("pt-BR", { month: "long" })} a ${endOfWeek.getDate()} de ${endOfWeek.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}`;
 
   return (
     <div className="flex-1">

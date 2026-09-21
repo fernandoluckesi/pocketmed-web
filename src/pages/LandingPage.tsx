@@ -289,7 +289,7 @@ export default function LandingPage() {
                 "Histórico de consultas",
                 "Resultados de exames",
                 "Controle de medicamentos",
-                "Cartao de vacinas",
+                "Cartão de vacinas",
                 "Notificações em tempo real",
               ].map((item) => (
                 <li
@@ -477,7 +477,7 @@ export default function LandingPage() {
             </div>
 
             <p className="text-sm text-slate-400">
-              &copy; {new Date().getFullYear()} Hispora Clínical Systems. Todos
+              &copy; {new Date().getFullYear()} Hispora Clinical Systems. Todos
               os direitos reservados.
             </p>
           </div>

@@ -210,7 +210,7 @@ export default function Insurance() {
                   onClick={() => handleToggle(conv.id)}
                   className={`w-full py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${conv.active ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
                 >
-                  {conv.active ? "✓ Ativo" : "Inativo — Reativar"}
+                  {conv.active ? "✓ Ativo" : "Inativo, Reativar"}
                 </button>
               </div>
             </div>

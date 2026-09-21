@@ -76,9 +76,9 @@ export default function InstitutionalHome() {
             </h3>
             <p className="text-slate-600 leading-relaxed">
               Acesse seu histórico médico completo, consultas, exames,
-              medicamentos e vacinas diretamente do seu celular. Cadastre
-              dependentes e compartilhe a responsabilidade com outros
-              familiares. Disponível para Android e iOS.
+              medicamentos, vacinas, doenças, cirurgias e atestados,
+              diretamente do seu celular. Cadastre dependentes e acompanhe a
+              saúde de toda a família. Disponível para Android e iOS.
             </p>
           </div>
 

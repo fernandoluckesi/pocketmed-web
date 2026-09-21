@@ -24,7 +24,7 @@ export function DemoPatients() {
         </div>
         <div className="flex-1">
           <p className="text-sm font-bold text-amber-900">
-            Modo demonstração — dados fictícios
+            Modo demonstração, dados fictícios
           </p>
           <p className="text-xs text-amber-700">
             Finalize a verificação profissional para pesquisar e gerenciar

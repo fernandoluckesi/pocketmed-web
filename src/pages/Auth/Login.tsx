@@ -224,21 +224,21 @@ export default function Login() {
               onClick={() => setLegalModal("privacy")}
               className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400"
             >
-              Politicas de Privacidade
+              Políticas de Privacidade
             </button>
             <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
             <button
               onClick={() => setLegalModal("terms")}
               className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400"
             >
-              Termos de Servico
+              Termos de Serviço
             </button>
             <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
             <button
               onClick={() => setLegalModal("security")}
               className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400"
             >
-              Padroes de Seguranca
+              Padrões de Segurança
             </button>
           </div>
           <p className="text-[10px] text-slate-400">
@@ -259,21 +259,21 @@ export default function Login() {
       <LegalModal
         open={legalModal === "privacy"}
         onClose={() => setLegalModal(null)}
-        title="Politica de Privacidade"
+        title="Política de Privacidade"
       >
         <PrivacyPolicyContent />
       </LegalModal>
       <LegalModal
         open={legalModal === "terms"}
         onClose={() => setLegalModal(null)}
-        title="Termos de Servico"
+        title="Termos de Serviço"
       >
         <TermsOfServiceContent />
       </LegalModal>
       <LegalModal
         open={legalModal === "security"}
         onClose={() => setLegalModal(null)}
-        title="Padroes de Seguranca"
+        title="Padrões de Segurança"
       >
         <SecurityStandardsContent />
       </LegalModal>

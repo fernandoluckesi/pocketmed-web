@@ -121,7 +121,7 @@ export function AtestadoForm({
       )}
 
       <p className="text-xs text-slate-400">
-        Preenchimento manual por enquanto — a leitura automática do PDF para
+        Preenchimento manual por enquanto, a leitura automática do PDF para
         preencher estes campos está prevista para uma próxima etapa.
       </p>
 

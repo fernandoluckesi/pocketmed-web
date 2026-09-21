@@ -7,6 +7,10 @@ import {
   Pill,
   FileText,
   Heart,
+  HeartPulse,
+  Scissors,
+  FileCheck,
+  Users2,
   ArrowLeft,
   CheckCircle,
   Fingerprint,
@@ -45,10 +49,10 @@ export default function InstitutionalMobile() {
                 <span className="text-primary">no bolso</span>
               </h1>
               <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-6 sm:mb-8">
-                O aplicativo Hispora é gratuito e permite que pacientes
-                acessem todo o seu histórico médico de forma simples, segura e
-                instantânea. Consultas, exames, medicamentos, vacinas e
-                alergias, tudo em um só lugar.
+                O aplicativo Hispora é gratuito e reúne todo o seu histórico
+                médico, consultas, exames, medicamentos, vacinas, alergias,
+                doenças, cirurgias e atestados, em um só lugar, acessível de
+                qualquer lugar, para você e sua família.
               </p>
               <div className="flex flex-wrap gap-2 sm:gap-3">
                 <span className="bg-slate-100 text-slate-700 px-4 py-2 rounded-full text-sm font-medium">
@@ -103,6 +107,26 @@ export default function InstitutionalMobile() {
               desc: "Mantenha atualizado seu cartão de vacinas e alergias conhecidas para atendimentos de emergência.",
             },
             {
+              icon: HeartPulse,
+              title: "Doenças e Condições",
+              desc: "Registre diagnósticos e condições de saúde ao longo da vida, com status do tratamento sempre visível.",
+            },
+            {
+              icon: Scissors,
+              title: "Cirurgias",
+              desc: "Histórico cirúrgico completo: datas, hospitais, técnicas e implantes, prontos para qualquer novo médico.",
+            },
+            {
+              icon: FileCheck,
+              title: "Atestados",
+              desc: "Guarde seus atestados médicos com CID, dias de afastamento e o documento original anexado, nunca mais perca um.",
+            },
+            {
+              icon: Users2,
+              title: "Dependentes",
+              desc: "Cadastre filhos e outros dependentes e acompanhe o histórico de saúde de toda a família em um só app.",
+            },
+            {
               icon: Bell,
               title: "Notificações",
               desc: "Receba lembretes de medicamentos, retornos médicos e aprovações de acesso ao seu prontuário.",
@@ -128,6 +152,54 @@ export default function InstitutionalMobile() {
               </p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Valor do histórico */}
+      <section className="bg-primary/5 py-14 sm:py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-4">
+              Não é só um app. É o seu histórico de saúde.
+            </h2>
+            <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto">
+              Cada consulta, exame, cirurgia ou atestado registrado é uma peça
+              do seu histórico médico completo, e esse histórico vale mais do
+              que parece.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
+            {[
+              {
+                title: "Nunca comece do zero com um médico novo",
+                desc: "Trocou de médico ou precisou de um especialista? Seu histórico completo vai com você, sem depender da memória ou de pastas de papel.",
+              },
+              {
+                title: "Decisivo em uma emergência",
+                desc: "Alergias, medicamentos em uso e condições crônicas visíveis na hora certa podem ser a diferença em um atendimento de urgência.",
+              },
+              {
+                title: "Toda a família organizada",
+                desc: "Com o cadastro de dependentes, pais e filhos têm o histórico de saúde de toda a família reunido em um único lugar.",
+              },
+              {
+                title: "Documentos que nunca se perdem",
+                desc: "Atestados, resultados de exames e receitas ficam guardados digitalmente, prontos para consultar ou enviar quando precisar.",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-100 shadow-sm"
+              >
+                <h4 className="font-bold text-slate-900 mb-2">
+                  {item.title}
+                </h4>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

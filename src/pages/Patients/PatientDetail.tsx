@@ -806,7 +806,7 @@ function MedicationDetailView({
         <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-100">
           <Stethoscope className="w-3.5 h-3.5 text-primary" />
           <span className="text-xs font-medium text-blue-700">
-            Registro médico — preenchido pelo profissional de saúde
+            Registro médico, preenchido pelo profissional de saúde
           </span>
         </div>
       )}
@@ -2654,7 +2654,7 @@ function ConsultaDetailView({
         <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-100">
           <Stethoscope className="w-3.5 h-3.5 text-primary" />
           <span className="text-xs font-medium text-blue-700">
-            Registro médico — preenchido pelo profissional de saúde
+            Registro médico, preenchido pelo profissional de saúde
           </span>
         </div>
       )}

@@ -16,7 +16,7 @@ const banners = [
     title: "Prontuário Integrado",
     subtitle: "O prontuário do paciente onde ele estiver",
     description:
-      "Acesse o histórico completo do paciente em qualquer dispositivo. Consultas, exames, medicamentos e laudos — tudo sincronizado em tempo real entre médicos, clínicas e o próprio paciente.",
+      "Acesse o histórico completo do paciente em qualquer dispositivo. Consultas, exames, medicamentos e laudos, tudo sincronizado em tempo real entre médicos, clínicas e o próprio paciente.",
     cta: "Explorar",
     path: "/patients",
   },
