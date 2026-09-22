@@ -54,11 +54,7 @@ import {
   DEMO_PATIENT_ID,
   DEMO_DEPENDENT_ID,
 } from "../../mocks/demoPatientApi";
-import {
-  generateExamPdf,
-  generatePrescriptionPdf,
-  generateVaccinePrescriptionPdf,
-} from "../../utils/generate-pdf";
+import { generateVaccinePrescriptionPdf } from "../../utils/generate-pdf";
 import { api } from "../../services/api";
 import { AtestadoForm, type CertificateRecord } from "../Atestados/AtestadoForm";
 import { Snackbar } from "../../components/Snackbar";
@@ -1523,22 +1519,20 @@ function ExamResultModal({
 
 function ExamRequestForm({
   onClose,
-  patientName,
   patientId,
   onSaved,
   variant = "modal",
 }: {
   onClose: () => void;
-  patientName: string;
   patientId: string;
   onSaved: () => void;
   variant?: "modal" | "inline";
 }) {
-  const { user } = useAuth();
   const [examNames, setExamNames] = useState<string[]>([""]);
   const [description, setDescription] = useState("");
-  const [_file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [readingAttachment, setReadingAttachment] = useState(false);
+  const [readingError, setReadingError] = useState(false);
 
   const examOptions = [...EXAM_CATALOG]
     .sort((a, b) => a.localeCompare(b, "pt-BR"))
@@ -1557,20 +1551,33 @@ function ExamRequestForm({
     setExamNames([...examNames, ""]);
   }
 
-  async function handleGeneratePdf() {
-    const validExams = examNames.filter((n) => n.trim());
-    if (validExams.length === 0) return;
-
-    await generateExamPdf({
-      doctor: {
-        name: user?.name || "Médico",
-        crm: user?.crm || "",
-        specialty: user?.specialty,
-        rqe: user?.rqe || undefined,
-      },
-      patient: { name: patientName },
-      exams: validExams,
-    });
+  async function handleAttachFile(file: File | null) {
+    if (!file) return;
+    setReadingAttachment(true);
+    setReadingError(false);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const result = await api("/exam-catalog/parse-order", {
+        method: "POST",
+        body: formData,
+        isFormData: true,
+      });
+      const matches: { name: string }[] = Array.isArray(result?.matchedExams)
+        ? result.matchedExams
+        : [];
+      if (matches.length > 0) {
+        setExamNames((prev) => {
+          const hasContent = prev.some((n) => n.trim());
+          const base = hasContent ? prev : [];
+          return [...base, ...matches.map((m) => m.name)];
+        });
+      }
+    } catch {
+      setReadingError(true);
+    } finally {
+      setReadingAttachment(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -1612,6 +1619,27 @@ function ExamRequestForm({
       }
       onSubmit={handleSubmit}
     >
+      <div>
+        <FileInput
+          label="Anexar pedido de exame (PDF ou imagem)"
+          name="exam-file"
+          onChange={handleAttachFile}
+          accept=".pdf,.jpg,.jpeg,.png"
+        />
+        {readingAttachment && (
+          <p className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            Lendo anexo...
+          </p>
+        )}
+        {readingError && !readingAttachment && (
+          <p className="text-xs text-red-600 mt-2">
+            Não foi possível ler o anexo automaticamente. Preencha os campos
+            abaixo manualmente.
+          </p>
+        )}
+      </div>
+
       {examNames.map((name, index) => (
         <SearchableSelect
           key={index}
@@ -1645,30 +1673,6 @@ function ExamRequestForm({
         rows={2}
       />
 
-      <button
-        type="button"
-        onClick={handleGeneratePdf}
-        className="flex items-center gap-2 text-primary text-sm font-bold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
-      >
-        <Download className="w-4 h-4" />
-        Gerar PDF do Pedido de Exame
-      </button>
-
-      <div className="flex items-center gap-4 py-2">
-        <div className="flex-1 h-px bg-slate-200" />
-        <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">
-          Ou
-        </span>
-        <div className="flex-1 h-px bg-slate-200" />
-      </div>
-
-      <FileInput
-        label="Upload da guia em PDF"
-        name="exam-file"
-        onChange={setFile}
-        accept=".pdf"
-      />
-
       <FormActions
         onCancel={onClose}
         submitLabel="Solicitar Exame"
@@ -1691,16 +1695,19 @@ interface MedFormItem {
 }
 
 const FREQUENCY_OPTIONS = [
-  { value: "daily", label: "Diário" },
+  { value: "once_daily", label: "1x ao dia" },
   { value: "twice_daily", label: "2x ao dia" },
   { value: "three_times_daily", label: "3x ao dia" },
   { value: "four_times_daily", label: "4x ao dia" },
-  { value: "custom", label: "Personalizado" },
+  { value: "every_6_hours", label: "A cada 6 horas" },
+  { value: "every_8_hours", label: "A cada 8 horas" },
+  { value: "every_12_hours", label: "A cada 12 horas" },
+  { value: "as_needed", label: "Se necessário" },
 ];
 
 function getTimeSlotsCount(frequency: string): number {
   switch (frequency) {
-    case "daily":
+    case "once_daily":
       return 1;
     case "twice_daily":
       return 2;
@@ -1708,13 +1715,22 @@ function getTimeSlotsCount(frequency: string): number {
       return 3;
     case "four_times_daily":
       return 4;
+    case "every_6_hours":
+      return 4;
+    case "every_8_hours":
+      return 3;
+    case "every_12_hours":
+      return 2;
+    case "as_needed":
+      return 0;
     default:
       return 1;
   }
 }
 
 function generateDistributedTimes(count: number): string[] {
-  if (count <= 1) return ["08:00"];
+  if (count <= 0) return [];
+  if (count === 1) return ["08:00"];
   if (count === 2) return ["08:00", "20:00"];
   if (count === 3) return ["08:00", "14:00", "20:00"];
   if (count === 4) return ["08:00", "12:00", "16:00", "20:00"];
@@ -1729,26 +1745,31 @@ function generateDistributedTimes(count: number): string[] {
 
 function PrescriptionForm({
   onClose,
-  patientName,
+  patientId,
+  onSaved,
   variant = "modal",
 }: {
   onClose: () => void;
-  patientName: string;
+  patientId: string;
+  onSaved: () => void;
   variant?: "modal" | "inline";
 }) {
-  const { user } = useAuth();
   const medicationSearch = useMedicationCatalogSearch();
   const [medications, setMedications] = useState<MedFormItem[]>([
     {
       name: "",
       dosage: "",
-      frequency: "daily",
+      frequency: "once_daily",
       times: ["08:00"],
       startDate: "",
       endDate: "",
       instructions: "",
     },
   ]);
+  const [saving, setSaving] = useState(false);
+  const [submissionErrors, setSubmissionErrors] = useState<string[]>([]);
+  const [readingAttachment, setReadingAttachment] = useState(false);
+  const [readingError, setReadingError] = useState(false);
 
   function updateMed(
     index: number,
@@ -1778,7 +1799,7 @@ function PrescriptionForm({
       {
         name: "",
         dosage: "",
-        frequency: "daily",
+        frequency: "once_daily",
         times: ["08:00"],
         startDate: "",
         endDate: "",
@@ -1787,24 +1808,84 @@ function PrescriptionForm({
     ]);
   }
 
-  async function handleGeneratePdf() {
-    const validMeds = medications.filter((m) => m.name.trim());
+  async function handleAttachFile(file: File | null) {
+    if (!file) return;
+    setReadingAttachment(true);
+    setReadingError(false);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const result = await api("/medication-catalog/parse-order", {
+        method: "POST",
+        body: formData,
+        isFormData: true,
+      });
+      const matches: { product: string }[] = Array.isArray(
+        result?.matchedMedications,
+      )
+        ? result.matchedMedications
+        : [];
+      if (matches.length > 0) {
+        setMedications((prev) => {
+          const hasContent = prev.some((m) => m.name.trim());
+          const base = hasContent ? prev : [];
+          const newRows: MedFormItem[] = matches.map((m) => ({
+            name: m.product,
+            dosage: "",
+            frequency: "once_daily",
+            times: ["08:00"],
+            startDate: "",
+            endDate: "",
+            instructions: "",
+          }));
+          return [...base, ...newRows];
+        });
+      }
+    } catch {
+      setReadingError(true);
+    } finally {
+      setReadingAttachment(false);
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const validMeds = medications.filter(
+      (m) => m.name.trim() && m.dosage.trim() && m.startDate,
+    );
     if (validMeds.length === 0) return;
 
-    await generatePrescriptionPdf({
-      doctor: {
-        name: user?.name || "Médico",
-        crm: user?.crm || "",
-        specialty: user?.specialty,
-        rqe: user?.rqe || undefined,
-      },
-      patient: { name: patientName },
-      medications: validMeds.map((m) => ({
-        name: m.name,
-        presentation: m.dosage || undefined,
-        instructions: m.instructions || m.frequency || undefined,
-      })),
-    });
+    setSaving(true);
+    setSubmissionErrors([]);
+    const errors: string[] = [];
+
+    for (const med of validMeds) {
+      try {
+        await api("/medications", {
+          method: "POST",
+          body: {
+            name: med.name.trim(),
+            dosage: med.dosage.trim(),
+            frequency: med.frequency,
+            times: med.times.length > 0 ? med.times : undefined,
+            startDate: med.startDate,
+            endDate: med.endDate || undefined,
+            instructions: med.instructions.trim() || undefined,
+            patientId,
+          },
+        });
+      } catch {
+        errors.push(`Medicamento "${med.name}"`);
+      }
+    }
+
+    if (errors.length > 0) {
+      setSubmissionErrors(errors);
+    } else {
+      onSaved();
+      onClose();
+    }
+    setSaving(false);
   }
 
   return (
@@ -1814,11 +1895,47 @@ function PrescriptionForm({
           ? "bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5"
           : "p-8 pt-0 space-y-5"
       }
-      onSubmit={(e) => {
-        e.preventDefault();
-        onClose();
-      }}
+      onSubmit={handleSubmit}
     >
+      {submissionErrors.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 relative">
+          <button
+            type="button"
+            onClick={() => setSubmissionErrors([])}
+            className="absolute top-3 right-3 text-amber-600 hover:text-amber-800 cursor-pointer border-none bg-transparent p-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <p className="text-xs font-semibold text-amber-800 mb-1">
+            Não foi possível salvar:
+          </p>
+          <p className="text-xs text-amber-700">
+            {submissionErrors.join(", ")}
+          </p>
+        </div>
+      )}
+
+      <div>
+        <FileInput
+          label="Anexar receita/pedido (PDF ou imagem)"
+          name="prescription-file"
+          onChange={handleAttachFile}
+          accept=".pdf,.jpg,.jpeg,.png"
+        />
+        {readingAttachment && (
+          <p className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            Lendo anexo...
+          </p>
+        )}
+        {readingError && !readingAttachment && (
+          <p className="text-xs text-red-600 mt-2">
+            Não foi possível ler o anexo automaticamente. Preencha os campos
+            abaixo manualmente.
+          </p>
+        )}
+      </div>
+
       {medications.map((med, index) => (
         <div key={index} className="space-y-4">
           {index > 0 && <div className="h-px bg-slate-100" />}
@@ -1901,16 +2018,11 @@ function PrescriptionForm({
         </button>
       </div>
 
-      <button
-        type="button"
-        onClick={handleGeneratePdf}
-        className="flex items-center gap-2 text-primary text-sm font-bold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
-      >
-        <Download className="w-4 h-4" />
-        Gerar PDF da Receita
-      </button>
-
-      <FormActions onCancel={onClose} submitLabel="Prescrever" />
+      <FormActions
+        onCancel={onClose}
+        submitLabel="Prescrever"
+        loading={saving}
+      />
     </form>
   );
 }
@@ -1950,7 +2062,7 @@ function ConsultaForm({
     {
       name: "",
       dosage: "",
-      frequency: "daily",
+      frequency: "once_daily",
       times: ["08:00"],
       startDate: "",
       endDate: "",
@@ -2221,7 +2333,7 @@ function ConsultaForm({
                     {
                       name: "",
                       dosage: "",
-                      frequency: "daily",
+                      frequency: "once_daily",
                       times: ["08:00"],
                       startDate: "",
                       endDate: "",
@@ -2329,7 +2441,7 @@ function ConsultaForm({
                     {
                       name: "",
                       dosage: "",
-                      frequency: "daily",
+                      frequency: "once_daily",
                       times: ["08:00"],
                       startDate: "",
                       endDate: "",
@@ -2679,6 +2791,42 @@ function ConsultaDetailView({
             </p>
           </div>
         </div>
+
+        {(consultation.locationClinicName || consultation.locationStreet) && (
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Local da Consulta
+            </p>
+            <div className="flex items-start gap-2">
+              <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+              <div>
+                {consultation.locationClinicName && (
+                  <p className="text-sm font-semibold text-slate-800">
+                    {consultation.locationClinicName}
+                  </p>
+                )}
+                {consultation.locationStreet && (
+                  <p className="text-sm text-slate-600">
+                    {consultation.locationStreet}
+                    {consultation.locationNumber
+                      ? `, ${consultation.locationNumber}`
+                      : ""}
+                    {consultation.locationNeighborhood
+                      ? ` - ${consultation.locationNeighborhood}`
+                      : ""}
+                  </p>
+                )}
+                {(consultation.locationCity || consultation.locationState) && (
+                  <p className="text-sm text-slate-600">
+                    {[consultation.locationCity, consultation.locationState]
+                      .filter(Boolean)
+                      .join(" - ")}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div>
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
@@ -5798,7 +5946,11 @@ export default function PatientDetail() {
                 </button>
                 <PrescriptionForm
                   onClose={() => setAddingMedicamento(false)}
-                  patientName={patient.name}
+                  patientId={patient.id}
+                  onSaved={() => {
+                    refetch();
+                    setAddingMedicamento(false);
+                  }}
                   variant="inline"
                 />
               </div>
@@ -5855,7 +6007,6 @@ export default function PatientDetail() {
                 </button>
                 <ExamRequestForm
                   onClose={() => setAddingExame(false)}
-                  patientName={patient.name}
                   patientId={patient.id}
                   onSaved={() => {
                     refetch();

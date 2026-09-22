@@ -20,6 +20,7 @@ interface Consultation {
   id: string;
   patientName: string;
   patientCpf: string;
+  patientPhone: string;
   patientAvatar?: string;
   date: string;
   time: string;
@@ -56,6 +57,26 @@ function mapStatus(apt: any): "REALIZADA" | "AGENDADA" | "CANCELADA" {
   return "AGENDADA";
 }
 
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length === 11) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  }
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  return value;
+}
+
+/** Shows only the last 3 digits of the CPF (LGPD) — the rest is replaced by
+ * placeholder characters that keep the CPF's NNN.NNN.NNN-NN shape visible. */
+function maskCpf(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length !== 11) return "•••.•••.•••-••";
+  const masked = "•".repeat(8) + digits.slice(8);
+  return `${masked.slice(0, 3)}.${masked.slice(3, 6)}.${masked.slice(6, 9)}-${masked.slice(9, 11)}`;
+}
+
 // --- Main Page ---
 export default function Consultations() {
   const dialog = useDialog();
@@ -80,7 +101,8 @@ export default function Consultations() {
           return {
             id: apt.id,
             patientName: apt.patient?.name || apt.patientName || "Paciente",
-            patientCpf: apt.patient?.phone || "",
+            patientCpf: apt.patient?.cpf || "",
+            patientPhone: apt.patient?.phone || "",
             patientAvatar: apt.patient?.profileImage || undefined,
             date: apt.dateTime,
             time: dt.toLocaleTimeString("pt-BR", {
@@ -306,12 +328,13 @@ export default function Consultations() {
                             <p className="text-sm font-bold text-slate-900">
                               {con.patientName}
                             </p>
-                            <p className="text-[11px] text-slate-500 font-mono mt-0.5">
-                              CPF:{" "}
-                              {con.patientCpf.replace(
-                                /(\d{3})\.(\d{3})\.(\d{3})-(\d{2})/,
-                                "$1.***.***-$4",
-                              )}
+                            {con.patientPhone && (
+                              <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                                {formatPhone(con.patientPhone)}
+                              </p>
+                            )}
+                            <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                              CPF: {maskCpf(con.patientCpf)}
                             </p>
                           </div>
                         </div>

@@ -44,12 +44,54 @@ export interface Appointment {
   doctorId?: string;
   specialty?: string;
   location?: string;
+  locationClinicName?: string;
+  locationStreet?: string;
+  locationNumber?: string;
+  locationNeighborhood?: string;
+  locationCity?: string;
+  locationState?: string;
   notes?: string;
   instructions?: string;
   lockedByDoctor?: boolean;
   visitType?: string;
   paymentType?: string;
   convenioId?: string;
+}
+
+/** Single-line summary of the consultation's address, for compact display
+ * (the appointment list card). The detail view shows the parts separately. */
+function formatAppointmentLocation(apt: {
+  locationClinicName?: string;
+  locationStreet?: string;
+  locationNumber?: string;
+  locationNeighborhood?: string;
+  locationCity?: string;
+  locationState?: string;
+}): string | undefined {
+  const parts: string[] = [];
+  if (apt.locationStreet) {
+    parts.push(
+      apt.locationNumber
+        ? `${apt.locationStreet}, ${apt.locationNumber}`
+        : apt.locationStreet,
+    );
+  }
+  if (apt.locationNeighborhood) parts.push(apt.locationNeighborhood);
+  if (apt.locationCity) {
+    parts.push(
+      apt.locationState
+        ? `${apt.locationCity} - ${apt.locationState}`
+        : apt.locationCity,
+    );
+  } else if (apt.locationState) {
+    parts.push(apt.locationState);
+  }
+
+  const address = parts.join(", ");
+  if (apt.locationClinicName) {
+    return address ? `${apt.locationClinicName} - ${address}` : apt.locationClinicName;
+  }
+  return address || undefined;
 }
 
 export interface Medication {
@@ -203,7 +245,13 @@ export function usePatientDetail(id: string | undefined) {
               doctorName: apt.doctorName || undefined,
               doctorId: apt.doctorId || undefined,
               specialty: apt.doctorSpecialty || apt.specialty || undefined,
-              location: apt.location || undefined,
+              location: formatAppointmentLocation(apt),
+              locationClinicName: apt.locationClinicName || undefined,
+              locationStreet: apt.locationStreet || undefined,
+              locationNumber: apt.locationNumber || undefined,
+              locationNeighborhood: apt.locationNeighborhood || undefined,
+              locationCity: apt.locationCity || undefined,
+              locationState: apt.locationState || undefined,
               notes: apt.doctorFeedback || apt.notes || undefined,
               instructions: apt.doctorInstructions || undefined,
               lockedByDoctor: apt.lockedByDoctor || false,

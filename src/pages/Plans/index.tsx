@@ -1,93 +1,93 @@
-import { Check, Star, Zap, Crown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Check, Zap, Star, TrendingUp, Crown, Building2 } from "lucide-react";
 import { motion } from "motion/react";
 import { MainLayout } from "../../components/MainLayout";
+import { api } from "../../services/api";
+
+interface PlanFeatures {
+  agenda: boolean;
+  prontuario: boolean;
+  examesDocumentos: boolean;
+  dependentes: boolean;
+  secretaria: boolean;
+  gestaoClinica: boolean;
+  financeiro: boolean;
+  ocrIa: boolean;
+  relatoriosAvancados: boolean;
+  auditoriaAvancada: boolean;
+  integracoesApi: boolean;
+  suportePrioritario: boolean;
+}
 
 interface Plan {
   id: string;
   name: string;
-  price: string;
-  period: string;
+  price: number | null;
   description: string;
-  features: string[];
+  professionalsIncluded: number | null;
+  activePatientsIncluded: number | null;
+  additionalProfessionalPrice: number | null;
+  additionalPatientsPer1000Price: number | null;
   highlighted?: boolean;
-  icon: React.ComponentType<{ className?: string; size?: number }>;
-  badge?: string;
+  features: PlanFeatures;
 }
 
-const PLANS: Plan[] = [
-  {
-    id: "free",
-    name: "Gratuito",
-    price: "R$ 0",
-    period: "/mês",
-    description:
-      "Ideal para começar a usar a plataforma e conhecer os recursos.",
-    icon: Zap,
-    features: [
-      "Até 10 pacientes",
-      "Agendamento básico",
-      "Prontuário eletrônico",
-      "Suporte por email",
-    ],
-  },
-  {
-    id: "pro",
-    name: "Profissional",
-    price: "R$ 99",
-    period: "/mês",
-    description:
-      "Para médicos que precisam de mais recursos e pacientes ilimitados.",
-    icon: Star,
-    highlighted: true,
-    badge: "Mais Popular",
-    features: [
-      "Pacientes ilimitados",
-      "Agendamento avançado",
-      "Prontuário completo",
-      "Prescrição digital",
-      "Teleconsulta integrada",
-      "Relatórios e analytics",
-      "Suporte prioritário",
-      "Notificações push",
-    ],
-  },
-  {
-    id: "clinic",
-    name: "Clínica",
-    price: "R$ 249",
-    period: "/mês",
-    description: "Para clínicas com múltiplos profissionais e gestão completa.",
-    icon: Crown,
-    features: [
-      "Tudo do Profissional",
-      "Até 10 profissionais",
-      "Gestão de equipe",
-      "Secretários(as) e admins",
-      "Multi-agenda",
-      "Faturamento integrado",
-      "API personalizada",
-      "Suporte dedicado 24/7",
-      "Onboarding assistido",
-    ],
-  },
+const PLAN_ICONS: Record<string, React.ComponentType<{ className?: string; size?: number }>> = {
+  starter: Zap,
+  plus: Star,
+  pro: TrendingUp,
+  premium: Crown,
+  enterprise: Building2,
+};
+
+const FEATURE_LABELS: { key: keyof PlanFeatures; label: string }[] = [
+  { key: "agenda", label: "Agenda" },
+  { key: "prontuario", label: "Prontuário digital" },
+  { key: "examesDocumentos", label: "Exames e documentos" },
+  { key: "dependentes", label: "Dependentes / cuidadores" },
+  { key: "secretaria", label: "Secretária" },
+  { key: "gestaoClinica", label: "Gestão de clínica" },
+  { key: "financeiro", label: "Gestão financeira" },
+  { key: "ocrIa", label: "OCR / leitura automática" },
+  { key: "relatoriosAvancados", label: "Relatórios avançados" },
+  { key: "auditoriaAvancada", label: "Auditoria avançada" },
+  { key: "integracoesApi", label: "Integrações / API" },
+  { key: "suportePrioritario", label: "Suporte prioritário" },
 ];
 
-function PlanCard({ plan, index }: { plan: Plan; index: number }) {
+function formatPriceBRL(value: number | null): string {
+  if (value === null) return "Sob consulta";
+  return `R$ ${value.toLocaleString("pt-BR")}`;
+}
+
+function PlanCard({
+  plan,
+  index,
+  onChoose,
+}: {
+  plan: Plan;
+  index: number;
+  onChoose: () => void;
+}) {
+  const Icon = PLAN_ICONS[plan.id] || Zap;
+  const activeFeatures = FEATURE_LABELS.filter(({ key }) => plan.features[key]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.15 }}
+      transition={{ delay: index * 0.1 }}
       className={`relative rounded-[2rem] p-8 flex flex-col justify-between transition-all ${
         plan.highlighted
           ? "bg-primary text-white shadow-2xl shadow-primary/30 scale-[1.02]"
           : "bg-white border border-slate-100 shadow-sm hover:shadow-lg"
       }`}
     >
-      {plan.badge && (
+      {plan.highlighted && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
           <span className="bg-orange-500 text-white text-[10px] font-black uppercase tracking-wider px-4 py-1.5 rounded-full shadow-lg">
-            {plan.badge}
+            Plano Principal
           </span>
         </div>
       )}
@@ -97,7 +97,7 @@ function PlanCard({ plan, index }: { plan: Plan; index: number }) {
           <div
             className={`w-12 h-12 rounded-xl flex items-center justify-center ${plan.highlighted ? "bg-white/20" : "bg-primary/10"}`}
           >
-            <plan.icon
+            <Icon
               size={24}
               className={plan.highlighted ? "text-white" : "text-primary"}
             />
@@ -114,24 +114,37 @@ function PlanCard({ plan, index }: { plan: Plan; index: number }) {
             <span
               className={`text-4xl font-display font-extrabold ${plan.highlighted ? "text-white" : "text-slate-900"}`}
             >
-              {plan.price}
+              {formatPriceBRL(plan.price)}
             </span>
-            <span
-              className={`text-sm font-medium ${plan.highlighted ? "text-white/70" : "text-slate-500"}`}
-            >
-              {plan.period}
-            </span>
+            {plan.price !== null && (
+              <span
+                className={`text-sm font-medium ${plan.highlighted ? "text-white/70" : "text-slate-500"}`}
+              >
+                /mês
+              </span>
+            )}
           </div>
           <p
             className={`text-sm mt-2 ${plan.highlighted ? "text-white/80" : "text-slate-500"}`}
           >
             {plan.description}
           </p>
+          <p
+            className={`text-xs font-bold mt-3 ${plan.highlighted ? "text-white/90" : "text-slate-600"}`}
+          >
+            {plan.professionalsIncluded === null
+              ? "Profissionais personalizados"
+              : `Até ${plan.professionalsIncluded} profissionais`}{" "}
+            •{" "}
+            {plan.activePatientsIncluded === null
+              ? "pacientes personalizados"
+              : `${plan.activePatientsIncluded.toLocaleString("pt-BR")} pacientes ativos`}
+          </p>
         </div>
 
         <ul className="space-y-3">
-          {plan.features.map((feature, i) => (
-            <li key={i} className="flex items-center gap-3">
+          {activeFeatures.map(({ key, label }) => (
+            <li key={key} className="flex items-center gap-3">
               <div
                 className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${plan.highlighted ? "bg-white/20" : "bg-green-100"}`}
               >
@@ -143,30 +156,53 @@ function PlanCard({ plan, index }: { plan: Plan; index: number }) {
               <span
                 className={`text-sm font-medium ${plan.highlighted ? "text-white/90" : "text-slate-700"}`}
               >
-                {feature}
+                {label}
               </span>
             </li>
           ))}
         </ul>
+
+        {(plan.additionalProfessionalPrice !== null ||
+          plan.additionalPatientsPer1000Price !== null) && (
+          <p
+            className={`text-xs ${plan.highlighted ? "text-white/70" : "text-slate-400"}`}
+          >
+            {plan.additionalProfessionalPrice !== null &&
+              `+R$ ${plan.additionalProfessionalPrice}/mês por profissional adicional. `}
+            {plan.additionalPatientsPer1000Price !== null &&
+              `+R$ ${plan.additionalPatientsPer1000Price} a cada 1.000 pacientes ativos adicionais.`}
+          </p>
+        )}
       </div>
 
       <button
+        onClick={onChoose}
         className={`mt-8 w-full py-4 rounded-2xl font-bold text-sm transition-all active:scale-[0.98] cursor-pointer border-none ${
-          plan.id === "free"
-            ? "bg-slate-100 text-slate-500 cursor-default shadow-none"
-            : plan.highlighted
-              ? "bg-white text-primary hover:bg-white/90 shadow-lg"
-              : "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
+          plan.highlighted
+            ? "bg-white text-primary hover:bg-white/90 shadow-lg"
+            : "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
         }`}
-        disabled={plan.id === "free"}
       >
-        {plan.id === "free" ? "Plano Atual" : "Assinar Agora"}
+        {plan.id === "enterprise" ? "Falar com Vendas" : "Escolher Plano"}
       </button>
     </motion.div>
   );
 }
 
 export default function Plans() {
+  const navigate = useNavigate();
+  const [plans, setPlans] = useState<Plan[]>([]);
+
+  useEffect(() => {
+    api("/plans")
+      .then((data) => setPlans(Array.isArray(data) ? data : []))
+      .catch(() => setPlans([]));
+  }, []);
+
+  function handleChoose(planId: string) {
+    navigate("/account", { state: { tab: "subscription", planId } });
+  }
+
   return (
     <MainLayout>
       <motion.div
@@ -177,18 +213,24 @@ export default function Plans() {
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mt-10 mb-16">
           <h1 className="text-4xl font-display font-extrabold text-slate-900 tracking-tight">
-            Escolha seu Plano
+            Escolha o Plano da sua Clínica
           </h1>
           <p className="text-slate-500 font-medium mt-3 text-md">
-            Selecione o plano ideal para sua prática médica. Todos incluem
-            acesso à plataforma Hispora com atualizações gratuitas.
+            Planos por capacidade da clínica, não por número de médicos.
+            Adicione mais profissionais quando precisar, sem pular de faixa de
+            preço.
           </p>
         </div>
 
         {/* Plans Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-          {PLANS.map((plan, index) => (
-            <PlanCard key={plan.id} plan={plan} index={index} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+          {plans.map((plan, index) => (
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              index={index}
+              onChoose={() => handleChoose(plan.id)}
+            />
           ))}
         </div>
 
@@ -198,11 +240,14 @@ export default function Plans() {
             Dúvidas sobre os planos?
           </h3>
           <p className="text-slate-500 max-w-lg mx-auto">
-            Todos os planos incluem 14 dias de teste grátis. Cancele a qualquer
-            momento sem multa. Precisa de um plano personalizado para sua
-            instituição?
+            A troca de plano é feita direto em Minha Conta, na aba Assinatura.
+            Precisa de um plano personalizado para sua rede de clínicas ou
+            hospital?
           </p>
-          <button className="mt-6 bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-bold text-sm hover:bg-slate-800 transition-all active:scale-[0.98] cursor-pointer border-none">
+          <button
+            onClick={() => handleChoose("enterprise")}
+            className="mt-6 bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-bold text-sm hover:bg-slate-800 transition-all active:scale-[0.98] cursor-pointer border-none"
+          >
             Falar com Vendas
           </button>
         </div>
