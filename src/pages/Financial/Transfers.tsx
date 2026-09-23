@@ -1,26 +1,55 @@
 import { useState, useEffect, useCallback } from "react";
-import { Coins, CheckCircle, Clock, FileCheck } from "lucide-react";
+import { Coins, CheckCircle, Clock, FileCheck, Filter, X } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
 import { financialApi, type DoctorTransfer } from "../../services/financial";
+
+interface ClinicDoctor {
+  id: string;
+  name: string;
+}
 
 export default function Transfers() {
   const [transfers, setTransfers] = useState<DoctorTransfer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [monthFilter, setMonthFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("Todos");
+  const [doctorFilter, setDoctorFilter] = useState("Todos");
+  const [doctors, setDoctors] = useState<ClinicDoctor[]>([]);
 
   const loadData = useCallback(async () => {
     try {
-      const data = await financialApi.listTransfers();
+      const filters: Record<string, string> = {};
+      if (monthFilter) filters.month = monthFilter;
+      if (statusFilter !== "Todos") filters.status = statusFilter;
+      if (doctorFilter !== "Todos") filters.doctorId = doctorFilter;
+      const data = await financialApi.listTransfers(filters);
       setTransfers(Array.isArray(data) ? data : []);
     } catch {
       // ignore
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [monthFilter, statusFilter, doctorFilter]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    financialApi
+      .listClinicDoctors()
+      .then((data) => setDoctors(Array.isArray(data) ? data : []))
+      .catch(() => setDoctors([]));
+  }, []);
+
+  const hasActiveFilters =
+    !!monthFilter || statusFilter !== "Todos" || doctorFilter !== "Todos";
+
+  const clearFilters = () => {
+    setMonthFilter("");
+    setStatusFilter("Todos");
+    setDoctorFilter("Todos");
+  };
 
   const totalDues = transfers.reduce(
     (acc, d) => acc + (Number(d.netTransfer) || 0),
@@ -128,6 +157,55 @@ export default function Transfers() {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold">
+            <Filter className="w-3.5 h-3.5 text-blue-600" />
+            <label className="text-slate-500 font-bold">Mês</label>
+            <input
+              type="month"
+              value={monthFilter}
+              onChange={(e) => setMonthFilter(e.target.value)}
+              className="bg-transparent border-none text-slate-800 focus:outline-none cursor-pointer font-bold"
+            />
+          </div>
+          <div className="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="bg-transparent border-none text-slate-800 focus:outline-none cursor-pointer font-bold"
+            >
+              <option value="Todos">Status: Todos</option>
+              <option value="CALCULADO">Calculado</option>
+              <option value="APROVADO">Aprovado</option>
+              <option value="PAGO">Pago</option>
+            </select>
+          </div>
+          <div className="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold">
+            <select
+              value={doctorFilter}
+              onChange={(e) => setDoctorFilter(e.target.value)}
+              className="bg-transparent border-none text-slate-800 focus:outline-none cursor-pointer font-bold"
+            >
+              <option value="Todos">Médico: Todos</option>
+              {doctors.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-rose-600 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" /> Limpar
+            </button>
+          )}
         </div>
 
         {/* Table */}

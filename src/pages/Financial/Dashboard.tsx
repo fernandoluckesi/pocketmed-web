@@ -8,13 +8,14 @@ import {
   TrendingUp,
   DollarSign,
   Filter,
+  Calendar,
   Download,
   BrainCircuit,
   Lightbulb,
   ChevronRight,
 } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
-import { api } from "../../services/api";
+import { financialApi } from "../../services/financial";
 
 interface KPIs {
   faturamento: number;
@@ -52,20 +53,46 @@ function formatCurrency(value: number): string {
   return `R$ ${value.toFixed(2)}`;
 }
 
+const MONTH_OPTIONS = [
+  { value: "01", label: "Janeiro" },
+  { value: "02", label: "Fevereiro" },
+  { value: "03", label: "Março" },
+  { value: "04", label: "Abril" },
+  { value: "05", label: "Maio" },
+  { value: "06", label: "Junho" },
+  { value: "07", label: "Julho" },
+  { value: "08", label: "Agosto" },
+  { value: "09", label: "Setembro" },
+  { value: "10", label: "Outubro" },
+  { value: "11", label: "Novembro" },
+  { value: "12", label: "Dezembro" },
+];
+
 export default function FinancialDashboard() {
   const [kpis, setKpis] = useState<KPIs | null>(null);
   const [specialties, setSpecialties] = useState<SpecialtyData[]>([]);
   const [transactions, setTransactions] = useState<RevenueTransaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState(
+    String(new Date().getMonth() + 1).padStart(2, "0"),
+  );
+  const [selectedYear, setSelectedYear] = useState(
+    String(new Date().getFullYear()),
+  );
+  const [statusFilter, setStatusFilter] = useState("Todos");
 
   const loadData = useCallback(async () => {
     try {
+      const year = parseInt(selectedYear, 10);
+      const month = parseInt(selectedMonth, 10);
       const [kpiData, specData, txData] = await Promise.all([
-        api("/financial/dashboard-kpis").catch(() => null),
-        api("/financial/revenue-by-specialty").catch(() => []),
-        api("/financial/recent-transactions?limit=10").catch(() => []),
+        financialApi.getDashboardKPIs(year, month).catch(() => null),
+        financialApi.getRevenueBySpecialty(year, month).catch(() => []),
+        financialApi
+          .getRecentTransactions(10, statusFilter !== "Todos" ? statusFilter : undefined)
+          .catch(() => []),
       ]);
-      if (kpiData) setKpis(kpiData);
+      if (kpiData) setKpis(kpiData as KPIs);
       setSpecialties(Array.isArray(specData) ? specData : []);
       setTransactions(Array.isArray(txData) ? txData : []);
     } catch {
@@ -73,7 +100,7 @@ export default function FinancialDashboard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedYear, selectedMonth, statusFilter]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -109,6 +136,40 @@ export default function FinancialDashboard() {
   return (
     <MainLayout>
       <div className="flex flex-col gap-6">
+        {/* Period Filter */}
+        <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900 tracking-tight leading-none">
+              Visão Geral Financeira
+            </h2>
+            <p className="text-xs text-slate-500 mt-1 font-medium">
+              Indicadores, receita por especialidade e transações do período
+            </p>
+          </div>
+          <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5">
+            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="bg-transparent border-none text-xs font-bold text-slate-700 focus:outline-none cursor-pointer"
+            >
+              {MONTH_OPTIONS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="bg-transparent border-none text-xs font-bold text-slate-700 focus:outline-none cursor-pointer"
+            >
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+            </select>
+          </div>
+        </div>
+
         {/* KPI Row */}
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
           <div className="bg-white p-4 rounded-xl border border-slate-200 hover:shadow-md transition-all duration-300 group">
@@ -147,7 +208,10 @@ export default function FinancialDashboard() {
             </div>
             <h3 className="text-xl font-bold text-slate-900 tracking-tight">{formatCurrency(kpis?.totalDespesas || 0)}</h3>
             <div className="flex items-center gap-1 mt-1 text-slate-500">
-              <span className="text-[10px] font-bold">Este mês</span>
+              <span className="text-[10px] font-bold">
+                {MONTH_OPTIONS.find((m) => m.value === selectedMonth)?.label} /{" "}
+                {selectedYear}
+              </span>
             </div>
           </div>
 
@@ -279,10 +343,20 @@ export default function FinancialDashboard() {
               <p className="text-[11px] text-slate-400 mt-0.5">Últimos lançamentos financeiros</p>
             </div>
             <div className="flex items-center gap-2">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer active:scale-95 transition-all">
-                <Filter className="w-3.5 h-3.5" />
-                <span>Filtrar</span>
-              </button>
+              <div className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold">
+                <Filter className="w-3.5 h-3.5 text-blue-600" />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="bg-transparent border-none text-slate-800 focus:outline-none cursor-pointer font-bold"
+                >
+                  <option value="Todos">Status: Todos</option>
+                  <option value="PAGO">Pago</option>
+                  <option value="PENDENTE">Pendente</option>
+                  <option value="FATURADO">Faturado</option>
+                  <option value="GLOSADO">Glosado</option>
+                </select>
+              </div>
               <button
                 onClick={handleExport}
                 className="bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-primary-dark cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all shadow-xs"

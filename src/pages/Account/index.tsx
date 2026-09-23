@@ -64,6 +64,21 @@ interface ClinicMembershipInfo {
   joinedAt: string;
 }
 
+interface ClinicDetails {
+  id: string;
+  name: string;
+  cnpj: string | null;
+  isActive: boolean;
+  cep: string | null;
+  street: string | null;
+  number: string | null;
+  complement: string | null;
+  neighborhood: string | null;
+  city: string | null;
+  state: string | null;
+  noNumber: boolean;
+}
+
 interface SubscriptionInfo {
   plan: Plan;
   additionalProfessionals: number;
@@ -148,10 +163,13 @@ export default function Account() {
   const dialog = useDialog();
   const location = useLocation();
   const navigationState = location.state as
-    | { tab?: "profile" | "security" | "subscription"; planId?: string }
+    | {
+        tab?: "profile" | "security" | "subscription" | "clinic";
+        planId?: string;
+      }
     | null;
   const [activeTab, setActiveTab] = useState<
-    "profile" | "security" | "subscription"
+    "profile" | "security" | "subscription" | "clinic"
   >(navigationState?.tab || "profile");
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -189,6 +207,126 @@ export default function Account() {
   );
 
   const myClinic = clinics.find((c) => c.role === "admin");
+
+  // --- Dados da Clínica tab state ---
+  const isClinicAdmin = user?.role === "admin";
+  const isClinicSecretary = user?.role === "secretary";
+  const [clinicDetails, setClinicDetails] = useState<ClinicDetails | null>(
+    null,
+  );
+  const [loadingClinicDetails, setLoadingClinicDetails] = useState(false);
+  const [editingClinicData, setEditingClinicData] = useState(false);
+  const [clinicDataSaving, setClinicDataSaving] = useState(false);
+  const [clinicDataError, setClinicDataError] = useState("");
+  const [clinicDataCepLoading, setClinicDataCepLoading] = useState(false);
+  const [clinicDataCepMessage, setClinicDataCepMessage] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    if (!user?.activeClinicId || (!isClinicAdmin && !isClinicSecretary)) {
+      setClinicDetails(null);
+      return;
+    }
+    setLoadingClinicDetails(true);
+    api
+      .get(`/clinics/${user.activeClinicId}`)
+      .then(({ data }) => setClinicDetails(data.clinic))
+      .catch(() => setClinicDetails(null))
+      .finally(() => setLoadingClinicDetails(false));
+  }, [user?.activeClinicId, isClinicAdmin, isClinicSecretary]);
+
+  const clinicDataFormik = useFormik({
+    enableReinitialize: true,
+    initialValues: {
+      name: clinicDetails?.name || "",
+      cnpj: clinicDetails?.cnpj ? formatCNPJ(clinicDetails.cnpj) : "",
+      cep: clinicDetails?.cep ? formatCEP(clinicDetails.cep) : "",
+      street: clinicDetails?.street || "",
+      number: clinicDetails?.number || "",
+      complement: clinicDetails?.complement || "",
+      neighborhood: clinicDetails?.neighborhood || "",
+      city: clinicDetails?.city || "",
+      state: clinicDetails?.state || "",
+      noNumber: clinicDetails?.noNumber || false,
+    },
+    validationSchema: Yup.object({
+      name: Yup.string().required("Nome da clínica é obrigatório"),
+      cnpj: Yup.string().test(
+        "cnpj-length",
+        "CNPJ deve ter 14 dígitos",
+        (val) => !val || val.replace(/\D/g, "").length === 14,
+      ),
+      cep: Yup.string().test(
+        "cep-length",
+        "CEP deve ter 8 dígitos",
+        (val) => !val || val.replace(/\D/g, "").length === 8,
+      ),
+      number: Yup.string().when("noNumber", {
+        is: false,
+        then: (schema) => schema.required("Número é obrigatório"),
+      }),
+    }),
+    onSubmit: async (values) => {
+      if (!user?.activeClinicId) return;
+      setClinicDataSaving(true);
+      setClinicDataError("");
+      try {
+        const { data } = await api.patch(`/clinics/${user.activeClinicId}`, {
+          ...values,
+          // UpdateClinicDto expects CNPJ punctuated (XX.XXX.XXX/XXXX-XX),
+          // unlike the create/convert DTOs which want digits only.
+          cnpj: values.cnpj || undefined,
+          cep: values.cep.replace(/\D/g, "") || undefined,
+        });
+        setClinicDetails(data.clinic);
+        setEditingClinicData(false);
+      } catch (err: any) {
+        setClinicDataError(
+          err?.response?.data?.message ||
+            "Erro ao salvar dados da clínica. Tente novamente.",
+        );
+      } finally {
+        setClinicDataSaving(false);
+      }
+    },
+  });
+
+  // CEP auto-fill for the clinic-data edit form
+  const clinicDataCepRequestRef = useRef(0);
+  useEffect(() => {
+    if (!editingClinicData) return;
+    const digits = clinicDataFormik.values.cep.replace(/\D/g, "");
+    if (digits.length !== 8) {
+      setClinicDataCepMessage(null);
+      return;
+    }
+    const requestId = ++clinicDataCepRequestRef.current;
+    setClinicDataCepLoading(true);
+    setClinicDataCepMessage(null);
+    fetchCep(digits).then((result) => {
+      if (requestId !== clinicDataCepRequestRef.current) return;
+      setClinicDataCepLoading(false);
+      if (result.success) {
+        clinicDataFormik.setFieldValue("street", result.data.street);
+        clinicDataFormik.setFieldValue(
+          "neighborhood",
+          result.data.neighborhood,
+        );
+        clinicDataFormik.setFieldValue("city", result.data.city);
+        clinicDataFormik.setFieldValue("state", result.data.state);
+      } else if (result.error === "not_found") {
+        setClinicDataCepMessage(
+          "CEP não encontrado. Preencha o endereço manualmente.",
+        );
+      } else {
+        setClinicDataCepMessage(
+          "Não foi possível consultar o CEP. Preencha o endereço manualmente.",
+        );
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clinicDataFormik.values.cep, editingClinicData]);
 
   useEffect(() => {
     async function loadClinics() {
@@ -549,6 +687,15 @@ export default function Account() {
   const tabs = [
     { id: "profile" as const, label: "Perfil", icon: Camera },
     { id: "security" as const, label: "Segurança", icon: Lock },
+    ...(isClinicAdmin || isClinicSecretary
+      ? [
+          {
+            id: "clinic" as const,
+            label: "Dados da Clínica",
+            icon: Building2,
+          },
+        ]
+      : []),
     { id: "subscription" as const, label: "Assinatura", icon: CreditCard },
   ];
 
@@ -1011,6 +1158,308 @@ export default function Account() {
           </>
         )}
 
+        {/* Clinic Data Tab */}
+        {activeTab === "clinic" && (isClinicAdmin || isClinicSecretary) && (
+          <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 max-w-2xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+                  <Building2 className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold font-display text-slate-900">
+                    Dados da Clínica
+                  </h2>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {isClinicAdmin
+                      ? "Nome, CNPJ e endereço da clínica."
+                      : "Nome, CNPJ e endereço da clínica. Apenas o administrador pode editar."}
+                  </p>
+                </div>
+              </div>
+              {isClinicAdmin && !editingClinicData && clinicDetails && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditingClinicData(true)}
+                >
+                  Editar
+                </Button>
+              )}
+            </div>
+
+            {loadingClinicDetails ? (
+              <p className="text-sm text-slate-400 mt-6">Carregando...</p>
+            ) : !clinicDetails ? (
+              <p className="text-sm text-slate-400 mt-6">
+                Não foi possível carregar os dados da clínica.
+              </p>
+            ) : !editingClinicData ? (
+              <div className="mt-6 grid sm:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                    Nome da Clínica
+                  </p>
+                  <p className="text-sm text-slate-900 mt-1">
+                    {clinicDetails.name}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                    CNPJ
+                  </p>
+                  <p className="text-sm text-slate-900 mt-1">
+                    {clinicDetails.cnpj
+                      ? formatCNPJ(clinicDetails.cnpj)
+                      : "Não informado"}
+                  </p>
+                </div>
+                <div className="sm:col-span-2">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                    Endereço
+                  </p>
+                  <p className="text-sm text-slate-900 mt-1">
+                    {clinicDetails.street
+                      ? `${clinicDetails.street}${clinicDetails.noNumber ? ", s/n" : clinicDetails.number ? `, ${clinicDetails.number}` : ""}${clinicDetails.complement ? ` - ${clinicDetails.complement}` : ""}`
+                      : "Não informado"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                    Bairro
+                  </p>
+                  <p className="text-sm text-slate-900 mt-1">
+                    {clinicDetails.neighborhood || "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                    Cidade / UF
+                  </p>
+                  <p className="text-sm text-slate-900 mt-1">
+                    {clinicDetails.city
+                      ? `${clinicDetails.city} / ${clinicDetails.state || "—"}`
+                      : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                    CEP
+                  </p>
+                  <p className="text-sm text-slate-900 mt-1">
+                    {clinicDetails.cep
+                      ? formatCEP(clinicDetails.cep)
+                      : "Não informado"}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <form
+                onSubmit={clinicDataFormik.handleSubmit}
+                className="mt-6 space-y-5"
+              >
+                {clinicDataError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium">
+                    {clinicDataError}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                    Nome da Clínica
+                  </label>
+                  <input
+                    name="name"
+                    value={clinicDataFormik.values.name}
+                    onChange={clinicDataFormik.handleChange}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                  />
+                  {clinicDataFormik.touched.name &&
+                    clinicDataFormik.errors.name && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {clinicDataFormik.errors.name}
+                      </p>
+                    )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                    CNPJ
+                  </label>
+                  <input
+                    name="cnpj"
+                    value={clinicDataFormik.values.cnpj}
+                    onChange={(e) =>
+                      clinicDataFormik.setFieldValue(
+                        "cnpj",
+                        formatCNPJ(e.target.value),
+                      )
+                    }
+                    placeholder="00.000.000/0000-00"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                  />
+                  {clinicDataFormik.touched.cnpj &&
+                    clinicDataFormik.errors.cnpj && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {clinicDataFormik.errors.cnpj}
+                      </p>
+                    )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                    CEP
+                  </label>
+                  <input
+                    name="cep"
+                    value={clinicDataFormik.values.cep}
+                    onChange={(e) =>
+                      clinicDataFormik.setFieldValue(
+                        "cep",
+                        formatCEP(e.target.value),
+                      )
+                    }
+                    placeholder="00000-000"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                  />
+                  {clinicDataCepLoading && (
+                    <p className="text-xs text-slate-400 mt-1">
+                      Buscando endereço...
+                    </p>
+                  )}
+                  {clinicDataCepMessage && (
+                    <p className="text-xs text-amber-600 mt-1">
+                      {clinicDataCepMessage}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                    Endereço
+                  </label>
+                  <input
+                    name="street"
+                    value={clinicDataFormik.values.street}
+                    onChange={clinicDataFormik.handleChange}
+                    placeholder="Rua, avenida..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                      Número
+                    </label>
+                    <input
+                      name="number"
+                      value={clinicDataFormik.values.number}
+                      onChange={clinicDataFormik.handleChange}
+                      disabled={clinicDataFormik.values.noNumber}
+                      placeholder="100"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary disabled:opacity-50"
+                    />
+                    <label className="flex items-center gap-2 mt-1.5 text-xs text-slate-500">
+                      <input
+                        type="checkbox"
+                        checked={clinicDataFormik.values.noNumber}
+                        onChange={(e) =>
+                          clinicDataFormik.setFieldValue(
+                            "noNumber",
+                            e.target.checked,
+                          )
+                        }
+                      />
+                      Sem número
+                    </label>
+                    {clinicDataFormik.touched.number &&
+                      clinicDataFormik.errors.number && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {clinicDataFormik.errors.number}
+                        </p>
+                      )}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                      Complemento
+                    </label>
+                    <input
+                      name="complement"
+                      value={clinicDataFormik.values.complement}
+                      onChange={clinicDataFormik.handleChange}
+                      placeholder="Sala 101"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                    Bairro
+                  </label>
+                  <input
+                    name="neighborhood"
+                    value={clinicDataFormik.values.neighborhood}
+                    onChange={clinicDataFormik.handleChange}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                      Cidade
+                    </label>
+                    <input
+                      name="city"
+                      value={clinicDataFormik.values.city}
+                      onChange={clinicDataFormik.handleChange}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                      Estado (UF)
+                    </label>
+                    <input
+                      name="state"
+                      value={clinicDataFormik.values.state}
+                      onChange={clinicDataFormik.handleChange}
+                      maxLength={2}
+                      placeholder="SP"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary uppercase"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    loading={clinicDataSaving}
+                    icon={<CheckCircle2 className="w-4 h-4" />}
+                  >
+                    Salvar Alterações
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setEditingClinicData(false);
+                      setClinicDataError("");
+                      clinicDataFormik.resetForm();
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
+
         {/* Subscription Tab */}
         {activeTab === "subscription" && (
           <div className="space-y-6">
@@ -1075,7 +1524,9 @@ export default function Account() {
                               ? "Administrador(a)"
                               : c.role === "doctor"
                                 ? "Médico(a)"
-                                : c.role}
+                                : c.role === "secretary"
+                                  ? "Secretário(a)"
+                                  : c.role}
                           </p>
                         </div>
                       </div>
@@ -1259,7 +1710,7 @@ export default function Account() {
             )}
 
             {/* Torne-se uma Clínica (quando o médico ainda não administra uma) */}
-            {!loadingClinics && !myClinic && (
+            {!loadingClinics && !myClinic && !isClinicSecretary && (
               <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">

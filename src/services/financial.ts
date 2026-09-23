@@ -227,7 +227,28 @@ export const financialApi = {
   getDRE: (year: number, month: number) => api(`/financial/dre?year=${year}&month=${month}`),
 
   // Dashboard
-  getDashboardKPIs: () => api("/financial/dashboard/kpis"),
-  getRevenueBySpecialty: () => api("/financial/dashboard/revenue-by-specialty"),
-  getRecentTransactions: (limit = 10) => api(`/financial/dashboard/recent-transactions?limit=${limit}`),
+  getDashboardKPIs: (year?: number, month?: number) => {
+    const params = new URLSearchParams();
+    if (year) params.set("year", String(year));
+    if (month) params.set("month", String(month));
+    const qs = params.toString();
+    return api(`/financial/dashboard/kpis${qs ? `?${qs}` : ""}`);
+  },
+  getRevenueBySpecialty: (year?: number, month?: number) => {
+    const params = new URLSearchParams();
+    if (year) params.set("year", String(year));
+    if (month) params.set("month", String(month));
+    const qs = params.toString();
+    return api(`/financial/dashboard/revenue-by-specialty${qs ? `?${qs}` : ""}`);
+  },
+  getRecentTransactions: (limit = 10, status?: string) => {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (status) params.set("status", status);
+    return api(`/financial/dashboard/recent-transactions?${params.toString()}`);
+  },
+
+  // Clinic doctors (for filter dropdowns — admin/secretary scoped to active clinic)
+  listClinicDoctors: (): Promise<
+    { id: string; name: string; email: string; specialty: string; crm: string }[]
+  > => api("/clinic-admin/doctors"),
 };

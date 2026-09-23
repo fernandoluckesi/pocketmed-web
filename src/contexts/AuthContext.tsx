@@ -8,6 +8,7 @@ interface User {
   email: string;
   type: string;
   role?: string;
+  activeClinicId?: string | null;
   name?: string;
   profileImage?: string;
   phone?: string;
@@ -76,6 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               email: savedUser.email || payload.email,
               type: savedUser.type || payload.type,
               role: savedUser.role || payload.role,
+              activeClinicId:
+                savedUser.activeClinicId ?? payload.activeClinicId ?? null,
               name: savedUser.name,
               profileImage: savedUser.profileImage,
               phone: savedUser.phone,
@@ -91,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               email: payload.email,
               type: payload.type,
               role: payload.role,
+              activeClinicId: payload.activeClinicId ?? null,
             };
 
         return { user, token: storedToken };
@@ -122,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: userData.email,
       type: userData.type,
       role: userData.role,
+      activeClinicId: userData.activeClinicId ?? null,
       name: userData.name,
       profileImage: userData.profileImage,
       phone: userData.phone,
@@ -172,6 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: userData.email,
       type: userData.type,
       role: userData.role,
+      activeClinicId: userData.activeClinicId ?? null,
       name: userData.name,
       profileImage: userData.profileImage,
       phone: userData.phone,

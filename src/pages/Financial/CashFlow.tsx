@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ArrowUpRight, ArrowDownRight, Wallet } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Wallet, Filter, X } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
 import { financialApi, type CashflowEntry } from "../../services/financial";
 
@@ -11,12 +11,19 @@ export default function CashFlow() {
     totalSaidas: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [typeFilter, setTypeFilter] = useState("Todos");
+  const [startDateFilter, setStartDateFilter] = useState("");
+  const [endDateFilter, setEndDateFilter] = useState("");
 
   const loadData = useCallback(async () => {
     try {
+      const filters: Record<string, string> = {};
+      if (typeFilter !== "Todos") filters.type = typeFilter;
+      if (startDateFilter) filters.startDate = startDateFilter;
+      if (endDateFilter) filters.endDate = endDateFilter;
       const [balanceData, entriesData] = await Promise.all([
         financialApi.getBalance(),
-        financialApi.listCashflow(),
+        financialApi.listCashflow(filters),
       ]);
       setBalance(balanceData);
       setEntries(entriesData.data || []);
@@ -25,11 +32,20 @@ export default function CashFlow() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [typeFilter, startDateFilter, endDateFilter]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const hasActiveFilters =
+    typeFilter !== "Todos" || !!startDateFilter || !!endDateFilter;
+
+  const clearFilters = () => {
+    setTypeFilter("Todos");
+    setStartDateFilter("");
+    setEndDateFilter("");
+  };
 
   if (loading) {
     return (
@@ -94,11 +110,56 @@ export default function CashFlow() {
 
         {/* Entries Table */}
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-          <div className="p-4 border-b border-slate-200">
-            <h2 className="text-md font-bold text-slate-900">Movimentações</h2>
-            <p className="text-[11px] text-slate-400">
-              Extrato de entradas e saídas
-            </p>
+          <div className="p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-md font-bold text-slate-900">Movimentações</h2>
+              <p className="text-[11px] text-slate-400">
+                Extrato de entradas e saídas
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold">
+                <Filter className="w-3.5 h-3.5 text-blue-600" />
+                <select
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                  className="bg-transparent border-none text-slate-800 focus:outline-none cursor-pointer font-bold"
+                >
+                  <option value="Todos">Tipo: Todos</option>
+                  <option value="ENTRADA">Entrada</option>
+                  <option value="SAIDA">Saída</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs">
+                <label className="text-[10px] font-bold text-slate-500 uppercase">
+                  De
+                </label>
+                <input
+                  type="date"
+                  value={startDateFilter}
+                  onChange={(e) => setStartDateFilter(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <label className="text-[10px] font-bold text-slate-500 uppercase">
+                  até
+                </label>
+                <input
+                  type="date"
+                  value={endDateFilter}
+                  onChange={(e) => setEndDateFilter(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-rose-600 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" /> Limpar
+                </button>
+              )}
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">

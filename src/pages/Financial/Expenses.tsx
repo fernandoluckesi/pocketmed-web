@@ -16,7 +16,22 @@ import { MainLayout } from "../../components/MainLayout";
 import {
   financialApi,
   type Expense as ExpenseType,
+  type CostCenter,
 } from "../../services/financial";
+
+const CATEGORIES = [
+  "Insumos",
+  "Folha de Pagamento",
+  "Aluguel",
+  "Condomínio",
+  "Energia",
+  "Água",
+  "Marketing",
+  "Seguros",
+  "Tecnologia",
+  "Manutenção",
+  "Outros",
+];
 
 export default function Expenses() {
   const dialog = useDialog();
@@ -24,12 +39,21 @@ export default function Expenses() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("Todos");
+  const [categoryFilter, setCategoryFilter] = useState("Todos");
+  const [costCenterFilter, setCostCenterFilter] = useState("Todos");
+  const [startDateFilter, setStartDateFilter] = useState("");
+  const [endDateFilter, setEndDateFilter] = useState("");
+  const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
       const filters: Record<string, string> = {};
       if (statusFilter !== "Todos") filters.status = statusFilter;
+      if (categoryFilter !== "Todos") filters.category = categoryFilter;
+      if (costCenterFilter !== "Todos") filters.costCenterId = costCenterFilter;
+      if (startDateFilter) filters.startDate = startDateFilter;
+      if (endDateFilter) filters.endDate = endDateFilter;
       const result = await financialApi.listExpenses(filters);
       setExpenses(result.data || []);
     } catch {
@@ -37,11 +61,33 @@ export default function Expenses() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, categoryFilter, costCenterFilter, startDateFilter, endDateFilter]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    financialApi
+      .listCostCenters()
+      .then((data) => setCostCenters(Array.isArray(data) ? data : []))
+      .catch(() => setCostCenters([]));
+  }, []);
+
+  const hasActiveFilters =
+    statusFilter !== "Todos" ||
+    categoryFilter !== "Todos" ||
+    costCenterFilter !== "Todos" ||
+    !!startDateFilter ||
+    !!endDateFilter;
+
+  const clearFilters = () => {
+    setStatusFilter("Todos");
+    setCategoryFilter("Todos");
+    setCostCenterFilter("Todos");
+    setStartDateFilter("");
+    setEndDateFilter("");
+  };
 
   const totalExpensesMonth = useMemo(
     () => expenses.reduce((sum, item) => sum + (Number(item.netValue) || 0), 0),
@@ -231,9 +277,66 @@ export default function Expenses() {
                 <option value="VENCIDO">Vencido</option>
               </select>
             </div>
+            <div className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold">
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="bg-transparent border-none text-slate-800 focus:outline-none cursor-pointer font-bold"
+              >
+                <option value="Todos">Categoria (Todas)</option>
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold">
+              <select
+                value={costCenterFilter}
+                onChange={(e) => setCostCenterFilter(e.target.value)}
+                className="bg-transparent border-none text-slate-800 focus:outline-none cursor-pointer font-bold"
+              >
+                <option value="Todos">Centro de Custo (Todos)</option>
+                {costCenters.map((cc) => (
+                  <option key={cc.id} value={cc.id}>
+                    {cc.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs">
+              <label className="text-[10px] font-bold text-slate-500 uppercase">
+                Venc. de
+              </label>
+              <input
+                type="date"
+                value={startDateFilter}
+                onChange={(e) => setStartDateFilter(e.target.value)}
+                className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              <label className="text-[10px] font-bold text-slate-500 uppercase">
+                até
+              </label>
+              <input
+                type="date"
+                value={endDateFilter}
+                onChange={(e) => setEndDateFilter(e.target.value)}
+                className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-rose-600 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" /> Limpar
+              </button>
+            )}
             <button
               onClick={handleExportData}
-              className="flex items-center gap-1.5 font-bold text-xs text-slate-700 hover:text-blue-600 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 font-bold text-xs text-slate-700 hover:text-blue-600 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-all cursor-pointer ml-auto"
             >
               <Download className="w-3.5 h-3.5" /> Exportar
             </button>

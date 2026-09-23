@@ -25,6 +25,12 @@ import { useAuth } from "../contexts/AuthContext";
 import { Button } from "../components/ui/Button";
 import { NotificationsDropdown } from "./NotificationsDropdown";
 import logoHorizontal from "../assets/logos/hispora-horizontal-primary.png";
+import api from "../config/api";
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Administrador(a)",
+  secretary: "Secretário(a)",
+};
 
 const navItems = [
   {
@@ -89,6 +95,31 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   const [avatarDropdown, setAvatarDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Clinic context shown in the header for its Admin/Secretary — plain
+  // doctors can belong to several clinics, so there's no single one to show.
+  const showsClinicContext =
+    user?.role === "admin" || user?.role === "secretary";
+  const [clinicName, setClinicName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!showsClinicContext || !user?.activeClinicId) {
+      setClinicName(null);
+      return;
+    }
+    let cancelled = false;
+    api
+      .get(`/clinics/${user.activeClinicId}`)
+      .then(({ data }) => {
+        if (!cancelled) setClinicName(data?.clinic?.name || null);
+      })
+      .catch(() => {
+        if (!cancelled) setClinicName(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.activeClinicId, showsClinicContext]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -257,7 +288,13 @@ export function MainLayout({ children }: MainLayoutProps) {
                     {user?.name || user?.email || "Usuário"}
                   </p>
                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                    {user?.role === "admin" ? "Administrador" : "Médico"}
+                    {ROLE_LABELS[user?.role || ""] || "Médico(a)"}
+                    {showsClinicContext && clinicName && (
+                      <span className="text-slate-400 normal-case tracking-normal font-semibold">
+                        {" "}
+                        • {clinicName}
+                      </span>
+                    )}
                   </p>
                 </div>
                 {user?.profileImage ? (

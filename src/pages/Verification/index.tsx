@@ -172,11 +172,11 @@ export default function Verification() {
     <MainLayout>
       <div className="space-y-8 w-full">
         <button
-          onClick={() => navigate("/dashboard")}
+          onClick={() => navigate("/account")}
           className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent"
         >
           <ArrowLeft size={20} />
-          <span>Voltar ao Dashboard</span>
+          <span>Voltar a Minha Conta</span>
         </button>
 
         {/* Header */}
