@@ -92,11 +92,18 @@ interface SubscriptionInfo {
     managed: boolean;
     status: string | null;
     currentPeriodEnd: string | null;
+    provider: "mercadopago" | "stripe" | null;
     gatewayAvailable: boolean;
   };
 }
 
 const SUBSCRIPTION_STATUS_LABELS: Record<string, string> = {
+  // Mercado Pago (preapproval)
+  pending: "Aguardando autorização",
+  authorized: "Ativa",
+  paused: "Pausada",
+  cancelled: "Cancelada",
+  // Stripe
   active: "Ativa",
   trialing: "Em teste",
   past_due: "Pagamento pendente",
@@ -196,6 +203,7 @@ export default function Account() {
     string | null
   >(null);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [syncLoading, setSyncLoading] = useState(false);
   const [subscriptionActionError, setSubscriptionActionError] = useState("");
   const [checkoutNotice, setCheckoutNotice] = useState<
     "success" | "canceled" | null
@@ -468,10 +476,41 @@ export default function Account() {
     setSubscription(refreshed);
   }
 
-  // Tries real payment first (Stripe Checkout). If the gateway isn't
-  // configured yet (503 — no STRIPE_SECRET_KEY/price ids set up), falls back
+  // Re-fetches the subscription status directly from the gateway (Mercado
+  // Pago/Stripe) instead of just re-reading our own DB — a webhook isn't
+  // guaranteed to have already updated it by the time the user is redirected
+  // back here (and can't reach localhost at all in local development).
+  async function syncSubscription() {
+    if (!myClinic) return;
+    const { data: refreshed } = await api.post(
+      `/clinics/${myClinic.clinicId}/subscription/sync`,
+    );
+    setSubscription(refreshed);
+  }
+
+  // Manual trigger for the "Verificar pagamento" button — useful whenever the
+  // automatic redirect back from checkout didn't land on this page (e.g. in
+  // local dev, where Mercado Pago's back_url can't point at localhost, so it
+  // sends the browser to mercadopago.com.br instead of here).
+  async function handleSyncNow() {
+    if (!myClinic) return;
+    setSyncLoading(true);
+    setSubscriptionActionError("");
+    try {
+      await syncSubscription();
+    } catch {
+      setSubscriptionActionError(
+        "Não foi possível verificar o pagamento. Tente novamente em instantes.",
+      );
+    } finally {
+      setSyncLoading(false);
+    }
+  }
+
+  // Tries real payment first (Mercado Pago, falling back to Stripe if that's
+  // configured instead). If no gateway is configured yet (503), falls back
   // to the manual/free plan-selection path so choosing a plan never breaks,
-  // even before a Stripe account exists.
+  // even before a gateway account exists.
   async function handleSelectPlan(planId: string) {
     if (!myClinic) return;
     setCheckoutLoadingPlanId(planId);
@@ -509,8 +548,33 @@ export default function Account() {
     }
   }
 
+  // Mercado Pago has no hosted self-service billing portal like Stripe, so
+  // "managing" the subscription there means cancelling it directly via API
+  // (with confirmation) instead of redirecting to a gateway-hosted page.
   async function handleManageBilling() {
-    if (!myClinic) return;
+    if (!myClinic || !subscription) return;
+
+    if (subscription.billing.provider === "mercadopago") {
+      const confirmed = await dialog.showConfirm(
+        "Cancelar a assinatura? A clínica perderá acesso aos recursos do plano atual.",
+      );
+      if (!confirmed) return;
+      setPortalLoading(true);
+      setSubscriptionActionError("");
+      try {
+        await api.post(`/clinics/${myClinic.clinicId}/subscription/cancel`);
+        await refreshSubscription();
+      } catch (err: any) {
+        setSubscriptionActionError(
+          err?.response?.data?.message ||
+            "Não foi possível cancelar a assinatura.",
+        );
+      } finally {
+        setPortalLoading(false);
+      }
+      return;
+    }
+
     setPortalLoading(true);
     setSubscriptionActionError("");
     try {
@@ -529,7 +593,7 @@ export default function Account() {
 
   useEffect(() => {
     if (!checkoutNotice) return;
-    if (checkoutNotice === "success") refreshSubscription();
+    if (checkoutNotice === "success") syncSubscription();
     window.history.replaceState({}, "", "/account");
     const timer = setTimeout(() => setCheckoutNotice(null), 8000);
     return () => clearTimeout(timer);
@@ -1561,7 +1625,8 @@ export default function Account() {
                     {subscription.billing.status && (
                       <span
                         className={`px-3 py-1.5 rounded-full text-xs font-bold ${
-                          subscription.billing.status === "active"
+                          subscription.billing.status === "active" ||
+                          subscription.billing.status === "authorized"
                             ? "bg-emerald-100 text-emerald-700"
                             : subscription.billing.status === "past_due" ||
                                 subscription.billing.status === "unpaid"
@@ -1581,7 +1646,7 @@ export default function Account() {
                 </div>
 
                 {subscription.billing.managed && (
-                  <div className="mt-4">
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
                     <Button
                       type="button"
                       variant="outline"
@@ -1590,8 +1655,22 @@ export default function Account() {
                       onClick={handleManageBilling}
                       icon={<CreditCard className="w-4 h-4" />}
                     >
-                      Gerenciar pagamento e faturas
+                      {subscription.billing.provider === "mercadopago"
+                        ? "Cancelar assinatura"
+                        : "Gerenciar pagamento e faturas"}
                     </Button>
+                    {subscription.billing.provider === "mercadopago" &&
+                      subscription.billing.status === "pending" && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          loading={syncLoading}
+                          onClick={handleSyncNow}
+                        >
+                          Verificar pagamento
+                        </Button>
+                      )}
                   </div>
                 )}
 
