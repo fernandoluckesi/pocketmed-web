@@ -189,10 +189,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       rqe: userData.rqe,
     });
 
-    // Don't navigate if email not verified — let the signup page handle it
-    if (userData.emailVerified === false) {
-      return;
-    }
+    // TEMP: email verification disabled (App Store review can't receive
+    // verification emails). To restore, uncomment this guard — it deferred
+    // navigation so Signup.tsx's inline code-entry step could take over —
+    // and revert the matching backend change in auth.service.ts
+    // (registerDoctor/registerPatient).
+    // if (userData.emailVerified === false) {
+    //   return;
+    // }
     navigate("/dashboard");
   }
 
