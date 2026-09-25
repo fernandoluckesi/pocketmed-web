@@ -8,6 +8,7 @@ import {
   Building2,
   CheckCircle2,
   Users,
+  Receipt,
 } from "lucide-react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -79,6 +80,17 @@ interface ClinicDetails {
   noNumber: boolean;
 }
 
+interface SubscriptionPaymentRow {
+  id: string;
+  status: string;
+  transactionAmount: number;
+  netReceivedAmount: number | null;
+  feeAmount: number | null;
+  paymentMethodId: string | null;
+  dateCreated: string | null;
+  dateApproved: string | null;
+}
+
 interface SubscriptionInfo {
   plan: Plan;
   additionalProfessionals: number;
@@ -111,6 +123,46 @@ const SUBSCRIPTION_STATUS_LABELS: Record<string, string> = {
   incomplete: "Incompleta",
   unpaid: "Não paga",
 };
+
+// Mercado Pago's individual-payment statuses (distinct from the
+// subscription-level statuses above — a subscription can be "authorized"
+// while a specific monthly charge is still "pending" or was "rejected").
+const PAYMENT_STATUS_LABELS: Record<
+  string,
+  { label: string; classes: string }
+> = {
+  approved: {
+    label: "Aprovado",
+    classes: "bg-emerald-100 text-emerald-700",
+  },
+  pending: { label: "Pendente", classes: "bg-amber-100 text-amber-700" },
+  in_process: { label: "Em análise", classes: "bg-amber-100 text-amber-700" },
+  rejected: { label: "Rejeitado", classes: "bg-red-100 text-red-700" },
+  cancelled: { label: "Cancelado", classes: "bg-slate-200 text-slate-600" },
+  refunded: { label: "Reembolsado", classes: "bg-slate-200 text-slate-600" },
+  charged_back: { label: "Estornado", classes: "bg-red-100 text-red-700" },
+};
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  pix: "PIX",
+  account_money: "Saldo Mercado Pago",
+  bolbradesco: "Boleto",
+  visa: "Cartão Visa",
+  master: "Cartão Mastercard",
+  amex: "Cartão Amex",
+  elo: "Cartão Elo",
+  hipercard: "Cartão Hipercard",
+  debvisa: "Cartão de Débito Visa",
+  debmaster: "Cartão de Débito Mastercard",
+};
+
+function formatPaymentMethod(paymentMethodId: string | null): string {
+  if (!paymentMethodId) return "—";
+  return (
+    PAYMENT_METHOD_LABELS[paymentMethodId] ||
+    paymentMethodId.charAt(0).toUpperCase() + paymentMethodId.slice(1)
+  );
+}
 
 function formatCNPJ(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 14);
@@ -191,6 +243,8 @@ export default function Account() {
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(
     null,
   );
+  const [payments, setPayments] = useState<SubscriptionPaymentRow[]>([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
   const [showBecomeClinicForm, setShowBecomeClinicForm] = useState(
     !!navigationState?.planId,
   );
@@ -371,6 +425,22 @@ export default function Account() {
       .catch(() => setSubscription(null));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [myClinic?.clinicId]);
+
+  // Payment history only makes sense once the clinic has a real gateway
+  // subscription (billing.managed) — before that there's nothing to show.
+  useEffect(() => {
+    if (!myClinic || !subscription?.billing.managed) {
+      setPayments([]);
+      return;
+    }
+    setLoadingPayments(true);
+    api
+      .get(`/clinics/${myClinic.clinicId}/subscription/payments`)
+      .then(({ data }) => setPayments(Array.isArray(data) ? data : []))
+      .catch(() => setPayments([]))
+      .finally(() => setLoadingPayments(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myClinic?.clinicId, subscription?.billing.managed]);
 
   const becomeClinicFormik = useFormik({
     initialValues: {
@@ -808,6 +878,7 @@ export default function Account() {
 
         {/* Profile Tab */}
         {activeTab === "profile" && (
+          <>
           <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 space-y-8">
             {/* Avatar */}
             <div className="flex items-center gap-6">
@@ -1061,6 +1132,73 @@ export default function Account() {
               </Button>
             </form>
           </div>
+
+          {/* Clínicas Vinculadas — every professional sees this, distinct
+              from "Dados da Clínica" (admin-only editing of one clinic's
+              own data) and from Assinatura's copy (billing context). */}
+          <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold font-display text-slate-900">
+                  Clínicas Vinculadas
+                </h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  Clínicas das quais você faz parte como médico, secretário(a)
+                  ou administrador(a).
+                </p>
+              </div>
+              <Link
+                to="/plans"
+                className="text-sm font-bold text-primary hover:opacity-80 transition-opacity whitespace-nowrap"
+              >
+                Ver planos
+              </Link>
+            </div>
+            <div className="mt-6 space-y-3">
+              {loadingClinics ? (
+                <p className="text-sm text-slate-400">Carregando...</p>
+              ) : clinics.length === 0 ? (
+                <p className="text-sm text-slate-400">
+                  Você ainda não está vinculado a nenhuma clínica.
+                </p>
+              ) : (
+                clinics.map((c) => (
+                  <div
+                    key={c.membershipId}
+                    className="flex items-center justify-between p-4 bg-slate-50 rounded-xl"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+                        <Building2 className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-900">{c.name}</p>
+                        <p className="text-xs text-slate-500">
+                          {c.role === "admin"
+                            ? "Administrador(a)"
+                            : c.role === "doctor"
+                              ? "Médico(a)"
+                              : c.role === "secretary"
+                                ? "Secretário(a)"
+                                : c.role}
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        c.isActive
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-slate-200 text-slate-500"
+                      }`}
+                    >
+                      {c.isActive ? "Ativa" : "Inativa"}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+          </>
         )}
 
         {/* Security Tab */}
@@ -1620,6 +1758,16 @@ export default function Account() {
                     <p className="text-sm text-slate-500 mt-1">
                       Gerencie a assinatura da sua clínica na plataforma Hispora.
                     </p>
+                    {subscription.billing.currentPeriodEnd && (
+                      <p className="text-xs font-bold text-slate-600 mt-2">
+                        Próximo vencimento:{" "}
+                        <span className="text-slate-900">
+                          {new Date(
+                            subscription.billing.currentPeriodEnd,
+                          ).toLocaleDateString("pt-BR")}
+                        </span>
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     {subscription.billing.status && (
@@ -1720,6 +1868,83 @@ export default function Account() {
                     )}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Meus Pagamentos — histórico de cobranças reais da assinatura,
+                só existe depois do primeiro checkout (billing.managed). */}
+            {myClinic && subscription?.billing.managed && (
+              <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+                    <Receipt className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold font-display text-slate-900">
+                      Meus Pagamentos
+                    </h2>
+                    <p className="text-sm text-slate-500 mt-1">
+                      Histórico de cobranças da assinatura da clínica.
+                    </p>
+                  </div>
+                </div>
+
+                {loadingPayments ? (
+                  <p className="text-sm text-slate-400">Carregando...</p>
+                ) : payments.length === 0 ? (
+                  <p className="text-sm text-slate-400">
+                    Nenhum pagamento registrado ainda.
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto -mx-2">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                          <th className="px-2 py-2">Data</th>
+                          <th className="px-2 py-2 text-right">Valor</th>
+                          <th className="px-2 py-2 text-center">Status</th>
+                          <th className="px-2 py-2">Método</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 text-sm">
+                        {payments.map((p) => {
+                          const info = PAYMENT_STATUS_LABELS[p.status] || {
+                            label: p.status,
+                            classes: "bg-slate-100 text-slate-600",
+                          };
+                          return (
+                            <tr key={p.id}>
+                              <td className="px-2 py-3 text-slate-600">
+                                {p.dateCreated
+                                  ? new Date(p.dateCreated).toLocaleDateString(
+                                      "pt-BR",
+                                    )
+                                  : "—"}
+                              </td>
+                              <td className="px-2 py-3 text-right font-bold text-slate-900 font-mono">
+                                R${" "}
+                                {Number(p.transactionAmount).toLocaleString(
+                                  "pt-BR",
+                                  { minimumFractionDigits: 2 },
+                                )}
+                              </td>
+                              <td className="px-2 py-3 text-center">
+                                <span
+                                  className={`inline-flex px-2.5 py-0.5 rounded-full font-bold text-[10px] ${info.classes}`}
+                                >
+                                  {info.label}
+                                </span>
+                              </td>
+                              <td className="px-2 py-3 text-slate-500">
+                                {formatPaymentMethod(p.paymentMethodId)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 
