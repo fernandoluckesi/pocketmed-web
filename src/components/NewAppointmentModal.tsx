@@ -15,6 +15,7 @@ import { SearchableSelect } from "./ui/SearchableSelect";
 import { api, ApiError } from "../services/api";
 import { financialApi, type Convenio } from "../services/financial";
 import { useToast } from "../contexts/ToastContext";
+import { formatElapsedTime } from "../utils/format-duration";
 import {
   emptyWeekly,
   generateSlots,
@@ -39,6 +40,10 @@ export interface EditableAppointment {
   paymentType?: string;
   convenioId?: string;
   convenioName?: string;
+  /** Consultation timer, for clinic reporting (revenue vs. time spent). */
+  startedAt?: string | null;
+  endedAt?: string | null;
+  durationSeconds?: number | null;
 }
 
 interface NewAppointmentModalProps {
@@ -88,6 +93,12 @@ export function NewAppointmentModal({
   const readOnly = isExisting && !editing;
   const [confirmingCancel, setConfirmingCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+
+  // Consultation timer (clinic reporting: revenue vs. time spent)
+  const [consultationStartedAt, setConsultationStartedAt] = useState<string | null>(null);
+  const [consultationDurationSeconds, setConsultationDurationSeconds] = useState<number | null>(null);
+  const [startingConsultation, setStartingConsultation] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   // Patient search
   const [searchTerm, setSearchTerm] = useState("");
@@ -224,6 +235,10 @@ export function NewAppointmentModal({
     );
     setConvenioId(appointment.convenioId || "");
     setConvenioName(appointment.convenioName || "");
+    setConsultationStartedAt(appointment.startedAt || null);
+    setConsultationDurationSeconds(
+      typeof appointment.durationSeconds === "number" ? appointment.durationSeconds : null,
+    );
     if (!Number.isNaN(dt.getTime())) {
       setDate(
         `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`,
@@ -240,6 +255,38 @@ export function NewAppointmentModal({
         : null,
     );
   }, [isOpen, appointment]);
+
+  // Ticks the "em andamento" timer once a second while the consultation is
+  // running (started but not yet finished).
+  useEffect(() => {
+    if (!consultationStartedAt || appointment?.isCompleted) return;
+
+    const startMs = new Date(consultationStartedAt).getTime();
+    const tick = () => setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [consultationStartedAt, appointment?.isCompleted]);
+
+  async function handleStartConsultation() {
+    if (!appointment) return;
+    setStartingConsultation(true);
+    try {
+      const updated = await api(`/appointments/${appointment.id}/start`, {
+        method: "POST",
+      });
+      setConsultationStartedAt(updated.startedAt);
+      toast.success("Consulta iniciada! O tempo está sendo registrado.");
+    } catch (err) {
+      const msg =
+        err instanceof ApiError
+          ? err.data?.message || "Erro ao iniciar a consulta."
+          : "Erro ao iniciar a consulta.";
+      toast.error(String(msg));
+    } finally {
+      setStartingConsultation(false);
+    }
+  }
 
   // Resolve a disponibilidade e a grade de horários para a data escolhida.
   const dayAvailability = date
@@ -934,6 +981,28 @@ export function NewAppointmentModal({
                 </>
               ) : readOnly ? (
                 <>
+                  {consultationStartedAt && !appointment?.isCompleted && (
+                    <span className="mr-auto flex items-center gap-1.5 text-sm font-semibold text-green-700">
+                      <Clock size={16} />
+                      Consulta em andamento: {formatElapsedTime(elapsedSeconds)}
+                    </span>
+                  )}
+                  {appointment?.isCompleted && consultationDurationSeconds != null && (
+                    <span className="mr-auto flex items-center gap-1.5 text-sm font-medium text-slate-500">
+                      <Clock size={16} />
+                      Duração da consulta: {formatElapsedTime(consultationDurationSeconds)}
+                    </span>
+                  )}
+                  {!consultationStartedAt && !appointment?.isCompleted && (
+                    <Button
+                      variant="success"
+                      size="md"
+                      onClick={handleStartConsultation}
+                      loading={startingConsultation}
+                    >
+                      Iniciar Consulta
+                    </Button>
+                  )}
                   <Button
                     variant="danger-outline"
                     size="md"

@@ -9,11 +9,14 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  Clock,
 } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
 import { useDialog } from "../../components/ui/Dialog";
+import { useToast } from "../../contexts/ToastContext";
 import { NewAppointmentModal } from "../../components/NewAppointmentModal";
-import { api } from "../../services/api";
+import { api, ApiError } from "../../services/api";
+import { formatElapsedTime } from "../../utils/format-duration";
 
 // --- Types ---
 interface Consultation {
@@ -27,6 +30,8 @@ interface Consultation {
   doctorName: string;
   specialty: string;
   status: "REALIZADA" | "AGENDADA" | "CANCELADA";
+  startedAt: string | null;
+  durationSeconds: number | null;
 }
 
 // --- Helpers ---
@@ -80,6 +85,7 @@ function maskCpf(value: string): string {
 // --- Main Page ---
 export default function Consultations() {
   const dialog = useDialog();
+  const toast = useToast();
   const [statusFilter, setStatusFilter] = useState<
     "Todas" | "Agendadas" | "Realizadas" | "Canceladas"
   >("Todas");
@@ -90,7 +96,48 @@ export default function Consultations() {
   const [selectedConsultation, setSelectedConsultation] =
     useState<Consultation | null>(null);
   const [showNewAppointment, setShowNewAppointment] = useState(false);
+  const [startingConsultation, setStartingConsultation] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const itemsPerPage = 10;
+
+  // Ticks the "em andamento" timer once a second while the selected
+  // consultation is running (started but not yet finished).
+  useEffect(() => {
+    if (!selectedConsultation?.startedAt || selectedConsultation.status === "REALIZADA") return;
+
+    const startMs = new Date(selectedConsultation.startedAt).getTime();
+    const tick = () => setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [selectedConsultation?.startedAt, selectedConsultation?.status]);
+
+  async function handleStartConsultation() {
+    if (!selectedConsultation) return;
+    setStartingConsultation(true);
+    try {
+      const updated = await api(`/appointments/${selectedConsultation.id}/start`, {
+        method: "POST",
+      });
+      setSelectedConsultation((prev) =>
+        prev ? { ...prev, startedAt: updated.startedAt } : prev,
+      );
+      setConsultations((prev) =>
+        prev.map((c) =>
+          c.id === selectedConsultation.id ? { ...c, startedAt: updated.startedAt } : c,
+        ),
+      );
+      toast.success("Consulta iniciada! O tempo está sendo registrado.");
+    } catch (err) {
+      const msg =
+        err instanceof ApiError
+          ? err.data?.message || "Erro ao iniciar a consulta."
+          : "Erro ao iniciar a consulta.";
+      toast.error(String(msg));
+    } finally {
+      setStartingConsultation(false);
+    }
+  }
 
   const loadConsultations = useCallback(async () => {
     try {
@@ -112,6 +159,9 @@ export default function Consultations() {
             doctorName: apt.doctorName || "—",
             specialty: apt.doctorSpecialty || "—",
             status: mapStatus(apt),
+            startedAt: apt.startedAt || null,
+            durationSeconds:
+              typeof apt.durationSeconds === "number" ? apt.durationSeconds : null,
           };
         },
       );
@@ -541,8 +591,32 @@ export default function Consultations() {
                       : "Cancelada"}
                 </span>
               </div>
+              {selectedConsultation.startedAt &&
+                selectedConsultation.status !== "REALIZADA" && (
+                  <div className="flex items-center gap-1.5 text-sm font-semibold text-green-700">
+                    <Clock className="w-4 h-4" />
+                    Consulta em andamento: {formatElapsedTime(elapsedSeconds)}
+                  </div>
+                )}
+              {selectedConsultation.status === "REALIZADA" &&
+                selectedConsultation.durationSeconds != null && (
+                  <div className="flex items-center gap-1.5 text-sm font-medium text-slate-500">
+                    <Clock className="w-4 h-4" />
+                    Duração da consulta: {formatElapsedTime(selectedConsultation.durationSeconds)}
+                  </div>
+                )}
             </div>
             <div className="p-6 border-t border-slate-100 flex gap-3 justify-end">
+              {selectedConsultation.status === "AGENDADA" &&
+                !selectedConsultation.startedAt && (
+                  <button
+                    onClick={handleStartConsultation}
+                    disabled={startingConsultation}
+                    className="px-5 py-2.5 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-2xl transition-colors cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {startingConsultation ? "Iniciando..." : "Iniciar Consulta"}
+                  </button>
+                )}
               <button
                 onClick={() => setSelectedConsultation(null)}
                 className="px-5 py-2.5 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-colors cursor-pointer border-none"

@@ -34,6 +34,9 @@ interface APIAppointment {
   paymentType?: string;
   convenioId?: string;
   convenio?: { id?: string; name?: string };
+  startedAt?: string | null;
+  endedAt?: string | null;
+  durationSeconds?: number | null;
 }
 
 /** Maps an API appointment to the shape consumed by the appointment modal. */
@@ -51,6 +54,9 @@ function toAppointmentDetail(apt: APIAppointment): EditableAppointment {
     paymentType: apt.paymentType,
     convenioId: apt.convenioId || apt.convenio?.id,
     convenioName: apt.convenio?.name,
+    startedAt: apt.startedAt,
+    endedAt: apt.endedAt,
+    durationSeconds: apt.durationSeconds,
   };
 }
 
