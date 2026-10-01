@@ -21,7 +21,7 @@ import DoctorProfile from "../pages/Doctors/DoctorProfile";
 import Schedule from "../pages/Schedule";
 import ClinicalManagement from "../pages/ClinicalManagement";
 import Account from "../pages/Account/index";
-import Plans from "../pages/Plans/index";
+import PlansCompare from "../pages/Plans/Compare";
 import FinancialDashboard from "../pages/Financial/Dashboard";
 import Revenue from "../pages/Financial/Revenue";
 import Expenses from "../pages/Financial/Expenses";
@@ -153,11 +153,15 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      {/* The old plan-picker screen was removed — plan selection happens in
+          Minha Conta (Assinatura tab) and `/plans` now redirects to the
+          comparison table so any bookmarked link keeps working. */}
+      <Route path="/plans" element={<Navigate to="/plans/compare" replace />} />
       <Route
-        path="/plans"
+        path="/plans/compare"
         element={
           <ProtectedRoute>
-            <Plans />
+            <PlansCompare />
           </ProtectedRoute>
         }
       />

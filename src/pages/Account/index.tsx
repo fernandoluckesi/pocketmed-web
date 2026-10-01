@@ -7,6 +7,7 @@ import {
   ShieldAlert,
   Building2,
   CheckCircle2,
+  ChevronRight,
   Users,
   Receipt,
 } from "lucide-react";
@@ -24,36 +25,9 @@ import { Link, useLocation } from "react-router-dom";
 import api from "../../config/api";
 import { isValidCpf, maskCpf, normalizeCpf } from "../../utils/cpf";
 import { fetchCep } from "../../services/cep";
+import { formatPriceBRL, type Plan } from "../../data/plans";
 
 // --- Subscription types ---
-
-interface PlanFeatures {
-  agenda: boolean;
-  prontuario: boolean;
-  examesDocumentos: boolean;
-  dependentes: boolean;
-  secretaria: boolean;
-  gestaoClinica: boolean;
-  financeiro: boolean;
-  ocrIa: boolean;
-  relatoriosAvancados: boolean;
-  auditoriaAvancada: boolean;
-  integracoesApi: boolean;
-  suportePrioritario: boolean;
-}
-
-interface Plan {
-  id: string;
-  name: string;
-  price: number | null;
-  description: string;
-  professionalsIncluded: number | null;
-  activePatientsIncluded: number | null;
-  additionalProfessionalPrice: number | null;
-  additionalPatientsPer1000Price: number | null;
-  highlighted?: boolean;
-  features: PlanFeatures;
-}
 
 interface ClinicMembershipInfo {
   clinicId: string;
@@ -180,11 +154,6 @@ function formatCEP(value: string): string {
   return digits;
 }
 
-function formatPriceBRL(value: number | null): string {
-  if (value === null) return "Sob consulta";
-  return `R$ ${value.toLocaleString("pt-BR")}`;
-}
-
 const profileSchema = Yup.object({
   name: Yup.string()
     .min(3, "Mínimo 3 caracteres")
@@ -221,12 +190,10 @@ export default function Account() {
   const { user } = useAuth();
   const dialog = useDialog();
   const location = useLocation();
-  const navigationState = location.state as
-    | {
-        tab?: "profile" | "security" | "subscription" | "clinic";
-        planId?: string;
-      }
-    | null;
+  const navigationState = location.state as {
+    tab?: "profile" | "security" | "subscription" | "clinic";
+    planId?: string;
+  } | null;
   const [activeTab, setActiveTab] = useState<
     "profile" | "security" | "subscription" | "clinic"
   >(navigationState?.tab || "profile");
@@ -879,325 +846,325 @@ export default function Account() {
         {/* Profile Tab */}
         {activeTab === "profile" && (
           <>
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 space-y-8">
-            {/* Avatar */}
-            <div className="flex items-center gap-6">
-              <div className="relative">
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-24 h-24 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden hover:border-primary hover:bg-primary/5 transition-all group cursor-pointer"
-                >
-                  {profilePreview || user?.profileImage ? (
-                    <img
-                      src={profilePreview || user?.profileImage || ""}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <Camera
-                      size={28}
-                      className="text-slate-400 group-hover:text-primary transition-colors"
-                    />
-                  )}
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
-              </div>
-              <div>
-                <p className="font-bold text-slate-900">
-                  {user?.name || user?.email}
-                </p>
-                <p className="text-sm text-slate-500">
-                  Clique na imagem para alterar sua foto de perfil
-                </p>
-              </div>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={profileFormik.handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-on-surface-variant ml-1">
-                    Nome Completo
-                  </label>
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 space-y-8">
+              {/* Avatar */}
+              <div className="flex items-center gap-6">
+                <div className="relative">
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-24 h-24 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden hover:border-primary hover:bg-primary/5 transition-all group cursor-pointer"
+                  >
+                    {profilePreview || user?.profileImage ? (
+                      <img
+                        src={profilePreview || user?.profileImage || ""}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Camera
+                        size={28}
+                        className="text-slate-400 group-hover:text-primary transition-colors"
+                      />
+                    )}
+                  </div>
                   <input
-                    name="name"
-                    onChange={profileFormik.handleChange}
-                    onBlur={profileFormik.handleBlur}
-                    value={profileFormik.values.name}
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
-                    placeholder="Dr. João Silva"
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-on-surface-variant ml-1">
-                    Email
-                  </label>
-                  <input
-                    name="email"
-                    onChange={profileFormik.handleChange}
-                    value={profileFormik.values.email}
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
-                    disabled
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-on-surface-variant ml-1">
-                    Telefone
-                  </label>
-                  <input
-                    name="phone"
-                    onChange={profileFormik.handleChange}
-                    value={profileFormik.values.phone}
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
-                    placeholder="(11) 99999-9999"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-on-surface-variant ml-1">
-                    Gênero
-                  </label>
-                  <CustomSelect
-                    name="gender"
-                    value={profileFormik.values.gender}
-                    onChange={(val) =>
-                      profileFormik.setFieldValue("gender", val)
-                    }
-                    placeholder="Selecione"
-                    options={[
-                      { value: "Masculino", label: "Masculino" },
-                      { value: "Feminino", label: "Feminino" },
-                      { value: "Outro", label: "Outro" },
-                      {
-                        value: "Prefiro não informar",
-                        label: "Prefiro não informar",
-                      },
-                    ]}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-on-surface-variant ml-1">
-                    Data de Nascimento
-                  </label>
-                  <input
-                    type="date"
-                    name="birthDate"
-                    onChange={profileFormik.handleChange}
-                    value={profileFormik.values.birthDate}
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-on-surface-variant ml-1">
-                    CPF
-                  </label>
-                  <input
-                    name="cpf"
-                    value={profileFormik.values.cpf}
-                    onChange={(e) => {
-                      profileFormik.setFieldValue(
-                        "cpf",
-                        maskCpf(e.target.value),
-                      );
-                    }}
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
-                    placeholder="000.000.000-00"
-                    inputMode="numeric"
-                    maxLength={14}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-on-surface-variant ml-1">
-                    Especialidade
-                  </label>
-                  <CustomSelect
-                    name="specialty"
-                    value={profileFormik.values.specialty}
-                    onChange={(val) =>
-                      profileFormik.setFieldValue("specialty", val)
-                    }
-                    placeholder="Selecione a especialidade"
-                    options={[
-                      "Nenhuma",
-                      "Acupuntura",
-                      "Alergia e Imunologia",
-                      "Anestesiologia",
-                      "Angiologia",
-                      "Cancerologia",
-                      "Cardiologia",
-                      "Cirurgia Cardiovascular",
-                      "Cirurgia da Mão",
-                      "Cirurgia de Cabeça e Pescoço",
-                      "Cirurgia do Aparelho Digestivo",
-                      "Cirurgia Geral",
-                      "Cirurgia Pediátrica",
-                      "Cirurgia Plástica",
-                      "Cirurgia Torácica",
-                      "Cirurgia Vascular",
-                      "Clínica Médica",
-                      "Clínica Geral",
-                      "Coloproctologia",
-                      "Dermatologia",
-                      "Endocrinologia e Metabologia",
-                      "Endoscopia",
-                      "Gastroenterologia",
-                      "Genética Médica",
-                      "Geriatria",
-                      "Ginecologia e Obstetrícia",
-                      "Hematologia e Hemoterapia",
-                      "Homeopatia",
-                      "Infectologia",
-                      "Mastologia",
-                      "Medicina de Emergência",
-                      "Medicina de Família e Comunidade",
-                      "Medicina do Trabalho",
-                      "Medicina Esportiva",
-                      "Medicina Física e Reabilitação",
-                      "Medicina Intensiva",
-                      "Medicina Legal e Perícia Médica",
-                      "Medicina Nuclear",
-                      "Medicina Preventiva e Social",
-                      "Nefrologia",
-                      "Neurocirurgia",
-                      "Neurologia",
-                      "Nutrologia",
-                      "Oftalmologia",
-                      "Ortopedia e Traumatologia",
-                      "Otorrinolaringologia",
-                      "Patologia",
-                      "Patologia Clínica/Medicina Laboratorial",
-                      "Pediatria",
-                      "Pneumologia",
-                      "Psiquiatria",
-                      "Radiologia e Diagnóstico por Imagem",
-                      "Radioterapia",
-                      "Reumatologia",
-                      "Urologia",
-                    ].map((s) => ({ value: s, label: s }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-on-surface-variant ml-1">
-                    CRM
-                  </label>
-                  <input
-                    name="crm"
-                    onChange={profileFormik.handleChange}
-                    value={profileFormik.values.crm}
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
-                    placeholder="123456/SP"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-on-surface-variant ml-1">
-                    RQE
-                  </label>
-                  <input
-                    name="rqe"
-                    onChange={profileFormik.handleChange}
-                    value={profileFormik.values.rqe}
-                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
-                    placeholder="Número do RQE (se aplicável)"
-                  />
-                </div>
-              </div>
-
-              {/* Warns before saving: changing credential data reopens the
-                  verification, so it should not come as a surprise. */}
-              {credentialsChanged && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
-                  <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-800">
-                    Você alterou dados profissionais (CRM, RQE ou
-                    especialidade). Ao salvar, seus documentos voltarão para
-                    análise da nossa equipe.
+                <div>
+                  <p className="font-bold text-slate-900">
+                    {user?.name || user?.email}
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    Clique na imagem para alterar sua foto de perfil
                   </p>
                 </div>
-              )}
+              </div>
 
-              <Button
-                type="submit"
-                disabled={saving}
-                loading={saving}
-                variant="primary"
-                size="md"
-                icon={!saving ? <Save size={18} /> : undefined}
-              >
-                {saving ? "Salvando..." : "Salvar Alterações"}
-              </Button>
-            </form>
-          </div>
+              {/* Form */}
+              <form onSubmit={profileFormik.handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-on-surface-variant ml-1">
+                      Nome Completo
+                    </label>
+                    <input
+                      name="name"
+                      onChange={profileFormik.handleChange}
+                      onBlur={profileFormik.handleBlur}
+                      value={profileFormik.values.name}
+                      className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
+                      placeholder="Dr. João Silva"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-on-surface-variant ml-1">
+                      Email
+                    </label>
+                    <input
+                      name="email"
+                      onChange={profileFormik.handleChange}
+                      value={profileFormik.values.email}
+                      className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
+                      disabled
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-on-surface-variant ml-1">
+                      Telefone
+                    </label>
+                    <input
+                      name="phone"
+                      onChange={profileFormik.handleChange}
+                      value={profileFormik.values.phone}
+                      className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
+                      placeholder="(11) 99999-9999"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-on-surface-variant ml-1">
+                      Gênero
+                    </label>
+                    <CustomSelect
+                      name="gender"
+                      value={profileFormik.values.gender}
+                      onChange={(val) =>
+                        profileFormik.setFieldValue("gender", val)
+                      }
+                      placeholder="Selecione"
+                      options={[
+                        { value: "Masculino", label: "Masculino" },
+                        { value: "Feminino", label: "Feminino" },
+                        { value: "Outro", label: "Outro" },
+                        {
+                          value: "Prefiro não informar",
+                          label: "Prefiro não informar",
+                        },
+                      ]}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-on-surface-variant ml-1">
+                      Data de Nascimento
+                    </label>
+                    <input
+                      type="date"
+                      name="birthDate"
+                      onChange={profileFormik.handleChange}
+                      value={profileFormik.values.birthDate}
+                      className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-on-surface-variant ml-1">
+                      CPF
+                    </label>
+                    <input
+                      name="cpf"
+                      value={profileFormik.values.cpf}
+                      onChange={(e) => {
+                        profileFormik.setFieldValue(
+                          "cpf",
+                          maskCpf(e.target.value),
+                        );
+                      }}
+                      className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
+                      placeholder="000.000.000-00"
+                      inputMode="numeric"
+                      maxLength={14}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-on-surface-variant ml-1">
+                      Especialidade
+                    </label>
+                    <CustomSelect
+                      name="specialty"
+                      value={profileFormik.values.specialty}
+                      onChange={(val) =>
+                        profileFormik.setFieldValue("specialty", val)
+                      }
+                      placeholder="Selecione a especialidade"
+                      options={[
+                        "Nenhuma",
+                        "Acupuntura",
+                        "Alergia e Imunologia",
+                        "Anestesiologia",
+                        "Angiologia",
+                        "Cancerologia",
+                        "Cardiologia",
+                        "Cirurgia Cardiovascular",
+                        "Cirurgia da Mão",
+                        "Cirurgia de Cabeça e Pescoço",
+                        "Cirurgia do Aparelho Digestivo",
+                        "Cirurgia Geral",
+                        "Cirurgia Pediátrica",
+                        "Cirurgia Plástica",
+                        "Cirurgia Torácica",
+                        "Cirurgia Vascular",
+                        "Clínica Médica",
+                        "Clínica Geral",
+                        "Coloproctologia",
+                        "Dermatologia",
+                        "Endocrinologia e Metabologia",
+                        "Endoscopia",
+                        "Gastroenterologia",
+                        "Genética Médica",
+                        "Geriatria",
+                        "Ginecologia e Obstetrícia",
+                        "Hematologia e Hemoterapia",
+                        "Homeopatia",
+                        "Infectologia",
+                        "Mastologia",
+                        "Medicina de Emergência",
+                        "Medicina de Família e Comunidade",
+                        "Medicina do Trabalho",
+                        "Medicina Esportiva",
+                        "Medicina Física e Reabilitação",
+                        "Medicina Intensiva",
+                        "Medicina Legal e Perícia Médica",
+                        "Medicina Nuclear",
+                        "Medicina Preventiva e Social",
+                        "Nefrologia",
+                        "Neurocirurgia",
+                        "Neurologia",
+                        "Nutrologia",
+                        "Oftalmologia",
+                        "Ortopedia e Traumatologia",
+                        "Otorrinolaringologia",
+                        "Patologia",
+                        "Patologia Clínica/Medicina Laboratorial",
+                        "Pediatria",
+                        "Pneumologia",
+                        "Psiquiatria",
+                        "Radiologia e Diagnóstico por Imagem",
+                        "Radioterapia",
+                        "Reumatologia",
+                        "Urologia",
+                      ].map((s) => ({ value: s, label: s }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-on-surface-variant ml-1">
+                      CRM
+                    </label>
+                    <input
+                      name="crm"
+                      onChange={profileFormik.handleChange}
+                      value={profileFormik.values.crm}
+                      className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
+                      placeholder="123456/SP"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-on-surface-variant ml-1">
+                      RQE
+                    </label>
+                    <input
+                      name="rqe"
+                      onChange={profileFormik.handleChange}
+                      value={profileFormik.values.rqe}
+                      className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
+                      placeholder="Número do RQE (se aplicável)"
+                    />
+                  </div>
+                </div>
 
-          {/* Clínicas Vinculadas — every professional sees this, distinct
+                {/* Warns before saving: changing credential data reopens the
+                  verification, so it should not come as a surprise. */}
+                {credentialsChanged && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
+                    <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-800">
+                      Você alterou dados profissionais (CRM, RQE ou
+                      especialidade). Ao salvar, seus documentos voltarão para
+                      análise da nossa equipe.
+                    </p>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  loading={saving}
+                  variant="primary"
+                  size="md"
+                  icon={!saving ? <Save size={18} /> : undefined}
+                >
+                  {saving ? "Salvando..." : "Salvar Alterações"}
+                </Button>
+              </form>
+            </div>
+
+            {/* Clínicas Vinculadas — every professional sees this, distinct
               from "Dados da Clínica" (admin-only editing of one clinic's
               own data) and from Assinatura's copy (billing context). */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold font-display text-slate-900">
-                  Clínicas Vinculadas
-                </h2>
-                <p className="text-sm text-slate-500 mt-1">
-                  Clínicas das quais você faz parte como médico, secretário(a)
-                  ou administrador(a).
-                </p>
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold font-display text-slate-900">
+                    Clínicas Vinculadas
+                  </h2>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Clínicas das quais você faz parte como médico, secretário(a)
+                    ou administrador(a).
+                  </p>
+                </div>
+                <Link
+                  to="/plans/compare"
+                  className="text-sm font-bold text-primary hover:opacity-80 transition-opacity whitespace-nowrap"
+                >
+                  Comparar planos
+                </Link>
               </div>
-              <Link
-                to="/plans"
-                className="text-sm font-bold text-primary hover:opacity-80 transition-opacity whitespace-nowrap"
-              >
-                Ver planos
-              </Link>
-            </div>
-            <div className="mt-6 space-y-3">
-              {loadingClinics ? (
-                <p className="text-sm text-slate-400">Carregando...</p>
-              ) : clinics.length === 0 ? (
-                <p className="text-sm text-slate-400">
-                  Você ainda não está vinculado a nenhuma clínica.
-                </p>
-              ) : (
-                clinics.map((c) => (
-                  <div
-                    key={c.membershipId}
-                    className="flex items-center justify-between p-4 bg-slate-50 rounded-xl"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
-                        <Building2 className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-slate-900">{c.name}</p>
-                        <p className="text-xs text-slate-500">
-                          {c.role === "admin"
-                            ? "Administrador(a)"
-                            : c.role === "doctor"
-                              ? "Médico(a)"
-                              : c.role === "secretary"
-                                ? "Secretário(a)"
-                                : c.role}
-                        </p>
-                      </div>
-                    </div>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        c.isActive
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-slate-200 text-slate-500"
-                      }`}
+              <div className="mt-6 space-y-3">
+                {loadingClinics ? (
+                  <p className="text-sm text-slate-400">Carregando...</p>
+                ) : clinics.length === 0 ? (
+                  <p className="text-sm text-slate-400">
+                    Você ainda não está vinculado a nenhuma clínica.
+                  </p>
+                ) : (
+                  clinics.map((c) => (
+                    <div
+                      key={c.membershipId}
+                      className="flex items-center justify-between p-4 bg-slate-50 rounded-xl"
                     >
-                      {c.isActive ? "Ativa" : "Inativa"}
-                    </span>
-                  </div>
-                ))
-              )}
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+                          <Building2 className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900">{c.name}</p>
+                          <p className="text-xs text-slate-500">
+                            {c.role === "admin"
+                              ? "Administrador(a)"
+                              : c.role === "doctor"
+                                ? "Médico(a)"
+                                : c.role === "secretary"
+                                  ? "Secretário(a)"
+                                  : c.role}
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          c.isActive
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-slate-200 text-slate-500"
+                        }`}
+                      >
+                        {c.isActive ? "Ativa" : "Inativa"}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
-          </div>
           </>
         )}
 
@@ -1696,10 +1663,10 @@ export default function Account() {
                   </p>
                 </div>
                 <Link
-                  to="/plans"
+                  to="/plans/compare"
                   className="text-sm font-bold text-primary hover:opacity-80 transition-opacity whitespace-nowrap"
                 >
-                  Ver planos
+                  Comparar planos
                 </Link>
               </div>
               <div className="mt-6 space-y-3">
@@ -1756,7 +1723,8 @@ export default function Account() {
                       Plano Atual — {myClinic.name}
                     </h2>
                     <p className="text-sm text-slate-500 mt-1">
-                      Gerencie a assinatura da sua clínica na plataforma Hispora.
+                      Gerencie a assinatura da sua clínica na plataforma
+                      Hispora.
                     </p>
                     {subscription.billing.currentPeriodEnd && (
                       <p className="text-xs font-bold text-slate-600 mt-2">
@@ -2006,6 +1974,13 @@ export default function Account() {
                         >
                           {isCurrent ? "Plano Atual" : "Selecionar"}
                         </Button>
+                        <Link
+                          to={`/plans/compare?plan=${plan.id}`}
+                          className="mt-2 w-full inline-flex items-center justify-center gap-1 text-xs font-bold text-primary hover:opacity-80 transition-opacity py-2"
+                        >
+                          Ver mais detalhes
+                          <ChevronRight size={14} />
+                        </Link>
                       </div>
                     );
                   })}
@@ -2271,8 +2246,7 @@ export default function Account() {
                               <p className="font-bold text-sm text-slate-900">
                                 {plan.name}
                               </p>
-                              {becomeClinicFormik.values.planId ===
-                                plan.id && (
+                              {becomeClinicFormik.values.planId === plan.id && (
                                 <CheckCircle2 className="w-4 h-4 text-primary" />
                               )}
                             </div>

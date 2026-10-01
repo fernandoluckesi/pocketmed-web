@@ -34,7 +34,6 @@ const navItems = [
 
 const personalItems = [
   { icon: ICONS.Account, label: "Minha Conta", path: "/account" },
-  { icon: ICONS.Plans, label: "Planos", path: "/plans" },
 ];
 
 export const Sidebar = () => {
