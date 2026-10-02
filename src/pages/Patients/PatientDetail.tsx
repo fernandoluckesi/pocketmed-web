@@ -2257,6 +2257,25 @@ function ConsultaForm({
   const [examNames, setExamNames] = useState<string[]>([""]);
   const [submissionErrors, setSubmissionErrors] = useState<string[]>([]);
 
+  /**
+   * Id of the consultation created by an earlier submit attempt.
+   *
+   * The consultation is created first, then its medications/exams. When an
+   * attachment fails the form stays open so the doctor can retry — and the
+   * retry must NOT post the consultation again, otherwise a failed medication
+   * turns into a duplicated consultation.
+   *
+   * It is state (not a ref) because the labels and the warning below depend on
+   * it; a ref read during render wouldn't trigger the re-render that updates
+   * them.
+   */
+  const [createdAppointmentId, setCreatedAppointmentId] = useState<
+    string | null
+  >(null);
+
+  /** Attachments already persisted, so a retry only re-sends what failed. */
+  const savedAttachmentsRef = useRef<Set<string>>(new Set());
+
   function handleMedicationChange(
     index: number,
     field: string,
@@ -2298,28 +2317,56 @@ function ConsultaForm({
 
     try {
       const dateTime = time ? `${date}T${time}:00` : `${date}T00:00:00`;
-      const consultation = await api(`/patients/${patientId}/consultations`, {
-        method: "POST",
-        body: {
-          date: dateTime,
-          symptoms: sintomas || undefined,
-          // Clinical notes are saved regardless of the completion flag — the
-          // doctor writes them during the visit and only ticks "finalizada"
-          // at the end, so gating them here would discard the notes.
-          ...(showClinicalSection
-            ? {
-                diagnosis: diagnostico || undefined,
-                prescription: orientações || undefined,
-                completed: finalizada,
-              }
-            : {}),
-          visitType,
-          paymentType,
-          convenioId: paymentType === "convenio" ? convenioId : undefined,
-        },
-      });
 
-      const appointmentId = consultation.id;
+      // Reuse the consultation from a previous partial submit instead of
+      // creating a second one.
+      let appointmentId = createdAppointmentId;
+
+      if (appointmentId) {
+        // Keep any field the doctor corrected before retrying.
+        await api(`/patients/${patientId}/consultations/${appointmentId}`, {
+          method: "PUT",
+          body: {
+            date: dateTime,
+            symptoms: sintomas || undefined,
+            ...(showClinicalSection
+              ? {
+                  diagnosis: diagnostico || undefined,
+                  prescription: orientações || undefined,
+                  completed: finalizada,
+                }
+              : {}),
+            visitType,
+            paymentType,
+            convenioId: paymentType === "convenio" ? convenioId : undefined,
+          },
+        });
+      } else {
+        const consultation = await api(`/patients/${patientId}/consultations`, {
+          method: "POST",
+          body: {
+            date: dateTime,
+            symptoms: sintomas || undefined,
+            // Clinical notes are saved regardless of the completion flag —
+            // the doctor writes them during the visit and only ticks
+            // "finalizada" at the end, so gating them here would discard
+            // the notes.
+            ...(showClinicalSection
+              ? {
+                  diagnosis: diagnostico || undefined,
+                  prescription: orientações || undefined,
+                  completed: finalizada,
+                }
+              : {}),
+            visitType,
+            paymentType,
+            convenioId: paymentType === "convenio" ? convenioId : undefined,
+          },
+        });
+        appointmentId = consultation.id;
+        setCreatedAppointmentId(appointmentId);
+      }
+
       const errors: string[] = [];
 
       // Create linked medications. Uses POST /medications (not the
@@ -2331,6 +2378,8 @@ function ConsultaForm({
           (m) => m.name.trim() && m.dosage.trim() && m.startDate,
         );
         for (const med of validMeds) {
+          const key = `med:${med.name.trim()}`;
+          if (savedAttachmentsRef.current.has(key)) continue;
           try {
             await api("/medications", {
               method: "POST",
@@ -2346,6 +2395,7 @@ function ConsultaForm({
                 appointmentId,
               },
             });
+            savedAttachmentsRef.current.add(key);
           } catch {
             errors.push(`Medicamento "${med.name}"`);
           }
@@ -2356,6 +2406,8 @@ function ConsultaForm({
       if (showClinicalSection && addExam) {
         for (const examName of examNames) {
           if (!examName.trim()) continue;
+          const key = `exam:${examName.trim()}`;
+          if (savedAttachmentsRef.current.has(key)) continue;
           try {
             await api(`/exams`, {
               method: "POST",
@@ -2366,6 +2418,7 @@ function ConsultaForm({
                 appointmentId,
               },
             });
+            savedAttachmentsRef.current.add(key);
           } catch {
             errors.push(`Exame "${examName}"`);
           }
@@ -2373,6 +2426,8 @@ function ConsultaForm({
       }
 
       if (errors.length > 0) {
+        // The consultation is already persisted; only the listed attachments
+        // failed. Retrying re-sends just those (see the refs above).
         setSubmissionErrors(errors);
       } else {
         onSaved();
@@ -2380,6 +2435,11 @@ function ConsultaForm({
       }
     } catch (err) {
       console.error("Erro ao salvar consulta:", err);
+      setSubmissionErrors([
+        createdAppointmentId
+          ? "Não foi possível atualizar a consulta. Tente novamente."
+          : "Não foi possível salvar a consulta. Tente novamente.",
+      ]);
     } finally {
       setSaving(false);
     }
@@ -2561,9 +2621,40 @@ function ConsultaForm({
         </>
       )}
 
+      {submissionErrors.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm">
+          {createdAppointmentId ? (
+            <>
+              <p className="font-semibold">
+                A consulta foi salva, mas estes itens falharam:
+              </p>
+              <ul className="list-disc list-inside mt-1">
+                {submissionErrors.map((err) => (
+                  <li key={err}>{err}</li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs">
+                Salvar novamente tenta apenas os itens acima — a consulta não
+                será duplicada.
+              </p>
+            </>
+          ) : (
+            submissionErrors.map((err) => <p key={err}>{err}</p>)
+          )}
+        </div>
+      )}
+
       <FormActions
-        onCancel={onClose}
-        submitLabel="Salvar Consulta"
+        onCancel={() => {
+          // The consultation may already exist from a partial submit, so the
+          // list has to refresh even when the doctor gives up on the
+          // attachments — otherwise it looks like nothing was saved.
+          if (createdAppointmentId) onSaved();
+          onClose();
+        }}
+        submitLabel={
+          createdAppointmentId ? "Tentar novamente" : "Salvar Consulta"
+        }
         loading={saving}
         loadingLabel="Salvando..."
       />
@@ -2619,6 +2710,20 @@ function EditConsultaForm({
   ]);
   const [examNames, setExamNames] = useState<string[]>([""]);
   const [submissionErrors, setSubmissionErrors] = useState<string[]>([]);
+
+  /**
+   * Attachments already created by an earlier submit attempt, keyed by
+   * `med:<name>` / `exam:<name>`. Updating the consultation itself is a PUT
+   * (idempotent), but medications and exams are POSTs — without this, retrying
+   * after one failure would duplicate the ones that had already succeeded.
+   *
+   * Keying by name means renaming an already-saved row creates a new record
+   * rather than editing the old one. That's deliberate: these endpoints return
+   * ids the form doesn't track, and a rename is indistinguishable from a new
+   * prescription here. The alternative (ignoring renames) would silently drop
+   * the doctor's correction.
+   */
+  const savedAttachmentsRef = useRef<Set<string>>(new Set());
 
   function handleMedicationChange(
     index: number,
@@ -2689,6 +2794,8 @@ function EditConsultaForm({
           (m) => m.name.trim() && m.dosage.trim() && m.startDate,
         );
         for (const med of validMeds) {
+          const key = `med:${med.name.trim()}`;
+          if (savedAttachmentsRef.current.has(key)) continue;
           try {
             await api("/medications", {
               method: "POST",
@@ -2704,6 +2811,7 @@ function EditConsultaForm({
                 appointmentId: consultation.id,
               },
             });
+            savedAttachmentsRef.current.add(key);
           } catch {
             errors.push(`Medicamento "${med.name}"`);
           }
@@ -2713,6 +2821,8 @@ function EditConsultaForm({
       if (showClinicalSection && addExam) {
         const validExams = examNames.filter((n) => n.trim());
         for (const examName of validExams) {
+          const key = `exam:${examName.trim()}`;
+          if (savedAttachmentsRef.current.has(key)) continue;
           try {
             await api("/exams", {
               method: "POST",
@@ -2724,6 +2834,7 @@ function EditConsultaForm({
                 lockedByDoctor: true,
               },
             });
+            savedAttachmentsRef.current.add(key);
           } catch {
             errors.push(`Exame "${examName}"`);
           }
@@ -2901,19 +3012,24 @@ function EditConsultaForm({
       {submissionErrors.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm">
           <p className="font-semibold">
-            A consulta foi salva, mas alguns itens falharam:
+            A consulta foi salva, mas estes itens falharam:
           </p>
           <ul className="list-disc list-inside mt-1">
             {submissionErrors.map((err) => (
               <li key={err}>{err}</li>
             ))}
           </ul>
+          <p className="mt-2 text-xs">
+            Salvar novamente tenta apenas os itens acima — nada será duplicado.
+          </p>
         </div>
       )}
 
       <FormActions
         onCancel={onClose}
-        submitLabel="Salvar Alterações"
+        submitLabel={
+          submissionErrors.length > 0 ? "Tentar novamente" : "Salvar Alterações"
+        }
         loading={saving}
         loadingLabel="Salvando..."
       />
