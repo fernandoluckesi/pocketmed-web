@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Clock,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { MainLayout } from "../../components/MainLayout";
 import { useDialog } from "../../components/ui/Dialog";
 import { useToast } from "../../contexts/ToastContext";
@@ -21,6 +22,8 @@ import { formatElapsedTime } from "../../utils/format-duration";
 // --- Types ---
 interface Consultation {
   id: string;
+  /** Null for dependent-only appointments, which have no patient record. */
+  patientId: string | null;
   patientName: string;
   patientCpf: string;
   patientPhone: string;
@@ -86,6 +89,7 @@ function maskCpf(value: string): string {
 export default function Consultations() {
   const dialog = useDialog();
   const toast = useToast();
+  const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<
     "Todas" | "Agendadas" | "Realizadas" | "Canceladas"
   >("Todas");
@@ -103,10 +107,15 @@ export default function Consultations() {
   // Ticks the "em andamento" timer once a second while the selected
   // consultation is running (started but not yet finished).
   useEffect(() => {
-    if (!selectedConsultation?.startedAt || selectedConsultation.status === "REALIZADA") return;
+    if (
+      !selectedConsultation?.startedAt ||
+      selectedConsultation.status === "REALIZADA"
+    )
+      return;
 
     const startMs = new Date(selectedConsultation.startedAt).getTime();
-    const tick = () => setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
+    const tick = () =>
+      setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
@@ -116,18 +125,34 @@ export default function Consultations() {
     if (!selectedConsultation) return;
     setStartingConsultation(true);
     try {
-      const updated = await api(`/appointments/${selectedConsultation.id}/start`, {
-        method: "POST",
-      });
+      const updated = await api(
+        `/appointments/${selectedConsultation.id}/start`,
+        {
+          method: "POST",
+        },
+      );
       setSelectedConsultation((prev) =>
         prev ? { ...prev, startedAt: updated.startedAt } : prev,
       );
       setConsultations((prev) =>
         prev.map((c) =>
-          c.id === selectedConsultation.id ? { ...c, startedAt: updated.startedAt } : c,
+          c.id === selectedConsultation.id
+            ? { ...c, startedAt: updated.startedAt }
+            : c,
         ),
       );
       toast.success("Consulta iniciada! O tempo está sendo registrado.");
+
+      // Go to the patient record with this consultation already in edit mode,
+      // which is where notes are taken during the visit. Dependent-only
+      // appointments have no patient record, so the modal just stays open.
+      const patientId = selectedConsultation.patientId || updated.patientId;
+      if (patientId) {
+        setSelectedConsultation(null);
+        navigate(
+          `/patients/${patientId}?consulta=${selectedConsultation.id}&edit=1`,
+        );
+      }
     } catch (err) {
       const msg =
         err instanceof ApiError
@@ -147,6 +172,7 @@ export default function Consultations() {
           const dt = new Date(apt.dateTime);
           return {
             id: apt.id,
+            patientId: apt.patientId || apt.patient?.id || null,
             patientName: apt.patient?.name || apt.patientName || "Paciente",
             patientCpf: apt.patient?.cpf || "",
             patientPhone: apt.patient?.phone || "",
@@ -161,7 +187,9 @@ export default function Consultations() {
             status: mapStatus(apt),
             startedAt: apt.startedAt || null,
             durationSeconds:
-              typeof apt.durationSeconds === "number" ? apt.durationSeconds : null,
+              typeof apt.durationSeconds === "number"
+                ? apt.durationSeconds
+                : null,
           };
         },
       );
@@ -602,7 +630,8 @@ export default function Consultations() {
                 selectedConsultation.durationSeconds != null && (
                   <div className="flex items-center gap-1.5 text-sm font-medium text-slate-500">
                     <Clock className="w-4 h-4" />
-                    Duração da consulta: {formatElapsedTime(selectedConsultation.durationSeconds)}
+                    Duração da consulta:{" "}
+                    {formatElapsedTime(selectedConsultation.durationSeconds)}
                   </div>
                 )}
             </div>

@@ -27,7 +27,13 @@ interface APIAppointment {
   status: string;
   isCompleted: boolean;
   doctorId?: string;
-  patient?: { name: string; email?: string; profileImage?: string };
+  patientId?: string;
+  patient?: {
+    id?: string;
+    name: string;
+    email?: string;
+    profileImage?: string;
+  };
   doctor?: { id?: string; name?: string };
   doctorName?: string;
   visitType?: string;
@@ -47,6 +53,7 @@ function toAppointmentDetail(apt: APIAppointment): EditableAppointment {
     reason: apt.reason || "",
     doctorId: apt.doctorId || apt.doctor?.id,
     doctorName: apt.doctor?.name || apt.doctorName || "",
+    patientId: apt.patientId || apt.patient?.id,
     patientName: apt.patient?.name || "",
     patientEmail: apt.patient?.email || "",
     isCompleted: apt.isCompleted,

@@ -22,7 +22,7 @@ import {
   X,
   FileCheck,
 } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { MainLayout } from "../../components/MainLayout";
 import { Button } from "../../components/ui/Button";
 import { usePatientDetail } from "../../hooks/usePatients";
@@ -49,14 +49,15 @@ import { financialApi, type Convenio } from "../../services/financial";
 import { EXAM_CATALOG } from "../../data/exam-catalog";
 import { VACCINE_CATALOG } from "../../data/vaccine-catalog";
 import { useAuth } from "../../contexts/AuthContext";
+import { canWriteClinicalData } from "../../utils/roles";
 import { useDoctorVerification } from "../../hooks/useDoctorVerification";
-import {
-  DEMO_PATIENT_ID,
-  DEMO_DEPENDENT_ID,
-} from "../../mocks/demoPatientApi";
+import { DEMO_PATIENT_ID, DEMO_DEPENDENT_ID } from "../../mocks/demoPatientApi";
 import { generateVaccinePrescriptionPdf } from "../../utils/generate-pdf";
 import { api } from "../../services/api";
-import { AtestadoForm, type CertificateRecord } from "../Atestados/AtestadoForm";
+import {
+  AtestadoForm,
+  type CertificateRecord,
+} from "../Atestados/AtestadoForm";
 import { Snackbar } from "../../components/Snackbar";
 import {
   canEditRecord,
@@ -536,9 +537,9 @@ function getMedicationTimeSlots(frequency: string): number {
 /** Debounced remote search against the ANVISA-backed medication catalog
  * (GET /medication-catalog), for the "Nome do Medicamento" searchable select. */
 function useMedicationCatalogSearch() {
-  const [options, setOptions] = useState<
-    { value: string; label: string }[]
-  >([]);
+  const [options, setOptions] = useState<{ value: string; label: string }[]>(
+    [],
+  );
   const [loading, setLoading] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -603,9 +604,7 @@ function MedicationForm({
     initial.startDate?.split("T")[0] || "",
   );
   const [endDate, setEndDate] = useState(initial.endDate?.split("T")[0] || "");
-  const [instructions, setInstructions] = useState(
-    initial.instructions || "",
-  );
+  const [instructions, setInstructions] = useState(initial.instructions || "");
   const [active, setActive] = useState<"true" | "false">(
     initial.active ? "true" : "false",
   );
@@ -1349,9 +1348,7 @@ function ExamDetailView({
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
               Laboratório / Origem
             </p>
-            <p className="text-sm font-medium text-slate-800">
-              {exam.source}
-            </p>
+            <p className="text-sm font-medium text-slate-800">{exam.source}</p>
           </div>
         )}
         {exam.completedAt && (
@@ -2027,6 +2024,191 @@ function PrescriptionForm({
   );
 }
 
+// --- Shared consultation sub-forms (medications / exams) ---
+
+/**
+ * Repeatable medication fields, identical to the ones in `PrescriptionForm`
+ * (the standalone "Adicionar Medicamento" screen). Extracted so the create
+ * and edit consultation forms render the same inputs instead of each keeping
+ * its own copy, which is how they had already drifted apart.
+ */
+function MedicationFieldsList({
+  medications,
+  onChange,
+  onTimeChange,
+  onAdd,
+  medicationSearch,
+  idPrefix,
+}: {
+  medications: MedFormItem[];
+  onChange: (index: number, field: string, value: string | string[]) => void;
+  onTimeChange: (medIndex: number, timeIndex: number, value: string) => void;
+  onAdd: () => void;
+  medicationSearch: ReturnType<typeof useMedicationCatalogSearch>;
+  idPrefix: string;
+}) {
+  return (
+    <div className="space-y-4 pl-4 border-l-2 border-primary/20">
+      {medications.map((med, index) => (
+        <div key={index} className="space-y-3">
+          {index > 0 && <div className="h-px bg-slate-200" />}
+          <SearchableSelect
+            label="Nome do Medicamento"
+            name={`${idPrefix}-med-name-${index}`}
+            value={med.name}
+            onChange={(val) => onChange(index, "name", val)}
+            options={medicationSearch.options}
+            onSearch={medicationSearch.search}
+            loading={medicationSearch.loading}
+            placeholder="Pesquise o medicamento (base ANVISA)"
+            allowFreeText
+          />
+          <TextInput
+            label="Dosagem"
+            name={`${idPrefix}-med-dosage-${index}`}
+            value={med.dosage}
+            onChange={(val) => onChange(index, "dosage", val)}
+            placeholder="Ex: 50mg"
+          />
+          <SelectInput
+            label="Frequência"
+            name={`${idPrefix}-med-frequency-${index}`}
+            value={med.frequency}
+            onChange={(val) => onChange(index, "frequency", val)}
+            options={FREQUENCY_OPTIONS}
+          />
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+              Horários
+            </label>
+            <div className="flex flex-wrap gap-3">
+              {med.times.map((t, tIdx) => (
+                <input
+                  key={tIdx}
+                  type="time"
+                  aria-label={`Horário ${tIdx + 1}`}
+                  value={t}
+                  onChange={(e) => onTimeChange(index, tIdx, e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-900 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                />
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <DateInput
+              label="Data de Início"
+              name={`${idPrefix}-med-start-${index}`}
+              value={med.startDate}
+              onChange={(val) => onChange(index, "startDate", val)}
+            />
+            <DateInput
+              label="Data de Fim"
+              name={`${idPrefix}-med-end-${index}`}
+              value={med.endDate}
+              onChange={(val) => onChange(index, "endDate", val)}
+            />
+          </div>
+          <Textarea
+            label="Instruções"
+            name={`${idPrefix}-med-instructions-${index}`}
+            value={med.instructions}
+            onChange={(val) => onChange(index, "instructions", val)}
+            placeholder="Instruções de uso"
+            rows={2}
+          />
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={onAdd}
+        className="flex items-center gap-1 text-primary text-xs font-semibold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
+      >
+        <Plus className="w-3.5 h-3.5" />
+        Adicionar outro medicamento
+      </button>
+    </div>
+  );
+}
+
+/** Repeatable exam-name fields, mirroring `ExamRequestForm`. */
+function ExamFieldsList({
+  examNames,
+  onChange,
+  onAdd,
+  idPrefix,
+}: {
+  examNames: string[];
+  onChange: (index: number, value: string) => void;
+  onAdd: () => void;
+  idPrefix: string;
+}) {
+  const examOptions = [...EXAM_CATALOG]
+    .sort((a, b) => a.localeCompare(b, "pt-BR"))
+    .map((name) => ({ value: name, label: name }));
+
+  return (
+    <div className="space-y-4 pl-4 border-l-2 border-primary/20">
+      {examNames.map((name, index) => (
+        <SearchableSelect
+          key={index}
+          label={index === 0 ? "Nome do Exame" : `Exame ${index + 1}`}
+          name={`${idPrefix}-exam-${index}`}
+          value={name}
+          onChange={(val) => onChange(index, val)}
+          options={examOptions}
+          placeholder="Pesquise ou digite o nome do exame"
+          allowFreeText
+        />
+      ))}
+      <button
+        type="button"
+        onClick={onAdd}
+        className="flex items-center gap-1 text-primary text-xs font-semibold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
+      >
+        <Plus className="w-3.5 h-3.5" />
+        Adicionar outro exame
+      </button>
+    </div>
+  );
+}
+
+/** Blank medication row — the shape both consultation forms start from. */
+function emptyMedication(): MedFormItem {
+  return {
+    name: "",
+    dosage: "",
+    frequency: "once_daily",
+    times: ["08:00"],
+    startDate: "",
+    endDate: "",
+    instructions: "",
+  };
+}
+
+/**
+ * Section heading that separates the clinical fields a doctor fills in
+ * during/after the visit from the scheduling fields above them.
+ */
+function ClinicalSectionDivider() {
+  return (
+    <div className="pt-2">
+      <div className="h-px bg-slate-200" />
+      <div className="flex items-start gap-2 mt-5">
+        <Stethoscope className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+        <div>
+          <h4 className="text-sm font-bold text-slate-900">
+            Dados clínicos da consulta
+          </h4>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Preenchido pelo médico durante o atendimento. Marque “Consulta
+            finalizada” ao concluir.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // --- Consulta Form ---
 
 function ConsultaForm({
@@ -2040,6 +2222,9 @@ function ConsultaForm({
   onSaved: () => void;
   variant?: "modal" | "inline";
 }) {
+  const { user } = useAuth();
+  // Secretaries can schedule but never author clinical content.
+  const showClinicalSection = canWriteClinicalData(user);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [sintomas, setSintomas] = useState("");
@@ -2071,13 +2256,6 @@ function ConsultaForm({
   ]);
   const [examNames, setExamNames] = useState<string[]>([""]);
   const [submissionErrors, setSubmissionErrors] = useState<string[]>([]);
-
-  const examOptions = [...EXAM_CATALOG]
-    .sort((a, b) => a.localeCompare(b, "pt-BR"))
-    .map((name) => ({
-      value: name,
-      label: name,
-    }));
 
   function handleMedicationChange(
     index: number,
@@ -2125,9 +2303,16 @@ function ConsultaForm({
         body: {
           date: dateTime,
           symptoms: sintomas || undefined,
-          diagnosis: finalizada ? diagnostico || undefined : undefined,
-          prescription: finalizada ? orientações || undefined : undefined,
-          completed: finalizada,
+          // Clinical notes are saved regardless of the completion flag — the
+          // doctor writes them during the visit and only ticks "finalizada"
+          // at the end, so gating them here would discard the notes.
+          ...(showClinicalSection
+            ? {
+                diagnosis: diagnostico || undefined,
+                prescription: orientações || undefined,
+                completed: finalizada,
+              }
+            : {}),
           visitType,
           paymentType,
           convenioId: paymentType === "convenio" ? convenioId : undefined,
@@ -2137,19 +2322,27 @@ function ConsultaForm({
       const appointmentId = consultation.id;
       const errors: string[] = [];
 
-      // Create linked medications
-      if (addMedication) {
-        for (const med of medications) {
-          if (!med.name.trim()) continue;
+      // Create linked medications. Uses POST /medications (not the
+      // /patients/:id/medications shortcut) because only that payload carries
+      // `times` and `endDate` — the form renders both fields, so the shortcut
+      // was silently dropping them.
+      if (showClinicalSection && addMedication) {
+        const validMeds = medications.filter(
+          (m) => m.name.trim() && m.dosage.trim() && m.startDate,
+        );
+        for (const med of validMeds) {
           try {
-            await api(`/patients/${patientId}/medications`, {
+            await api("/medications", {
               method: "POST",
               body: {
-                name: med.name,
-                dosage: med.dosage,
+                name: med.name.trim(),
+                dosage: med.dosage.trim(),
                 frequency: med.frequency,
-                startDate: date,
-                notes: med.instructions || undefined,
+                times: med.times.length > 0 ? med.times : undefined,
+                startDate: med.startDate,
+                endDate: med.endDate || undefined,
+                instructions: med.instructions.trim() || undefined,
+                patientId,
                 appointmentId,
               },
             });
@@ -2160,14 +2353,14 @@ function ConsultaForm({
       }
 
       // Create linked exams
-      if (addExam) {
+      if (showClinicalSection && addExam) {
         for (const examName of examNames) {
           if (!examName.trim()) continue;
           try {
             await api(`/exams`, {
               method: "POST",
               body: {
-                name: examName,
+                name: examName.trim(),
                 type: "other",
                 patientId,
                 appointmentId,
@@ -2291,20 +2484,10 @@ function ConsultaForm({
         rows={3}
       />
 
-      <label className="flex items-center gap-3 cursor-pointer select-none">
-        <input
-          type="checkbox"
-          checked={finalizada}
-          onChange={(e) => setFinalizada(e.target.checked)}
-          className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/30 cursor-pointer accent-primary"
-        />
-        <span className="text-sm font-medium text-slate-700">
-          Consulta finalizada
-        </span>
-      </label>
-
-      {finalizada && (
+      {showClinicalSection && (
         <>
+          <ClinicalSectionDivider />
+
           <Textarea
             label="Diagnóstico"
             name="consulta-diagnostico"
@@ -2322,182 +2505,59 @@ function ConsultaForm({
             rows={3}
           />
 
-          <label className="flex items-center gap-3 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={addMedication}
-              onChange={(e) => {
-                setAddMedication(e.target.checked);
-                if (!e.target.checked) {
-                  setMedications([
-                    {
-                      name: "",
-                      dosage: "",
-                      frequency: "once_daily",
-                      times: ["08:00"],
-                      startDate: "",
-                      endDate: "",
-                      instructions: "",
-                    },
-                  ]);
-                }
-              }}
-              className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/30 cursor-pointer accent-primary"
+          {addMedication ? (
+            <MedicationFieldsList
+              medications={medications}
+              onChange={handleMedicationChange}
+              onTimeChange={handleMedTimeChange}
+              onAdd={() => setMedications([...medications, emptyMedication()])}
+              medicationSearch={medicationSearch}
+              idPrefix="consulta"
             />
-            <span className="text-sm font-medium text-slate-700">
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              icon={<Plus className="w-3.5 h-3.5" />}
+              onClick={() => setAddMedication(true)}
+            >
               Adicionar medicamento
-            </span>
-          </label>
-
-          {addMedication && (
-            <div className="space-y-4 pl-4 border-l-2 border-primary/20">
-              {medications.map((med, index) => (
-                <div key={index} className="space-y-3">
-                  {index > 0 && <div className="h-px bg-slate-200" />}
-                  <SearchableSelect
-                    label="Nome do Medicamento"
-                    name={`med-name-${index}`}
-                    value={med.name}
-                    onChange={(val) =>
-                      handleMedicationChange(index, "name", val)
-                    }
-                    options={medicationSearch.options}
-                    onSearch={medicationSearch.search}
-                    loading={medicationSearch.loading}
-                    placeholder="Pesquise o medicamento (base ANVISA)"
-                    allowFreeText
-                  />
-                  <TextInput
-                    label="Dosagem"
-                    name={`med-dosage-${index}`}
-                    value={med.dosage}
-                    onChange={(val) =>
-                      handleMedicationChange(index, "dosage", val)
-                    }
-                    placeholder="Ex: 50mg"
-                  />
-                  <SelectInput
-                    label="Frequência"
-                    name={`med-frequency-${index}`}
-                    value={med.frequency}
-                    onChange={(val) =>
-                      handleMedicationChange(index, "frequency", val)
-                    }
-                    options={FREQUENCY_OPTIONS}
-                  />
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
-                      Horários
-                    </label>
-                    <div className="flex flex-wrap gap-3">
-                      {med.times.map((t, tIdx) => (
-                        <input
-                          key={tIdx}
-                          type="time"
-                          value={t}
-                          onChange={(e) =>
-                            handleMedTimeChange(index, tIdx, e.target.value)
-                          }
-                          className="bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-900 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <DateInput
-                      label="Data de Início"
-                      name={`med-start-${index}`}
-                      value={med.startDate}
-                      onChange={(val) =>
-                        handleMedicationChange(index, "startDate", val)
-                      }
-                    />
-                    <DateInput
-                      label="Data de Fim"
-                      name={`med-end-${index}`}
-                      value={med.endDate}
-                      onChange={(val) =>
-                        handleMedicationChange(index, "endDate", val)
-                      }
-                    />
-                  </div>
-                  <Textarea
-                    label="Instruções"
-                    name={`med-instructions-${index}`}
-                    value={med.instructions}
-                    onChange={(val) =>
-                      handleMedicationChange(index, "instructions", val)
-                    }
-                    placeholder="Instruções de uso"
-                    rows={2}
-                  />
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() =>
-                  setMedications([
-                    ...medications,
-                    {
-                      name: "",
-                      dosage: "",
-                      frequency: "once_daily",
-                      times: ["08:00"],
-                      startDate: "",
-                      endDate: "",
-                      instructions: "",
-                    },
-                  ])
-                }
-                className="flex items-center gap-1 text-primary text-xs font-semibold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Adicionar outro medicamento
-              </button>
-            </div>
+            </Button>
           )}
 
-          <label className="flex items-center gap-3 cursor-pointer select-none">
+          {addExam ? (
+            <ExamFieldsList
+              examNames={examNames}
+              onChange={handleExamChange}
+              onAdd={() => setExamNames([...examNames, ""])}
+              idPrefix="consulta"
+            />
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              icon={<Plus className="w-3.5 h-3.5" />}
+              onClick={() => setAddExam(true)}
+            >
+              Adicionar exame
+            </Button>
+          )}
+
+          {/* Moved to the end: this flag now only signals completion, it no
+              longer gates the visibility of the clinical fields above. */}
+          <label className="flex items-center gap-3 cursor-pointer select-none pt-2">
             <input
               type="checkbox"
-              checked={addExam}
-              onChange={(e) => {
-                setAddExam(e.target.checked);
-                if (!e.target.checked) {
-                  setExamNames([""]);
-                }
-              }}
+              checked={finalizada}
+              onChange={(e) => setFinalizada(e.target.checked)}
               className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/30 cursor-pointer accent-primary"
             />
             <span className="text-sm font-medium text-slate-700">
-              Adicionar exame
+              Consulta finalizada
             </span>
           </label>
-
-          {addExam && (
-            <div className="space-y-4 pl-4 border-l-2 border-primary/20">
-              {examNames.map((name, index) => (
-                <SearchableSelect
-                  key={index}
-                  label={index === 0 ? "Nome do Exame" : `Exame ${index + 1}`}
-                  name={`consulta-exam-${index}`}
-                  value={name}
-                  onChange={(val) => handleExamChange(index, val)}
-                  options={examOptions}
-                  placeholder="Pesquise ou digite o nome do exame"
-                  allowFreeText
-                />
-              ))}
-              <button
-                type="button"
-                onClick={() => setExamNames([...examNames, ""])}
-                className="flex items-center gap-1 text-primary text-xs font-semibold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Adicionar outro exame
-              </button>
-            </div>
-          )}
         </>
       )}
 
@@ -2524,6 +2584,10 @@ function EditConsultaForm({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { user } = useAuth();
+  // Secretaries schedule appointments but never author clinical content, so
+  // the whole clinical block is absent for them (not merely disabled).
+  const showClinicalSection = canWriteClinicalData(user);
   const dateObj = new Date(consultation.date);
   const [date, setDate] = useState(dateObj.toISOString().split("T")[0]);
   const [time, setTime] = useState(dateObj.toTimeString().slice(0, 5));
@@ -2545,9 +2609,53 @@ function EditConsultaForm({
   const convenios = useActiveConvenios();
   const [saving, setSaving] = useState(false);
 
+  // Medications / exams prescribed during this visit. Both start collapsed and
+  // are created linked to the appointment on submit.
+  const medicationSearch = useMedicationCatalogSearch();
+  const [addMedication, setAddMedication] = useState(false);
+  const [addExam, setAddExam] = useState(false);
+  const [medications, setMedications] = useState<MedFormItem[]>([
+    emptyMedication(),
+  ]);
+  const [examNames, setExamNames] = useState<string[]>([""]);
+  const [submissionErrors, setSubmissionErrors] = useState<string[]>([]);
+
+  function handleMedicationChange(
+    index: number,
+    field: string,
+    value: string | string[],
+  ) {
+    const updated = [...medications];
+    updated[index] = { ...updated[index], [field]: value };
+    if (field === "frequency" && typeof value === "string") {
+      const count = getTimeSlotsCount(value);
+      updated[index].times = generateDistributedTimes(count);
+    }
+    setMedications(updated);
+  }
+
+  function handleMedTimeChange(
+    medIndex: number,
+    timeIndex: number,
+    value: string,
+  ) {
+    const updated = [...medications];
+    const times = [...updated[medIndex].times];
+    times[timeIndex] = value;
+    updated[medIndex] = { ...updated[medIndex], times };
+    setMedications(updated);
+  }
+
+  function handleExamChange(index: number, value: string) {
+    const updated = [...examNames];
+    updated[index] = value;
+    setExamNames(updated);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    setSubmissionErrors([]);
     try {
       const dateTime = time ? `${date}T${time}:00` : `${date}T00:00:00`;
       await api(`/patients/${patientId}/consultations/${consultation.id}`, {
@@ -2555,14 +2663,80 @@ function EditConsultaForm({
         body: {
           date: dateTime,
           symptoms: sintomas || undefined,
-          diagnosis: finalizada ? diagnostico || undefined : undefined,
-          prescription: finalizada ? orientações || undefined : undefined,
-          completed: finalizada,
+          // Saved regardless of the completion flag: the doctor takes notes
+          // throughout the visit and only ticks "finalizada" at the end.
+          // Omitted entirely for secretaries — sending empty strings would
+          // wipe the doctor's notes, since the backend treats `undefined` as
+          // "leave as is" but `""` as a real value.
+          ...(showClinicalSection
+            ? {
+                diagnosis: diagnostico || undefined,
+                prescription: orientações || undefined,
+                completed: finalizada,
+              }
+            : {}),
           visitType,
           paymentType,
           convenioId: paymentType === "convenio" ? convenioId : undefined,
         },
       });
+
+      const errors: string[] = [];
+
+      if (showClinicalSection && addMedication) {
+        // Same required fields as the standalone prescription screen.
+        const validMeds = medications.filter(
+          (m) => m.name.trim() && m.dosage.trim() && m.startDate,
+        );
+        for (const med of validMeds) {
+          try {
+            await api("/medications", {
+              method: "POST",
+              body: {
+                name: med.name.trim(),
+                dosage: med.dosage.trim(),
+                frequency: med.frequency,
+                times: med.times.length > 0 ? med.times : undefined,
+                startDate: med.startDate,
+                endDate: med.endDate || undefined,
+                instructions: med.instructions.trim() || undefined,
+                patientId,
+                appointmentId: consultation.id,
+              },
+            });
+          } catch {
+            errors.push(`Medicamento "${med.name}"`);
+          }
+        }
+      }
+
+      if (showClinicalSection && addExam) {
+        const validExams = examNames.filter((n) => n.trim());
+        for (const examName of validExams) {
+          try {
+            await api("/exams", {
+              method: "POST",
+              body: {
+                name: examName.trim(),
+                type: "other",
+                patientId,
+                appointmentId: consultation.id,
+                lockedByDoctor: true,
+              },
+            });
+          } catch {
+            errors.push(`Exame "${examName}"`);
+          }
+        }
+      }
+
+      if (errors.length > 0) {
+        // The consultation itself saved — surface only what failed so the
+        // doctor doesn't resubmit the whole form and duplicate it.
+        setSubmissionErrors(errors);
+        return;
+      }
+
       onSaved();
       onClose();
     } catch (err) {
@@ -2647,20 +2821,10 @@ function EditConsultaForm({
         rows={3}
       />
 
-      <label className="flex items-center gap-3 cursor-pointer select-none">
-        <input
-          type="checkbox"
-          checked={finalizada}
-          onChange={(e) => setFinalizada(e.target.checked)}
-          className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/30 cursor-pointer accent-primary"
-        />
-        <span className="text-sm font-medium text-slate-700">
-          Consulta finalizada
-        </span>
-      </label>
-
-      {finalizada && (
+      {showClinicalSection && (
         <>
+          <ClinicalSectionDivider />
+
           <Textarea
             label="Diagnóstico"
             name="edit-consulta-diagnostico"
@@ -2677,7 +2841,74 @@ function EditConsultaForm({
             placeholder="Orientações e recomendações ao paciente"
             rows={3}
           />
+
+          {addMedication ? (
+            <MedicationFieldsList
+              medications={medications}
+              onChange={handleMedicationChange}
+              onTimeChange={handleMedTimeChange}
+              onAdd={() => setMedications([...medications, emptyMedication()])}
+              medicationSearch={medicationSearch}
+              idPrefix="edit-consulta"
+            />
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              icon={<Plus className="w-3.5 h-3.5" />}
+              onClick={() => setAddMedication(true)}
+            >
+              Adicionar medicamento
+            </Button>
+          )}
+
+          {addExam ? (
+            <ExamFieldsList
+              examNames={examNames}
+              onChange={handleExamChange}
+              onAdd={() => setExamNames([...examNames, ""])}
+              idPrefix="edit-consulta"
+            />
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              icon={<Plus className="w-3.5 h-3.5" />}
+              onClick={() => setAddExam(true)}
+            >
+              Adicionar exame
+            </Button>
+          )}
+
+          {/* Completion flag lives at the end now: it marks the visit as done
+              and no longer controls whether the clinical fields render. */}
+          <label className="flex items-center gap-3 cursor-pointer select-none pt-2">
+            <input
+              type="checkbox"
+              checked={finalizada}
+              onChange={(e) => setFinalizada(e.target.checked)}
+              className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/30 cursor-pointer accent-primary"
+            />
+            <span className="text-sm font-medium text-slate-700">
+              Consulta finalizada
+            </span>
+          </label>
         </>
+      )}
+
+      {submissionErrors.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm">
+          <p className="font-semibold">
+            A consulta foi salva, mas alguns itens falharam:
+          </p>
+          <ul className="list-disc list-inside mt-1">
+            {submissionErrors.map((err) => (
+              <li key={err}>{err}</li>
+            ))}
+          </ul>
+        </div>
       )}
 
       <FormActions
@@ -2697,14 +2928,17 @@ function ConsultaDetailView({
   patientId,
   onClose,
   onSaved,
+  startInEditMode = false,
 }: {
   consultation: Appointment;
   patientId: string;
   onClose: () => void;
   onSaved: () => void;
+  /** Opens directly in edit mode (used by the "Iniciar Consulta" deep link). */
+  startInEditMode?: boolean;
 }) {
   const { user } = useAuth();
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(startInEditMode);
   const [resending, setResending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
@@ -4839,7 +5073,9 @@ function AtestadoDetailView({
             Dias de Afastamento
           </p>
           <p className="text-sm font-semibold text-slate-800">
-            {certificate.daysOff != null ? `${certificate.daysOff} dia(s)` : "—"}
+            {certificate.daysOff != null
+              ? `${certificate.daysOff} dia(s)`
+              : "—"}
           </p>
         </div>
         <div>
@@ -5652,6 +5888,7 @@ function VaccineDetailView({
 export default function PatientDetail() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { patient, loading, error, refetch } = usePatientDetail(id);
   const [activeTab, setActiveTab] = useState<
     | "consultas"
@@ -5670,8 +5907,15 @@ export default function PatientDetail() {
   const [editingConsulta, setEditingConsulta] = useState<Appointment | null>(
     null,
   );
-  const [viewingMedication, setViewingMedication] =
-    useState<Medication | null>(null);
+  /**
+   * Set when arriving from "Iniciar Consulta" (`?consulta=<id>&edit=1`): the
+   * consultation opens straight in edit mode so the doctor can start taking
+   * notes without an extra click.
+   */
+  const [autoEditConsulta, setAutoEditConsulta] = useState(false);
+  const [viewingMedication, setViewingMedication] = useState<Medication | null>(
+    null,
+  );
   const [viewingExam, setViewingExam] = useState<Exam | null>(null);
   const [showEditPatientModal, setShowEditPatientModal] = useState(false);
   const { user } = useAuth();
@@ -5684,6 +5928,27 @@ export default function PatientDetail() {
   useEffect(() => {
     setActiveTab("consultas");
   }, [id]);
+
+  // Deep link from "Iniciar Consulta": open the given consultation, already in
+  // edit mode. The params are consumed once (replaced in history) so a later
+  // "Voltar para Consultas" doesn't bounce the doctor straight back in.
+  const consultaParam = searchParams.get("consulta");
+  const editParam = searchParams.get("edit");
+  useEffect(() => {
+    if (!consultaParam || !patient) return;
+
+    const target = patient.appointments?.find((a) => a.id === consultaParam);
+    if (!target) return;
+
+    setActiveTab("consultas");
+    setEditingConsulta(target);
+    setAutoEditConsulta(editParam === "1");
+
+    const next = new URLSearchParams(searchParams);
+    next.delete("consulta");
+    next.delete("edit");
+    setSearchParams(next, { replace: true });
+  }, [consultaParam, editParam, patient, searchParams, setSearchParams]);
 
   // Doctors pending verification can only reach the fictitious demo patient
   // and its one example dependent (fully mocked on the front, see
@@ -5865,9 +6130,14 @@ export default function PatientDetail() {
                 <ConsultaDetailView
                   consultation={editingConsulta}
                   patientId={patient.id}
-                  onClose={() => setEditingConsulta(null)}
+                  startInEditMode={autoEditConsulta}
+                  onClose={() => {
+                    setAutoEditConsulta(false);
+                    setEditingConsulta(null);
+                  }}
                   onSaved={() => {
                     refetch();
+                    setAutoEditConsulta(false);
                     setEditingConsulta(null);
                   }}
                 />
@@ -6048,7 +6318,10 @@ export default function PatientDetail() {
           </div>
 
           <div style={{ display: activeTab === "vacinas" ? "block" : "none" }}>
-            <VaccinesSection patientId={patient.id} patientName={patient.name} />
+            <VaccinesSection
+              patientId={patient.id}
+              patientName={patient.name}
+            />
           </div>
 
           <div

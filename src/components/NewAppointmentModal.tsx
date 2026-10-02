@@ -9,6 +9,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/Button";
 import { SegmentedToggle } from "./ui/SegmentedToggle";
 import { SearchableSelect } from "./ui/SearchableSelect";
@@ -33,6 +34,7 @@ export interface EditableAppointment {
   reason?: string;
   doctorId?: string;
   doctorName?: string;
+  patientId?: string;
   patientName?: string;
   patientEmail?: string;
   isCompleted?: boolean;
@@ -86,6 +88,7 @@ export function NewAppointmentModal({
   onCancelled,
 }: NewAppointmentModalProps) {
   const toast = useToast();
+  const navigate = useNavigate();
 
   // Existing appointment → starts read-only; "Editar" unlocks the same fields.
   const isExisting = !!appointment;
@@ -95,8 +98,11 @@ export function NewAppointmentModal({
   const [cancelling, setCancelling] = useState(false);
 
   // Consultation timer (clinic reporting: revenue vs. time spent)
-  const [consultationStartedAt, setConsultationStartedAt] = useState<string | null>(null);
-  const [consultationDurationSeconds, setConsultationDurationSeconds] = useState<number | null>(null);
+  const [consultationStartedAt, setConsultationStartedAt] = useState<
+    string | null
+  >(null);
+  const [consultationDurationSeconds, setConsultationDurationSeconds] =
+    useState<number | null>(null);
   const [startingConsultation, setStartingConsultation] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
@@ -237,7 +243,9 @@ export function NewAppointmentModal({
     setConvenioName(appointment.convenioName || "");
     setConsultationStartedAt(appointment.startedAt || null);
     setConsultationDurationSeconds(
-      typeof appointment.durationSeconds === "number" ? appointment.durationSeconds : null,
+      typeof appointment.durationSeconds === "number"
+        ? appointment.durationSeconds
+        : null,
     );
     if (!Number.isNaN(dt.getTime())) {
       setDate(
@@ -262,7 +270,8 @@ export function NewAppointmentModal({
     if (!consultationStartedAt || appointment?.isCompleted) return;
 
     const startMs = new Date(consultationStartedAt).getTime();
-    const tick = () => setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
+    const tick = () =>
+      setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
@@ -277,6 +286,16 @@ export function NewAppointmentModal({
       });
       setConsultationStartedAt(updated.startedAt);
       toast.success("Consulta iniciada! O tempo está sendo registrado.");
+
+      // Take the doctor straight to the patient record, with this
+      // consultation already open in edit mode — that's where notes are
+      // taken during the visit. Without a patient id (e.g. a dependent-only
+      // appointment) the modal just stays open with the timer running.
+      const patientId = appointment.patientId || updated.patientId;
+      if (patientId) {
+        onClose();
+        navigate(`/patients/${patientId}?consulta=${appointment.id}&edit=1`);
+      }
     } catch (err) {
       const msg =
         err instanceof ApiError
@@ -875,7 +894,10 @@ export function NewAppointmentModal({
                     name="convenioId"
                     value={convenioId}
                     onChange={setConvenioId}
-                    options={convenios.map((c) => ({ value: c.id, label: c.name }))}
+                    options={convenios.map((c) => ({
+                      value: c.id,
+                      label: c.name,
+                    }))}
                     placeholder="Selecione o convênio"
                     allowFreeText={false}
                   />
@@ -987,12 +1009,14 @@ export function NewAppointmentModal({
                       Consulta em andamento: {formatElapsedTime(elapsedSeconds)}
                     </span>
                   )}
-                  {appointment?.isCompleted && consultationDurationSeconds != null && (
-                    <span className="mr-auto flex items-center gap-1.5 text-sm font-medium text-slate-500">
-                      <Clock size={16} />
-                      Duração da consulta: {formatElapsedTime(consultationDurationSeconds)}
-                    </span>
-                  )}
+                  {appointment?.isCompleted &&
+                    consultationDurationSeconds != null && (
+                      <span className="mr-auto flex items-center gap-1.5 text-sm font-medium text-slate-500">
+                        <Clock size={16} />
+                        Duração da consulta:{" "}
+                        {formatElapsedTime(consultationDurationSeconds)}
+                      </span>
+                    )}
                   {!consultationStartedAt && !appointment?.isCompleted && (
                     <Button
                       variant="success"
