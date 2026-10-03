@@ -4,25 +4,49 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, it, expect, vi } from "vitest";
 import { Sidebar } from "../../components/Sidebar";
 
-// Mock motion/react to render plain divs
-vi.mock("motion/react", () => ({
-  motion: {
-    div: ({
-      children,
-      ...props
-    }: {
-      children?: React.ReactNode;
-      [key: string]: unknown;
-    }) => React.createElement("div", props, children),
-    button: ({
-      children,
-      ...props
-    }: {
-      children?: React.ReactNode;
-      [key: string]: unknown;
-    }) => React.createElement("button", props, children),
-  },
-}));
+// Mock motion/react to render plain elements. A Proxy covers every tag the
+// tree happens to use, and motion-only props are stripped so React doesn't
+// warn about unknown DOM attributes (e.g. `whileHover`).
+vi.mock("motion/react", () => {
+  const ANIMATION_PROPS = new Set([
+    "initial",
+    "animate",
+    "exit",
+    "variants",
+    "transition",
+    "whileHover",
+    "whileTap",
+    "whileInView",
+    "layout",
+    "layoutId",
+    "viewport",
+  ]);
+
+  const motion = new Proxy(
+    {},
+    {
+      get:
+        (_target, tag: string) =>
+        ({
+          children,
+          ...props
+        }: {
+          children?: React.ReactNode;
+          [key: string]: unknown;
+        }) => {
+          const domProps = Object.fromEntries(
+            Object.entries(props).filter(([key]) => !ANIMATION_PROPS.has(key)),
+          );
+          return React.createElement(tag, domProps, children);
+        },
+    },
+  );
+
+  return {
+    motion,
+    AnimatePresence: ({ children }: { children?: React.ReactNode }) => children,
+  };
+});
 
 // Mock lucide-react - use importOriginal to get all exports and override with mock icons
 vi.mock("lucide-react", async (importOriginal) => {

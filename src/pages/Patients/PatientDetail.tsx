@@ -21,10 +21,15 @@ import {
   Download,
   X,
   FileCheck,
+  Clock,
+  ScrollText,
+  Paperclip,
 } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { MainLayout } from "../../components/MainLayout";
 import { Button } from "../../components/ui/Button";
+import { useToast } from "../../contexts/ToastContext";
+import { formatElapsedTime } from "../../utils/format-duration";
 import { usePatientDetail } from "../../hooks/usePatients";
 import type {
   PatientFromAPI,
@@ -54,11 +59,21 @@ import { canWriteClinicalData } from "../../utils/roles";
 import { useDoctorVerification } from "../../hooks/useDoctorVerification";
 import { DEMO_PATIENT_ID, DEMO_DEPENDENT_ID } from "../../mocks/demoPatientApi";
 import { generateVaccinePrescriptionPdf } from "../../utils/generate-pdf";
-import { api } from "../../services/api";
+import { api, ApiError } from "../../services/api";
+import { PrescriptionDocument } from "./PrescriptionDocument";
+import type { PrescriptionItemInput } from "../../services/prescriptions";
 import {
   AtestadoForm,
   type CertificateRecord,
 } from "../Atestados/AtestadoForm";
+import { LaudoForm } from "../Laudos/LaudoForm";
+import { LaudoDocument } from "../Laudos/LaudoDocument";
+import { StatusBadge as LaudoStatusBadge } from "../Laudos/StatusBadge";
+import {
+  reportsApi,
+  reportTypeLabel,
+  type Report as LaudoRecord,
+} from "../../services/reports";
 import { Snackbar } from "../../components/Snackbar";
 import {
   canEditRecord,
@@ -1768,6 +1783,9 @@ function PrescriptionForm({
   const [submissionErrors, setSubmissionErrors] = useState<string[]>([]);
   const [readingAttachment, setReadingAttachment] = useState(false);
   const [readingError, setReadingError] = useState(false);
+  const [prescriptionItems, setPrescriptionItems] = useState<
+    PrescriptionItemInput[] | null
+  >(null);
 
   function updateMed(
     index: number,
@@ -1881,9 +1899,37 @@ function PrescriptionForm({
       setSubmissionErrors(errors);
     } else {
       onSaved();
-      onClose();
+      // Instead of closing right away, offer to bundle what was just saved
+      // into a formal prescription document (PDF) — "Visualiza a receita"
+      // step. Closing (without generating) is still one click away.
+      const frequencyLabel = (value: string) =>
+        FREQUENCY_OPTIONS.find((f) => f.value === value)?.label || value;
+      const formatBr = (isoDate: string) =>
+        isoDate ? isoDate.split("-").reverse().join("/") : "";
+
+      setPrescriptionItems(
+        validMeds.map((med) => ({
+          name: med.name.trim(),
+          posology: `${med.dosage.trim()} — ${frequencyLabel(med.frequency)}`,
+          treatmentDuration: med.endDate
+            ? `${formatBr(med.startDate)} a ${formatBr(med.endDate)}`
+            : "",
+        })),
+      );
     }
     setSaving(false);
+  }
+
+  if (prescriptionItems) {
+    return (
+      <div className={variant === "inline" ? "" : "p-8 pt-0"}>
+        <PrescriptionDocument
+          patientId={patientId}
+          items={prescriptionItems}
+          onClose={onClose}
+        />
+      </div>
+    );
   }
 
   return (
@@ -3012,7 +3058,6 @@ function EditConsultaForm({
               Adicionar exame
             </Button>
           )}
-
         </>
       )}
 
@@ -3098,24 +3143,33 @@ function EditConsultaForm({
 function ConsultaDetailView({
   consultation,
   patientId,
+  patientName,
   onClose,
   onSaved,
   startInEditMode = false,
 }: {
   consultation: Appointment;
   patientId: string;
+  patientName: string;
   onClose: () => void;
   onSaved: () => void;
   /** Opens directly in edit mode (used by the "Iniciar Consulta" deep link). */
   startInEditMode?: boolean;
 }) {
   const { user } = useAuth();
+  const toast = useToast();
+  const { startConsultation: setGlobalActiveConsultation } =
+    useActiveConsultation();
   const [editing, setEditing] = useState(startInEditMode);
   const [resending, setResending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [startedAt, setStartedAt] = useState(consultation.startedAt || null);
+  const [startingConsultation, setStartingConsultation] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const isOwner = user?.userId === consultation.doctorId;
   const isRejected = consultation.status === "rejected";
+  const isCompleted = consultation.status === "completed";
   const dateObj = new Date(consultation.date);
   const formattedDate = dateObj.toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -3154,6 +3208,45 @@ function ConsultaDetailView({
     }
   }
 
+  // Ticks the "em andamento" timer once a second while this consultation is
+  // running (started but not yet finished).
+  useEffect(() => {
+    if (!startedAt || isCompleted) return;
+
+    const startMs = new Date(startedAt).getTime();
+    const tick = () =>
+      setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [startedAt, isCompleted]);
+
+  async function handleStartConsultation() {
+    setStartingConsultation(true);
+    try {
+      const updated = await api(`/appointments/${consultation.id}/start`, {
+        method: "POST",
+      });
+      setStartedAt(updated.startedAt);
+      setGlobalActiveConsultation({
+        appointmentId: consultation.id,
+        patientId,
+        patientName,
+        dateTime: consultation.date,
+        startedAt: updated.startedAt,
+      });
+      toast.success("Consulta iniciada! O tempo está sendo registrado.");
+    } catch (err) {
+      const msg =
+        err instanceof ApiError
+          ? err.data?.message || "Erro ao iniciar a consulta."
+          : "Erro ao iniciar a consulta.";
+      toast.error(String(msg));
+    } finally {
+      setStartingConsultation(false);
+    }
+  }
+
   if (editing) {
     return (
       <EditConsultaForm
@@ -3179,7 +3272,7 @@ function ConsultaDetailView({
 
       {/* Info fields */}
       <div className="space-y-5">
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-3 gap-6">
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
               Data
@@ -3195,6 +3288,33 @@ function ConsultaDetailView({
             <p className="text-sm font-medium text-slate-800">
               {formattedTime}
             </p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Status
+            </p>
+            <span
+              className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
+                consultation.status === "completed"
+                  ? "bg-green-100 text-green-700"
+                  : consultation.status === "cancelled" ||
+                      consultation.status === "rejected"
+                    ? "bg-red-100 text-red-700"
+                    : consultation.status === "pending_approval"
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-blue-100 text-primary"
+              }`}
+            >
+              {consultation.status === "completed"
+                ? "Concluído"
+                : consultation.status === "cancelled"
+                  ? "Cancelado"
+                  : consultation.status === "rejected"
+                    ? "Recusado"
+                    : consultation.status === "pending_approval"
+                      ? "Aguardando aprovação"
+                      : "Agendado"}
+            </span>
           </div>
         </div>
 
@@ -3234,34 +3354,6 @@ function ConsultaDetailView({
           </div>
         )}
 
-        <div>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-            Status
-          </p>
-          <span
-            className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
-              consultation.status === "completed"
-                ? "bg-green-100 text-green-700"
-                : consultation.status === "cancelled" ||
-                    consultation.status === "rejected"
-                  ? "bg-red-100 text-red-700"
-                  : consultation.status === "pending_approval"
-                    ? "bg-amber-100 text-amber-700"
-                    : "bg-blue-100 text-primary"
-            }`}
-          >
-            {consultation.status === "completed"
-              ? "Concluído"
-              : consultation.status === "cancelled"
-                ? "Cancelado"
-                : consultation.status === "rejected"
-                  ? "Recusado"
-                  : consultation.status === "pending_approval"
-                    ? "Aguardando aprovação"
-                    : "Agendado"}
-          </span>
-        </div>
-
         {consultation.type && (
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
@@ -3295,6 +3387,40 @@ function ConsultaDetailView({
           </div>
         )}
       </div>
+
+      {/* Consultation timer — clinic reporting (revenue vs. time spent) */}
+      {isOwner &&
+        !isCompleted &&
+        !isRejected &&
+        consultation.status !== "cancelled" && (
+          <div className="flex items-center justify-between pt-[24px] border-t border-slate-100">
+            {startedAt ? (
+              <span className="flex items-center gap-1.5 text-sm font-semibold text-green-700">
+                <Clock size={16} />
+                Consulta em andamento: {formatElapsedTime(elapsedSeconds)}
+              </span>
+            ) : (
+              <Button
+                type="button"
+                variant="success"
+                size="sm"
+                onClick={handleStartConsultation}
+                loading={startingConsultation}
+              >
+                Iniciar Consulta
+              </Button>
+            )}
+          </div>
+        )}
+      {isCompleted && consultation.durationSeconds != null && (
+        <div className="flex items-center pt-[24px] border-t border-slate-100">
+          <span className="flex items-center gap-1.5 text-sm font-medium text-slate-500">
+            <Clock size={16} />
+            Duração da consulta:{" "}
+            {formatElapsedTime(consultation.durationSeconds)}
+          </span>
+        </div>
+      )}
 
       {/* Edit button */}
       {isOwner && (
@@ -5446,6 +5572,162 @@ function AtestadosSection({ patientId }: { patientId: string }) {
   );
 }
 
+// --- Reports ("Laudos") Section ---
+
+function LaudosSection({ patientId }: { patientId: string }) {
+  const [reports, setReports] = useState<LaudoRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
+  const [viewing, setViewing] = useState<LaudoRecord | null>(null);
+  const [editing, setEditing] = useState(false);
+
+  const loadReports = useCallback(async () => {
+    try {
+      const data = await reportsApi.listForPatient(patientId);
+      setReports(Array.isArray(data) ? data : []);
+    } catch {
+      setReports([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [patientId]);
+
+  useEffect(() => {
+    loadReports();
+  }, [loadReports]);
+
+  if (loading)
+    return <div className="text-center py-8 text-slate-400">Carregando...</div>;
+
+  if (viewing) {
+    const isLocked =
+      viewing.status === "signed" || viewing.status === "canceled";
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => {
+            setViewing(null);
+            setEditing(false);
+          }}
+          className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent mb-4 p-0"
+        >
+          <ArrowLeft size={18} />
+          <span>Voltar para Laudos</span>
+        </button>
+        {editing && !isLocked ? (
+          <LaudoForm
+            patientId={patientId}
+            initial={viewing}
+            onClose={() => setEditing(false)}
+            onSaved={(updated) => {
+              loadReports();
+              setViewing(updated);
+              setEditing(false);
+            }}
+            variant="inline"
+          />
+        ) : (
+          <div className="space-y-4">
+            <LaudoDocument
+              report={viewing}
+              onBackToEdit={() => {
+                if (isLocked) {
+                  setViewing(null);
+                  return;
+                }
+                setEditing(true);
+              }}
+              onGenerated={(updated) => {
+                setViewing(updated);
+                loadReports();
+              }}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (adding) {
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => setAdding(false)}
+          className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent mb-4 p-0"
+        >
+          <ArrowLeft size={18} />
+          <span>Voltar para Laudos</span>
+        </button>
+        <LaudoForm
+          patientId={patientId}
+          onClose={() => setAdding(false)}
+          onSaved={(created) => {
+            loadReports();
+            setAdding(false);
+            // Straight to the document view, where the PDF is generated.
+            setViewing(created);
+          }}
+          variant="inline"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="font-bold text-xl font-display tracking-tight">
+          Laudos
+        </h3>
+        <Button
+          onClick={() => setAdding(true)}
+          variant="primary"
+          size="sm"
+          icon={<Plus className="w-3.5 h-3.5 cursor-pointer" />}
+        >
+          Adicionar Laudo
+        </Button>
+      </div>
+
+      {reports.length === 0 ? (
+        <div className="text-center py-8 text-slate-400">
+          <ScrollText className="w-10 h-10 mx-auto mb-3 opacity-50" />
+          <p className="font-medium">Nenhum laudo registrado</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {reports.map((report) => (
+            <div
+              key={report.id}
+              onClick={() => setViewing(report)}
+              className="group bg-white hover:bg-slate-50 rounded-2xl p-6 flex items-center gap-6 border border-slate-100 shadow-sm cursor-pointer transition-all"
+            >
+              <div className="flex-grow min-w-0">
+                <h4 className="font-bold text-lg text-slate-900 truncate">
+                  {report.title}
+                </h4>
+                <p className="text-xs text-slate-500 mt-1">
+                  {reportTypeLabel(report.reportType, report.reportTypeOther)}
+                  {" • "}
+                  {report.issueDate
+                    ? new Date(report.issueDate).toLocaleDateString("pt-BR")
+                    : new Date(report.createdAt).toLocaleDateString("pt-BR")}
+                </p>
+              </div>
+              {report.fileUrl && (
+                <Paperclip className="w-4 h-4 text-slate-400 shrink-0" />
+              )}
+              <LaudoStatusBadge status={report.status} />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // --- Dependents Section ---
 
 interface DependentItem {
@@ -6071,6 +6353,7 @@ export default function PatientDetail() {
     | "vacinas"
     | "cirurgias"
     | "atestados"
+    | "laudos"
     | "dependentes"
   >("consultas");
   const [addingConsulta, setAddingConsulta] = useState(false);
@@ -6276,6 +6559,16 @@ export default function PatientDetail() {
             </button>
             <button
               className={`shrink-0 px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
+                activeTab === "laudos"
+                  ? "bg-primary/5 text-primary"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+              onClick={() => setActiveTab("laudos")}
+            >
+              Laudos
+            </button>
+            <button
+              className={`shrink-0 px-6 py-2.5 text-sm font-semibold rounded-xl transition-all cursor-pointer border-none ${
                 activeTab === "dependentes"
                   ? "bg-primary/5 text-primary"
                   : "text-gray-500 hover:text-gray-800"
@@ -6302,6 +6595,7 @@ export default function PatientDetail() {
                 <ConsultaDetailView
                   consultation={editingConsulta}
                   patientId={patient.id}
+                  patientName={patient.name}
                   startInEditMode={autoEditConsulta}
                   onClose={() => {
                     setAutoEditConsulta(false);
@@ -6506,6 +6800,10 @@ export default function PatientDetail() {
             style={{ display: activeTab === "atestados" ? "block" : "none" }}
           >
             <AtestadosSection patientId={patient.id} />
+          </div>
+
+          <div style={{ display: activeTab === "laudos" ? "block" : "none" }}>
+            <LaudosSection patientId={patient.id} />
           </div>
 
           <div

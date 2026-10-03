@@ -10,6 +10,8 @@ const STORAGE_KEY = "hispora_active_consultation";
 
 export interface ActiveConsultationInfo {
   appointmentId: string;
+  /** Null for dependent-only appointments, which have no patient record to open. */
+  patientId: string | null;
   patientName: string;
   /** ISO datetime of the scheduled appointment (not when the timer started). */
   dateTime: string;
@@ -30,10 +32,34 @@ interface ActiveConsultationContextValue {
 const ActiveConsultationContext =
   createContext<ActiveConsultationContextValue | null>(null);
 
+/** Guards against a shape saved by an older version of this context (e.g.
+ * before `patientId` existed) — silently keeping a stale/incomplete object
+ * around would make the header banner (and its click-to-open) misbehave in
+ * ways that look like a bug instead of just stale local cache. Nothing is
+ * lost by discarding it: the real `startedAt` lives on the appointment in
+ * the backend regardless of this local display cache. */
+function isValidStored(value: unknown): value is ActiveConsultationInfo {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.appointmentId === "string" &&
+    typeof v.startedAt === "string" &&
+    typeof v.patientName === "string" &&
+    typeof v.dateTime === "string" &&
+    (v.patientId === null || typeof v.patientId === "string")
+  );
+}
+
 function readStored(): ActiveConsultationInfo | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as ActiveConsultationInfo) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!isValidStored(parsed)) {
+      localStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
+    return parsed;
   } catch {
     return null;
   }

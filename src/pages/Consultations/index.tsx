@@ -145,6 +145,7 @@ export default function Consultations() {
       );
       setGlobalActiveConsultation({
         appointmentId: selectedConsultation.id,
+        patientId: selectedConsultation.patientId || updated.patientId || null,
         patientName: selectedConsultation.patientName || "Paciente",
         dateTime: selectedConsultation.date,
         startedAt: updated.startedAt,

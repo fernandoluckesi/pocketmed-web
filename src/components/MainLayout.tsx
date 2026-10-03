@@ -106,7 +106,8 @@ export function MainLayout({ children }: MainLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { activeConsultation, elapsedSeconds, endConsultation } = useActiveConsultation();
+  const { activeConsultation, elapsedSeconds, endConsultation } =
+    useActiveConsultation();
   const dialog = useDialog();
   const [endingConsultation, setEndingConsultation] = useState(false);
 
@@ -302,7 +303,19 @@ export function MainLayout({ children }: MainLayoutProps) {
               no header padding, so it reads as an extension of it. Visible
               from any screen while a consultation's timer is running. */}
           {activeConsultation ? (
-            <div className="w-[460px] shrink-0 flex items-center gap-3 bg-green-50 border-r border-green-100 pl-8 pr-6 py-4">
+            <div
+              onClick={() => {
+                if (!activeConsultation.patientId) return;
+                navigate(
+                  `/patients/${activeConsultation.patientId}?consulta=${activeConsultation.appointmentId}&edit=1`,
+                );
+              }}
+              className={`w-[460px] shrink-0 flex items-center gap-3 bg-green-50 border-r border-green-100 pl-8 pr-6 py-4 ${
+                activeConsultation.patientId
+                  ? "cursor-pointer hover:bg-green-100 transition-colors"
+                  : ""
+              }`}
+            >
               <span className="relative flex h-2.5 w-2.5 shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-600"></span>
@@ -324,7 +337,10 @@ export function MainLayout({ children }: MainLayoutProps) {
                 type="button"
                 variant="danger-outline"
                 size="sm"
-                onClick={handleEndConsultation}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEndConsultation();
+                }}
                 loading={endingConsultation}
                 className="shrink-0 shadow-none"
               >

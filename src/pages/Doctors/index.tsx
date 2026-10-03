@@ -299,8 +299,6 @@ export default function Doctors() {
     // Parse input: try to extract CRM number and state
     // Accepts formats like "123456 SP", "123456/SP", "SP-123456", "SP 123456"
     const trimmed = term.trim();
-    let crm = "";
-    let state = "";
 
     const matchNumState = trimmed.match(
       /^(\d{1,10})\s*[\/\-\s]\s*([A-Za-z]{2})$/,
@@ -309,13 +307,13 @@ export default function Doctors() {
       /^([A-Za-z]{2})\s*[\/\-\s]\s*(\d{1,10})$/,
     );
 
-    if (matchNumState) {
-      crm = matchNumState[1];
-      state = matchNumState[2].toUpperCase();
-    } else if (matchStateNum) {
-      state = matchStateNum[1].toUpperCase();
-      crm = matchStateNum[2];
-    } else {
+    const parsed = matchNumState
+      ? { crm: matchNumState[1], state: matchNumState[2].toUpperCase() }
+      : matchStateNum
+        ? { crm: matchStateNum[2], state: matchStateNum[1].toUpperCase() }
+        : null;
+
+    if (!parsed) {
       // Try general search by name/specialty/crm
       setSearchResults(
         doctors
@@ -331,7 +329,7 @@ export default function Doctors() {
       return;
     }
 
-    if (!crm || !state) return;
+    const { crm, state } = parsed;
 
     setSearchLoading(true);
     setSearchError(null);

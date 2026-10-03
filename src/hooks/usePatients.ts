@@ -56,6 +56,11 @@ export interface Appointment {
   visitType?: string;
   paymentType?: string;
   convenioId?: string;
+  patientId?: string | null;
+  /** Consultation timer, for clinic reporting — omitted entirely for non-doctor viewers by the backend. */
+  startedAt?: string | null;
+  endedAt?: string | null;
+  durationSeconds?: number | null;
 }
 
 /** Single-line summary of the consultation's address, for compact display

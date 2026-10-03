@@ -287,8 +287,10 @@ export function NewAppointmentModal({
         method: "POST",
       });
       setConsultationStartedAt(updated.startedAt);
+      const patientIdForTimer = appointment.patientId || updated.patientId || null;
       setGlobalActiveConsultation({
         appointmentId: appointment.id,
+        patientId: patientIdForTimer,
         patientName: appointment.patientName || "Paciente",
         dateTime: appointment.dateTime,
         startedAt: updated.startedAt,

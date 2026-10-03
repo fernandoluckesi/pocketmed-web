@@ -16,6 +16,9 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",
+    "@tiptap/pm": "3.31.4",
+    "@tiptap/react": "3.31.4",
+    "@tiptap/starter-kit": "3.31.4",
     "axios": "^1.16.0",
     "formik": "^2.4.9",
     "jspdf": "^4.2.1",
