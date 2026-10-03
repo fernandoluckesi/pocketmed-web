@@ -3,7 +3,6 @@ import { useLocation, Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { ICONS } from "../constants";
 import {
-  Search,
   ShieldAlert,
   DollarSign,
   ArrowLeft,
@@ -18,10 +17,14 @@ import {
   User,
   LogOut,
   ChevronDown,
+  Clock,
 } from "lucide-react";
 import { logout } from "../services/auth";
 import { useDoctorVerification } from "../hooks/useDoctorVerification";
 import { useAuth } from "../contexts/AuthContext";
+import { useActiveConsultation } from "../contexts/ActiveConsultationContext";
+import { useDialog } from "./ui/Dialog";
+import { formatElapsedTime } from "../utils/format-duration";
 import { Button } from "../components/ui/Button";
 import { NotificationsDropdown } from "./NotificationsDropdown";
 import logoHorizontal from "../assets/logos/hispora-horizontal-primary.png";
@@ -31,6 +34,17 @@ const ROLE_LABELS: Record<string, string> = {
   admin: "Administrador(a)",
   secretary: "Secretário(a)",
 };
+
+function formatScheduled(dateTimeIso: string): string {
+  const d = new Date(dateTimeIso);
+  if (isNaN(d.getTime())) return "";
+  const date = d.toLocaleDateString("pt-BR");
+  const time = d.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${date} às ${time}`;
+}
 
 const navItems = [
   {
@@ -92,6 +106,32 @@ export function MainLayout({ children }: MainLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { activeConsultation, elapsedSeconds, endConsultation } = useActiveConsultation();
+  const dialog = useDialog();
+  const [endingConsultation, setEndingConsultation] = useState(false);
+
+  async function handleEndConsultation() {
+    if (!activeConsultation) return;
+    const confirmed = await dialog.showConfirm(
+      "Isso encerra o cronômetro da consulta e marca o atendimento como concluído. Essa ação não pode ser desfeita.",
+      "Encerrar consulta",
+    );
+    if (!confirmed) return;
+
+    setEndingConsultation(true);
+    try {
+      await api.put(`/appointments/${activeConsultation.appointmentId}`, {
+        isCompleted: true,
+      });
+      endConsultation(activeConsultation.appointmentId);
+    } catch {
+      await dialog.showError(
+        "Não foi possível encerrar a consulta. Tente novamente.",
+      );
+    } finally {
+      setEndingConsultation(false);
+    }
+  }
 
   const [avatarDropdown, setAvatarDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -257,21 +297,46 @@ export function MainLayout({ children }: MainLayoutProps) {
       {/* Main Content */}
       <main className="ml-64 flex-grow flex flex-col min-h-screen min-w-0">
         {/* Top Bar */}
-        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 flex justify-between items-center px-8 py-4">
-          {/* Left: empty spacer */}
-          <div></div>
-
-          {/* Right: Search + Actions + Profile */}
-          <div className="flex items-center gap-4">
-            <div className="relative hidden lg:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Pesquisar pacientes ou registros..."
-                className="bg-slate-100 border-none rounded-full py-2 pl-10 pr-4 w-64 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none"
-              />
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 flex justify-between items-stretch">
+          {/* Left: active consultation banner — flush against the sidebar,
+              no header padding, so it reads as an extension of it. Visible
+              from any screen while a consultation's timer is running. */}
+          {activeConsultation ? (
+            <div className="w-[460px] shrink-0 flex items-center gap-3 bg-green-50 border-r border-green-100 pl-8 pr-6 py-4">
+              <span className="relative flex h-2.5 w-2.5 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-600"></span>
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="flex items-center gap-1.5 text-sm font-bold text-green-800">
+                  <Clock size={14} className="shrink-0" />
+                  <span className="truncate">Consulta em andamento —</span>
+                  <span className="tabular-nums shrink-0">
+                    {formatElapsedTime(elapsedSeconds)}
+                  </span>
+                </p>
+                <p className="text-xs text-green-700 truncate">
+                  {activeConsultation.patientName} •{" "}
+                  {formatScheduled(activeConsultation.dateTime)}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="danger-outline"
+                size="sm"
+                onClick={handleEndConsultation}
+                loading={endingConsultation}
+                className="shrink-0 shadow-none"
+              >
+                Encerrar
+              </Button>
             </div>
+          ) : (
+            <div />
+          )}
 
+          {/* Right: Actions + Profile */}
+          <div className="flex items-center gap-4 px-8 py-4">
             <div className="flex gap-1">
               <NotificationsDropdown />
             </div>

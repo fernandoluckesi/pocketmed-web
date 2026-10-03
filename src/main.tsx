@@ -6,6 +6,7 @@ import App from "./App";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { DialogProvider } from "./components/ui/Dialog";
+import { ActiveConsultationProvider } from "./contexts/ActiveConsultationContext";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -13,7 +14,9 @@ createRoot(document.getElementById("root")!).render(
       <ToastProvider>
         <DialogProvider>
           <AuthProvider>
-            <App />
+            <ActiveConsultationProvider>
+              <App />
+            </ActiveConsultationProvider>
           </AuthProvider>
         </DialogProvider>
       </ToastProvider>

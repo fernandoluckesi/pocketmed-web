@@ -16,6 +16,7 @@ import { SearchableSelect } from "./ui/SearchableSelect";
 import { api, ApiError } from "../services/api";
 import { financialApi, type Convenio } from "../services/financial";
 import { useToast } from "../contexts/ToastContext";
+import { useActiveConsultation } from "../contexts/ActiveConsultationContext";
 import { formatElapsedTime } from "../utils/format-duration";
 import {
   emptyWeekly,
@@ -89,6 +90,7 @@ export function NewAppointmentModal({
 }: NewAppointmentModalProps) {
   const toast = useToast();
   const navigate = useNavigate();
+  const { startConsultation: setGlobalActiveConsultation } = useActiveConsultation();
 
   // Existing appointment → starts read-only; "Editar" unlocks the same fields.
   const isExisting = !!appointment;
@@ -285,6 +287,12 @@ export function NewAppointmentModal({
         method: "POST",
       });
       setConsultationStartedAt(updated.startedAt);
+      setGlobalActiveConsultation({
+        appointmentId: appointment.id,
+        patientName: appointment.patientName || "Paciente",
+        dateTime: appointment.dateTime,
+        startedAt: updated.startedAt,
+      });
       toast.success("Consulta iniciada! O tempo está sendo registrado.");
 
       // Take the doctor straight to the patient record, with this

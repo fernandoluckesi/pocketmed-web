@@ -49,6 +49,7 @@ import { financialApi, type Convenio } from "../../services/financial";
 import { EXAM_CATALOG } from "../../data/exam-catalog";
 import { VACCINE_CATALOG } from "../../data/vaccine-catalog";
 import { useAuth } from "../../contexts/AuthContext";
+import { useActiveConsultation } from "../../contexts/ActiveConsultationContext";
 import { canWriteClinicalData } from "../../utils/roles";
 import { useDoctorVerification } from "../../hooks/useDoctorVerification";
 import { DEMO_PATIENT_ID, DEMO_DEPENDENT_ID } from "../../mocks/demoPatientApi";
@@ -2676,6 +2677,7 @@ function EditConsultaForm({
   onSaved: () => void;
 }) {
   const { user } = useAuth();
+  const { endConsultation } = useActiveConsultation();
   // Secretaries schedule appointments but never author clinical content, so
   // the whole clinical block is absent for them (not merely disabled).
   const showClinicalSection = canWriteClinicalData(user);
@@ -2699,6 +2701,7 @@ function EditConsultaForm({
   const [convenioId, setConvenioId] = useState(consultation.convenioId || "");
   const convenios = useActiveConvenios();
   const [saving, setSaving] = useState(false);
+  const [showFinalizeChoice, setShowFinalizeChoice] = useState(false);
 
   // Medications / exams prescribed during this visit. Both start collapsed and
   // are created linked to the appointment on submit.
@@ -2757,8 +2760,20 @@ function EditConsultaForm({
     setExamNames(updated);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  // The form's own submit just decides whether finalization needs an
+  // explicit choice — secretaries can't finalize at all (no clinical data in
+  // their payload), so their save stays a single direct action.
+  function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (showClinicalSection) {
+      setShowFinalizeChoice(true);
+    } else {
+      performSave(finalizada);
+    }
+  }
+
+  async function performSave(finalize: boolean) {
+    setShowFinalizeChoice(false);
     setSaving(true);
     setSubmissionErrors([]);
     try {
@@ -2768,8 +2783,8 @@ function EditConsultaForm({
         body: {
           date: dateTime,
           symptoms: sintomas || undefined,
-          // Saved regardless of the completion flag: the doctor takes notes
-          // throughout the visit and only ticks "finalizada" at the end.
+          // Saved regardless of finalization: the doctor takes notes
+          // throughout the visit and only finalizes at the end.
           // Omitted entirely for secretaries — sending empty strings would
           // wipe the doctor's notes, since the backend treats `undefined` as
           // "leave as is" but `""` as a real value.
@@ -2777,7 +2792,7 @@ function EditConsultaForm({
             ? {
                 diagnosis: diagnostico || undefined,
                 prescription: orientações || undefined,
-                completed: finalizada,
+                completed: finalize,
               }
             : {}),
           visitType,
@@ -2785,6 +2800,11 @@ function EditConsultaForm({
           convenioId: paymentType === "convenio" ? convenioId : undefined,
         },
       });
+
+      if (showClinicalSection && finalize) {
+        setFinalizada(true);
+        endConsultation(consultation.id);
+      }
 
       const errors: string[] = [];
 
@@ -2860,7 +2880,7 @@ function EditConsultaForm({
   return (
     <form
       className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5"
-      onSubmit={handleSubmit}
+      onSubmit={handleFormSubmit}
     >
       <div className="grid grid-cols-2 gap-6">
         <DateInput
@@ -2993,19 +3013,6 @@ function EditConsultaForm({
             </Button>
           )}
 
-          {/* Completion flag lives at the end now: it marks the visit as done
-              and no longer controls whether the clinical fields render. */}
-          <label className="flex items-center gap-3 cursor-pointer select-none pt-2">
-            <input
-              type="checkbox"
-              checked={finalizada}
-              onChange={(e) => setFinalizada(e.target.checked)}
-              className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/30 cursor-pointer accent-primary"
-            />
-            <span className="text-sm font-medium text-slate-700">
-              Consulta finalizada
-            </span>
-          </label>
         </>
       )}
 
@@ -3028,11 +3035,60 @@ function EditConsultaForm({
       <FormActions
         onCancel={onClose}
         submitLabel={
-          submissionErrors.length > 0 ? "Tentar novamente" : "Salvar Alterações"
+          submissionErrors.length > 0
+            ? "Tentar novamente"
+            : showClinicalSection
+              ? "Finalizar e Salvar Alterações"
+              : "Salvar Alterações"
         }
         loading={saving}
         loadingLabel="Salvando..."
       />
+
+      {showFinalizeChoice && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-pointer"
+            onClick={() => setShowFinalizeChoice(false)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center">
+            <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-5">
+              <AlertTriangle className="text-amber-600" size={28} />
+            </div>
+            <h3 className="text-lg font-extrabold text-slate-900 mb-2">
+              Finalizar esta consulta?
+            </h3>
+            <p className="text-sm text-slate-600 leading-relaxed mb-6">
+              Finalizar encerra o cronômetro da consulta e marca o atendimento
+              como concluído. Se ainda não terminou o atendimento, salve sem
+              finalizar e continue depois.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => performSave(true)}
+                className="w-full bg-primary text-white py-3 rounded-xl font-bold hover:bg-primary-dark transition-colors cursor-pointer border-none"
+              >
+                Finalizar Consulta e Salvar
+              </button>
+              <button
+                type="button"
+                onClick={() => performSave(false)}
+                className="w-full bg-slate-100 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-200 transition-colors cursor-pointer border-none"
+              >
+                Apenas Salvar
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowFinalizeChoice(false)}
+                className="w-full text-slate-500 py-2 font-bold hover:text-slate-700 transition-colors cursor-pointer border-none bg-transparent"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }

@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { MainLayout } from "../../components/MainLayout";
 import { useDialog } from "../../components/ui/Dialog";
 import { useToast } from "../../contexts/ToastContext";
+import { useActiveConsultation } from "../../contexts/ActiveConsultationContext";
 import { NewAppointmentModal } from "../../components/NewAppointmentModal";
 import { api, ApiError } from "../../services/api";
 import { formatElapsedTime } from "../../utils/format-duration";
@@ -89,6 +90,7 @@ function maskCpf(value: string): string {
 export default function Consultations() {
   const dialog = useDialog();
   const toast = useToast();
+  const { startConsultation: setGlobalActiveConsultation } = useActiveConsultation();
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<
     "Todas" | "Agendadas" | "Realizadas" | "Canceladas"
@@ -141,6 +143,12 @@ export default function Consultations() {
             : c,
         ),
       );
+      setGlobalActiveConsultation({
+        appointmentId: selectedConsultation.id,
+        patientName: selectedConsultation.patientName || "Paciente",
+        dateTime: selectedConsultation.date,
+        startedAt: updated.startedAt,
+      });
       toast.success("Consulta iniciada! O tempo está sendo registrado.");
 
       // Go to the patient record with this consultation already in edit mode,
