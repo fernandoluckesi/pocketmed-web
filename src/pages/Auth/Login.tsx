@@ -6,12 +6,7 @@ import * as Yup from "yup";
 import { useAuth } from "../../contexts/AuthContext";
 import { Snackbar } from "../../components/Snackbar";
 import logoHorizontal from "../../assets/logos/hispora-horizontal-primary.png";
-import {
-  LegalModal,
-  PrivacyPolicyContent,
-  TermsOfServiceContent,
-  SecurityStandardsContent,
-} from "../Institutional/LegalModal";
+import { LegalLinks } from "../../components/LegalLinks";
 
 const loginSchema = Yup.object({
   email: Yup.string().email("E-mail inválido").required("E-mail é obrigatório"),
@@ -23,9 +18,6 @@ export default function Login() {
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [snackbar, setSnackbar] = useState({ visible: false, message: "" });
-  const [legalModal, setLegalModal] = useState<
-    "privacy" | "terms" | "security" | null
-  >(null);
 
   const formik = useFormik({
     initialValues: {
@@ -84,11 +76,7 @@ export default function Login() {
           {/* Header */}
           <header className="text-center space-y-4">
             <div className="inline-flex items-center justify-center mb-12 w-full">
-              <img
-                src={logoHorizontal}
-                alt="Hispora"
-                className="h-28 w-auto"
-              />
+              <img src={logoHorizontal} alt="Hispora" className="h-28 w-auto" />
             </div>
             <div className="space-y-2">
               <h2 className="text-3xl font-display font-bold text-slate-900 tracking-tight">
@@ -219,28 +207,10 @@ export default function Login() {
 
         {/* Bottom footer */}
         <div className="mt-auto pt-8 pb-6 text-center lg:text-left space-y-2 w-full max-w-md">
-          <div className="flex items-center gap-3 justify-center lg:justify-start text-[10px] font-semibold uppercase tracking-wider text-slate-400 whitespace-nowrap">
-            <button
-              onClick={() => setLegalModal("privacy")}
-              className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400"
-            >
-              Políticas de Privacidade
-            </button>
-            <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-            <button
-              onClick={() => setLegalModal("terms")}
-              className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400"
-            >
-              Termos de Serviço
-            </button>
-            <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-            <button
-              onClick={() => setLegalModal("security")}
-              className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400"
-            >
-              Padrões de Segurança
-            </button>
-          </div>
+          <LegalLinks
+            variant="dots"
+            className="justify-center lg:justify-start"
+          />
           <p className="text-[10px] text-slate-400">
             © {new Date().getFullYear()} Hispora Clinical Systems. Todos os
             direitos reservados.
@@ -255,28 +225,6 @@ export default function Login() {
         visible={snackbar.visible}
         onClose={() => setSnackbar({ visible: false, message: "" })}
       />
-
-      <LegalModal
-        open={legalModal === "privacy"}
-        onClose={() => setLegalModal(null)}
-        title="Política de Privacidade"
-      >
-        <PrivacyPolicyContent />
-      </LegalModal>
-      <LegalModal
-        open={legalModal === "terms"}
-        onClose={() => setLegalModal(null)}
-        title="Termos de Serviço"
-      >
-        <TermsOfServiceContent />
-      </LegalModal>
-      <LegalModal
-        open={legalModal === "security"}
-        onClose={() => setLegalModal(null)}
-        title="Padrões de Segurança"
-      >
-        <SecurityStandardsContent />
-      </LegalModal>
     </div>
   );
 }

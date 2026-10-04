@@ -18,14 +18,7 @@ import {
 } from "lucide-react";
 import logoHorizontal from "../assets/logos/hispora-horizontal-primary.png";
 import mobileImg from "../assets/images/mobile.png";
-import {
-  LegalModal,
-  PrivacyPolicyContent,
-  TermsOfServiceContent,
-  SecurityStandardsContent,
-} from "./Institutional/LegalModal";
-
-type ModalType = "privacy" | "terms" | "security" | null;
+import { LegalLinks } from "../components/LegalLinks";
 
 // --- Testimonials Carousel ---
 
@@ -143,8 +136,6 @@ function TestimonialsCarousel() {
 }
 
 export default function LandingPage() {
-  const [activeModal, setActiveModal] = useState<ModalType>(null);
-
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -444,36 +435,12 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-slate-100 py-10 bg-slate-50">
         <div className="max-w-6xl mx-auto px-6">
-          {/* Legal Links */}
-          <div className="flex flex-wrap items-center justify-center gap-8 mb-8">
-            <button
-              onClick={() => setActiveModal("privacy")}
-              className="text-xs font-bold text-slate-500 uppercase tracking-wider hover:text-primary transition-colors cursor-pointer bg-transparent border-none"
-            >
-              Políticas de Privacidade
-            </button>
-            <button
-              onClick={() => setActiveModal("terms")}
-              className="text-xs font-bold text-slate-500 uppercase tracking-wider hover:text-primary transition-colors cursor-pointer bg-transparent border-none"
-            >
-              Termos de Serviço
-            </button>
-            <button
-              onClick={() => setActiveModal("security")}
-              className="text-xs font-bold text-slate-500 uppercase tracking-wider hover:text-primary transition-colors cursor-pointer bg-transparent border-none"
-            >
-              Padrões de Segurança
-            </button>
-          </div>
+          <LegalLinks className="mb-8" />
 
           {/* Nav + Copyright */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center">
-              <img
-                src={logoHorizontal}
-                alt="Hispora"
-                className="h-14 w-auto"
-              />
+              <img src={logoHorizontal} alt="Hispora" className="h-14 w-auto" />
             </div>
 
             <p className="text-sm text-slate-400">
@@ -483,29 +450,6 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
-
-      {/* Legal Modals */}
-      <LegalModal
-        open={activeModal === "privacy"}
-        onClose={() => setActiveModal(null)}
-        title="Política de Privacidade"
-      >
-        <PrivacyPolicyContent />
-      </LegalModal>
-      <LegalModal
-        open={activeModal === "terms"}
-        onClose={() => setActiveModal(null)}
-        title="Termos de Serviço"
-      >
-        <TermsOfServiceContent />
-      </LegalModal>
-      <LegalModal
-        open={activeModal === "security"}
-        onClose={() => setActiveModal(null)}
-        title="Padrões de Segurança"
-      >
-        <SecurityStandardsContent />
-      </LegalModal>
     </div>
   );
 }

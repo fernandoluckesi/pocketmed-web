@@ -15,7 +15,7 @@ import {
   MapPin,
   Loader2,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useAuth } from "../../contexts/AuthContext";
@@ -28,12 +28,7 @@ import { CustomSelect } from "../../components/ui/CustomSelect";
 import { PasswordStrengthIndicator } from "../../components/PasswordStrengthIndicator";
 import logoHorizontal from "../../assets/logos/hispora-horizontal-primary.png";
 import api from "../../config/api";
-import {
-  LegalModal,
-  PrivacyPolicyContent,
-  TermsOfServiceContent,
-  SecurityStandardsContent,
-} from "../Institutional/LegalModal";
+import { LegalLinks } from "../../components/LegalLinks";
 import { UF_LIST } from "../../utils/uf";
 
 const SPECIALTIES = [
@@ -236,9 +231,6 @@ function ClinicSignupForm({
 }) {
   const { registerDoctor } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [legalModal, setLegalModal] = useState<
-    "privacy" | "terms" | "security" | null
-  >(null);
   const [cepLoading, setCepLoading] = useState(false);
   const [cepMessage, setCepMessage] = useState<string | null>(null);
 
@@ -871,22 +863,26 @@ function ClinicSignupForm({
               className="ml-3 text-xs text-slate-500 leading-normal"
               htmlFor="clinic-terms"
             >
+              {/* Opened in a new tab on purpose: navigating away mid-signup
+                  would discard everything already typed in the form. */}
               Eu concordo com os{" "}
-              <button
-                type="button"
-                className="text-primary font-semibold hover:underline bg-transparent border-none cursor-pointer p-0 inline"
-                onClick={() => setLegalModal("terms")}
+              <Link
+                to="/legal#termos"
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary font-semibold hover:underline"
               >
                 Termos de Serviço
-              </button>{" "}
+              </Link>{" "}
               e a{" "}
-              <button
-                type="button"
-                className="text-primary font-semibold hover:underline bg-transparent border-none cursor-pointer p-0 inline"
-                onClick={() => setLegalModal("privacy")}
+              <Link
+                to="/legal#privacidade"
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary font-semibold hover:underline"
               >
                 Política de Privacidade
-              </button>{" "}
+              </Link>{" "}
               do Hispora.
             </label>
           </div>
@@ -921,21 +917,6 @@ function ClinicSignupForm({
           </button>
         </p>
       </footer>
-
-      <LegalModal
-        open={legalModal === "privacy"}
-        onClose={() => setLegalModal(null)}
-        title="Política de Privacidade"
-      >
-        <PrivacyPolicyContent />
-      </LegalModal>
-      <LegalModal
-        open={legalModal === "terms"}
-        onClose={() => setLegalModal(null)}
-        title="Termos de Serviço"
-      >
-        <TermsOfServiceContent />
-      </LegalModal>
     </>
   );
 }
@@ -948,9 +929,6 @@ export default function Signup() {
   );
   const [showPassword, setShowPassword] = useState(false);
   const [snackbar, setSnackbar] = useState({ visible: false, message: "" });
-  const [legalModal, setLegalModal] = useState<
-    "privacy" | "terms" | "security" | null
-  >(null);
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1696,22 +1674,25 @@ export default function Signup() {
                       className="ml-3 text-xs text-slate-500 leading-normal"
                       htmlFor="terms"
                     >
+                      {/* New tab on purpose — see the clinic form above. */}
                       Eu concordo com os{" "}
-                      <button
-                        type="button"
-                        className="text-primary font-semibold hover:underline bg-transparent border-none cursor-pointer p-0 inline"
-                        onClick={() => setLegalModal("terms")}
+                      <Link
+                        to="/legal#termos"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary font-semibold hover:underline"
                       >
                         Termos de Serviço
-                      </button>{" "}
+                      </Link>{" "}
                       e a{" "}
-                      <button
-                        type="button"
-                        className="text-primary font-semibold hover:underline bg-transparent border-none cursor-pointer p-0 inline"
-                        onClick={() => setLegalModal("privacy")}
+                      <Link
+                        to="/legal#privacidade"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary font-semibold hover:underline"
                       >
                         Política de Privacidade
-                      </button>{" "}
+                      </Link>{" "}
                       do Hispora.
                     </label>
                   </div>
@@ -1767,30 +1748,13 @@ export default function Signup() {
 
         {/* Bottom footer */}
         <div className="mt-auto pt-8 pb-6 text-center lg:text-left space-y-2 w-full max-w-md">
-          <div className="flex items-center gap-3 justify-center lg:justify-start text-[10px] font-semibold uppercase tracking-wider text-slate-400 whitespace-nowrap">
-            <button
-              onClick={() => setLegalModal("privacy")}
-              className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400"
-            >
-              Políticas de Privacidade
-            </button>
-            <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-            <button
-              onClick={() => setLegalModal("terms")}
-              className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400"
-            >
-              Termos de Serviço
-            </button>
-            <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-            <button
-              onClick={() => setLegalModal("security")}
-              className="hover:text-primary transition-colors cursor-pointer bg-transparent border-none text-[10px] font-semibold uppercase tracking-wider text-slate-400"
-            >
-              Padrões de Segurança
-            </button>
-          </div>
+          <LegalLinks
+            variant="dots"
+            className="justify-center lg:justify-start"
+          />
           <p className="text-[10px] text-slate-400">
-            © 2026 Hispora Clinical Systems. Todos os direitos reservados.
+            © {new Date().getFullYear()} Hispora Clinical Systems. Todos os
+            direitos reservados.
           </p>
         </div>
 
@@ -1802,29 +1766,6 @@ export default function Signup() {
         visible={snackbar.visible}
         onClose={() => setSnackbar({ visible: false, message: "" })}
       />
-
-      {/* Legal Modals */}
-      <LegalModal
-        open={legalModal === "privacy"}
-        onClose={() => setLegalModal(null)}
-        title="Política de Privacidade"
-      >
-        <PrivacyPolicyContent />
-      </LegalModal>
-      <LegalModal
-        open={legalModal === "terms"}
-        onClose={() => setLegalModal(null)}
-        title="Termos de Serviço"
-      >
-        <TermsOfServiceContent />
-      </LegalModal>
-      <LegalModal
-        open={legalModal === "security"}
-        onClose={() => setLegalModal(null)}
-        title="Padrões de Segurança"
-      >
-        <SecurityStandardsContent />
-      </LegalModal>
     </div>
   );
 }
