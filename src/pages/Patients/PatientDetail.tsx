@@ -66,6 +66,7 @@ import {
   AtestadoForm,
   type CertificateRecord,
 } from "../Atestados/AtestadoForm";
+import { formatCrm } from "../../utils/crm";
 import { LaudoForm } from "../Laudos/LaudoForm";
 import { LaudoDocument } from "../Laudos/LaudoDocument";
 import { StatusBadge as LaudoStatusBadge } from "../Laudos/StatusBadge";
@@ -6152,7 +6153,8 @@ function VaccinePrescriptionForm({
     await generateVaccinePrescriptionPdf({
       doctor: {
         name: user?.name || "Médico",
-        crm: user?.crm || "",
+        // Canonical form, resolved from the structured fields when available.
+        crm: formatCrm(user),
         specialty: user?.specialty,
         rqe: user?.rqe || undefined,
       },

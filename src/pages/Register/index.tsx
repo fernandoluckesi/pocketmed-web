@@ -3,13 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { isValidCpf, maskCpf, normalizeCpf } from "../../utils/cpf";
-import {
-  Eye,
-  EyeOff,
-  Loader2,
-  ArrowLeft,
-  Camera,
-} from "lucide-react";
+import { UF_LIST } from "../../utils/uf";
+import { Eye, EyeOff, Loader2, ArrowLeft, Camera } from "lucide-react";
 import api from "../../config/api";
 import logoHorizontalWhite from "../../assets/logos/hispora-horizontal-branco.png";
 
@@ -28,7 +23,10 @@ const registerSchema = Yup.object({
   phone: Yup.string().required("Telefone é obrigatório"),
   birthDate: Yup.string().required("Data de nascimento é obrigatória"),
   specialty: Yup.string().required("Especialidade é obrigatória"),
-  crm: Yup.string().required("CRM é obrigatório"),
+  crmNumber: Yup.string()
+    .required("Número do CRM é obrigatório")
+    .matches(/^\d+$/, "O CRM deve conter apenas números"),
+  crmUf: Yup.string().required("Selecione a UF do CRM"),
   cpf: Yup.string()
     .required("CPF é obrigatório")
     .test("cpf-valid", "CPF inválido", (val) => isValidCpf(val)),
@@ -61,7 +59,8 @@ export default function Register() {
       phone: "",
       birthDate: "",
       specialty: "",
-      crm: "",
+      crmNumber: "",
+      crmUf: "SP",
       cpf: "",
     },
     validationSchema: registerSchema,
@@ -406,22 +405,47 @@ export default function Register() {
                   </p>
                 )}
               </div>
+              {/* Number and UF as separate inputs — this screen used to take
+                  the whole CRM as free text, which is how inconsistent values
+                  got into the database in the first place. */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-on-surface-variant ml-1">
                   CRM
                 </label>
-                <input
-                  type="text"
-                  name="crm"
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  value={formik.values.crm}
-                  className={`w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none ${formik.touched.crm && formik.errors.crm ? "ring-2 ring-red-300" : ""}`}
-                  placeholder="123456/SP"
-                />
-                {formik.touched.crm && formik.errors.crm && (
+                <div className="grid grid-cols-[1fr_110px] gap-3">
+                  <input
+                    type="text"
+                    name="crmNumber"
+                    inputMode="numeric"
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    value={formik.values.crmNumber}
+                    className={`w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none ${formik.touched.crmNumber && formik.errors.crmNumber ? "ring-2 ring-red-300" : ""}`}
+                    placeholder="123456"
+                  />
+                  <select
+                    name="crmUf"
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    value={formik.values.crmUf}
+                    aria-label="UF do CRM"
+                    className={`w-full bg-slate-50 border-none rounded-xl px-3 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none cursor-pointer ${formik.touched.crmUf && formik.errors.crmUf ? "ring-2 ring-red-300" : ""}`}
+                  >
+                    {UF_LIST.map((uf) => (
+                      <option key={uf} value={uf}>
+                        {uf}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {formik.touched.crmNumber && formik.errors.crmNumber && (
                   <p className="text-red-500 text-xs ml-1">
-                    {formik.errors.crm}
+                    {formik.errors.crmNumber}
+                  </p>
+                )}
+                {formik.touched.crmUf && formik.errors.crmUf && (
+                  <p className="text-red-500 text-xs ml-1">
+                    {formik.errors.crmUf}
                   </p>
                 )}
               </div>

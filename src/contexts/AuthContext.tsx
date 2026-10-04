@@ -15,7 +15,11 @@ interface User {
   gender?: string;
   birthDate?: string;
   specialty?: string;
+  /** Canonical "number/UF" string, kept for display and older callers. */
   crm?: string;
+  /** Source of truth, stored in its own column on the backend. */
+  crmNumber?: string | null;
+  crmUf?: string | null;
   cpf?: string;
   rqe?: string;
 }
@@ -29,7 +33,10 @@ interface RegisterDoctorPayload {
   cpf: string;
   phone: string;
   birthDate: string;
-  crm: string;
+  /** CRM registration number, digits only. */
+  crmNumber: string;
+  /** Issuing state (2-letter UF). */
+  crmUf: string;
   rqe?: string;
   clinicName?: string;
   cnpj?: string;
@@ -86,6 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               birthDate: savedUser.birthDate,
               specialty: savedUser.specialty,
               crm: savedUser.crm,
+              crmNumber: savedUser.crmNumber ?? null,
+              crmUf: savedUser.crmUf ?? null,
               cpf: savedUser.cpf,
               rqe: savedUser.rqe,
             }
@@ -134,6 +143,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       birthDate: userData.birthDate,
       specialty: userData.specialty,
       crm: userData.crm,
+      crmNumber: userData.crmNumber ?? null,
+      crmUf: userData.crmUf ?? null,
       cpf: userData.cpf,
       rqe: userData.rqe,
     });
@@ -185,6 +196,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       birthDate: userData.birthDate,
       specialty: userData.specialty,
       crm: userData.crm,
+      crmNumber: userData.crmNumber ?? null,
+      crmUf: userData.crmUf ?? null,
       cpf: userData.cpf,
       rqe: userData.rqe,
     });

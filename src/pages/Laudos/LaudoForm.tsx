@@ -10,7 +10,7 @@ import { CustomSelect } from "../../components/ui/CustomSelect";
 import { RichTextEditor } from "../../components/ui/RichTextEditor";
 import { useAuth } from "../../contexts/AuthContext";
 import { ApiError } from "../../services/api";
-import { parseCrm } from "../../utils/crm";
+import { resolveCrm } from "../../utils/crm";
 import {
   reportsApi,
   REPORT_CLINICAL_FIELDS,
@@ -117,7 +117,12 @@ export function LaudoForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const doctorCrm = parseCrm(isEditing ? initial.doctorCrmSnapshot : user?.crm);
+  // When editing, the snapshot is a single string by design (it records what
+  // the document printed at issue time), so it has to be parsed. For a new
+  // laudo, read the authenticated profile's structured fields.
+  const doctorCrm = isEditing
+    ? resolveCrm({ crm: initial.doctorCrmSnapshot })
+    : resolveCrm(user);
 
   async function handleRemoveFile() {
     if (!initial) return;

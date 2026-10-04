@@ -14,6 +14,7 @@ import { motion } from "motion/react";
 import { MainLayout } from "../../components/MainLayout";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../../services/api";
+import { formatCrm } from "../../utils/crm";
 
 // --- Types ---
 
@@ -35,7 +36,10 @@ interface DoctorProfileData {
   name: string;
   email: string;
   specialty: string;
+  /** Canonical "number/UF" string. */
   crm: string;
+  crmNumber?: string | null;
+  crmUf?: string | null;
   rqe: string | null;
   phone: string;
   gender: string;
@@ -111,7 +115,7 @@ function ProfileHero({ doctor }: { doctor: DoctorProfileData }) {
             {doctor.specialty || "Médico(a)"}
           </span>
           <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold">
-            CRM {doctor.crm}
+            CRM {formatCrm(doctor)}
           </span>
           {doctor.rqe && (
             <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold">
@@ -144,7 +148,7 @@ function ProfileHero({ doctor }: { doctor: DoctorProfileData }) {
 function ProfileDetails({ doctor }: { doctor: DoctorProfileData }) {
   const items = [
     { icon: Stethoscope, label: "Especialidade", value: doctor.specialty },
-    { icon: IdCard, label: "CRM", value: doctor.crm },
+    { icon: IdCard, label: "CRM", value: formatCrm(doctor) },
     { icon: IdCard, label: "RQE", value: doctor.rqe || "—" },
     {
       icon: MapPin,

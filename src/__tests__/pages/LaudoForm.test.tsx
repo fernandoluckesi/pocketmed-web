@@ -39,7 +39,11 @@ vi.mock("../../contexts/AuthContext", () => ({
     user: {
       userId: "doctor-1",
       name: "Dra. Ana Souza",
+      // Structured fields are the source of truth; `crm` is the canonical
+      // string kept for display and older clients.
       crm: "100001/SP",
+      crmNumber: "100001",
+      crmUf: "SP",
       specialty: "Cardiologia",
       type: "doctor",
       role: "doctor",

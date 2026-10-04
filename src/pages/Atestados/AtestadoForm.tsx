@@ -9,6 +9,7 @@ import {
   FormActions,
 } from "../../components/ui/FormField";
 import { useAuth } from "../../contexts/AuthContext";
+import { formatCrm } from "../../utils/crm";
 import { api } from "../../services/api";
 
 export interface CertificateRecord {
@@ -48,15 +49,18 @@ export function AtestadoForm({
   variant = "modal",
 }: AtestadoFormProps) {
   const { user } = useAuth();
-  const [crm, setCrm] = useState(initial?.crm || user?.crm || "");
+  // The certificate's CRM stays a single free-text field on purpose: it
+  // records what was printed on the document, and a covering doctor's CRM may
+  // differ from the logged-in user's. Only the default comes from the
+  // profile, now in canonical form.
+  const [crm, setCrm] = useState(initial?.crm || formatCrm(user) || "");
   const [cid, setCid] = useState(initial?.cid || "");
   const [description, setDescription] = useState(initial?.description || "");
   const [daysOff, setDaysOff] = useState(
     initial?.daysOff != null ? String(initial.daysOff) : "",
   );
   const [issueDate, setIssueDate] = useState(
-    initial?.issueDate?.split("T")[0] ||
-      new Date().toISOString().split("T")[0],
+    initial?.issueDate?.split("T")[0] || new Date().toISOString().split("T")[0],
   );
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
@@ -71,7 +75,8 @@ export function AtestadoForm({
       const formData = new FormData();
       formData.append("crm", crm.trim());
       if (cid.trim()) formData.append("cid", cid.trim());
-      if (description.trim()) formData.append("description", description.trim());
+      if (description.trim())
+        formData.append("description", description.trim());
       if (daysOff) formData.append("daysOff", daysOff);
       if (issueDate) formData.append("issueDate", issueDate);
       if (file) formData.append("file", file);
