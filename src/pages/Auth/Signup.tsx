@@ -34,36 +34,7 @@ import {
   TermsOfServiceContent,
   SecurityStandardsContent,
 } from "../Institutional/LegalModal";
-
-const UF_LIST = [
-  "AC",
-  "AL",
-  "AP",
-  "AM",
-  "BA",
-  "CE",
-  "DF",
-  "ES",
-  "GO",
-  "MA",
-  "MT",
-  "MS",
-  "MG",
-  "PA",
-  "PB",
-  "PR",
-  "PE",
-  "PI",
-  "RJ",
-  "RN",
-  "RS",
-  "RO",
-  "RR",
-  "SC",
-  "SP",
-  "SE",
-  "TO",
-];
+import { UF_LIST } from "../../utils/uf";
 
 const SPECIALTIES = [
   "Nenhuma",
@@ -308,7 +279,11 @@ function ClinicSignupForm({
           cpf: values.cpf.replace(/\D/g, ""),
           phone: values.phone.replace(/\D/g, ""),
           birthDate: values.birthDate,
-          crm: `${values.crm}/${values.crmState}`,
+          // Sent as separate fields — the backend stores number and UF in
+          // their own columns. Concatenating here was what produced the
+          // "123456/SP" vs "SP-123456" drift between clients.
+          crmNumber: values.crm.replace(/\D/g, ""),
+          crmUf: values.crmState,
           clinicName: values.clinicName,
           cnpj: values.cnpj.replace(/\D/g, ""),
           cep: values.cep.replace(/\D/g, ""),
@@ -1107,7 +1082,9 @@ export default function Signup() {
           cpf: values.cpf.replace(/\D/g, ""),
           phone: values.phone.replace(/\D/g, ""),
           birthDate: values.birthDate,
-          crm: `${values.crm}/${values.crmState}`,
+          // Separate fields — see the clinic flow above.
+          crmNumber: values.crm.replace(/\D/g, ""),
+          crmUf: values.crmState,
           rqe: values.rqe || undefined,
           profileImage: profileImage || undefined,
         });
@@ -1208,11 +1185,7 @@ export default function Signup() {
           {/* Header */}
           <header className="text-center space-y-4">
             <div className="inline-flex items-center justify-center mb-12 w-full">
-              <img
-                src={logoHorizontal}
-                alt="Hispora"
-                className="h-28 w-auto"
-              />
+              <img src={logoHorizontal} alt="Hispora" className="h-28 w-auto" />
             </div>
             <div className="space-y-2">
               <h2 className="text-3xl font-display font-bold text-slate-900 tracking-tight">

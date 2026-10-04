@@ -6,6 +6,7 @@ import { MainLayout } from "../../components/MainLayout";
 import { SearchWithViewToggle } from "../../components/ui/SearchWithViewToggle";
 import { Button } from "../../components/ui/Button";
 import { useToast } from "../../contexts/ToastContext";
+import { formatCrm } from "../../utils/crm";
 import api from "../../config/api";
 
 // --- Types ---
@@ -16,7 +17,10 @@ interface Doctor {
   email: string;
   gender: string;
   specialty: string;
+  /** Canonical "number/UF" string. */
   crm: string;
+  crmNumber?: string | null;
+  crmUf?: string | null;
   phone: string;
   profileImage: string | null;
   createdAt: string;
@@ -33,6 +37,8 @@ interface SentInvite {
     name: string;
     specialty: string;
     crm: string;
+    crmNumber?: string | null;
+    crmUf?: string | null;
     profileImage: string | null;
   } | null;
 }
@@ -58,22 +64,6 @@ function inviteStatusStyle(status: SentInvite["status"]): string {
     default:
       return "bg-amber-100 text-amber-700";
   }
-}
-
-// --- Helpers ---
-
-// Normalizes a CRM (stored as "SP-100001" or "100001/SP") to the "numero/uf" format.
-function formatCrm(crm: string): string {
-  if (!crm) return "";
-  const dashMatch = crm.match(/^([A-Za-z]{2})-(\d+)$/);
-  if (dashMatch) {
-    return `${dashMatch[2]}/${dashMatch[1].toUpperCase()}`;
-  }
-  const slashMatch = crm.match(/^(\d+)\/([A-Za-z]{2})$/);
-  if (slashMatch) {
-    return `${slashMatch[1]}/${slashMatch[2].toUpperCase()}`;
-  }
-  return crm;
 }
 
 // --- Helper Components ---
@@ -120,7 +110,7 @@ function DoctorCard({
               {doctor.specialty}
             </p>
             <p className="text-gray-400 text-xs font-medium whitespace-nowrap">
-              CRM: {formatCrm(doctor.crm)}
+              CRM: {formatCrm(doctor)}
             </p>
           </div>
         </div>
@@ -169,7 +159,7 @@ function DoctorListRow({
       </div>
 
       <div className="hidden md:flex items-center gap-6 text-sm text-slate-500">
-        <span className="whitespace-nowrap">CRM: {formatCrm(doctor.crm)}</span>
+        <span className="whitespace-nowrap">CRM: {formatCrm(doctor)}</span>
         <span>{doctor.email}</span>
       </div>
     </motion.div>
@@ -314,14 +304,18 @@ export default function Doctors() {
         : null;
 
     if (!parsed) {
-      // Try general search by name/specialty/crm
+      // Try general search by name/specialty/crm. Also matches the bare
+      // registration number, so typing just the digits works regardless of
+      // how the full CRM is formatted.
+      const needle = trimmed.toLowerCase();
       setSearchResults(
         doctors
           .filter(
             (d) =>
-              d.name.toLowerCase().includes(trimmed.toLowerCase()) ||
-              d.specialty.toLowerCase().includes(trimmed.toLowerCase()) ||
-              d.crm.toLowerCase().includes(trimmed.toLowerCase()),
+              d.name.toLowerCase().includes(needle) ||
+              d.specialty.toLowerCase().includes(needle) ||
+              d.crm.toLowerCase().includes(needle) ||
+              (d.crmNumber || "").toLowerCase().includes(needle),
           )
           .map((d) => ({ ...d, isClinicMember: clinicDoctorIds.has(d.id) })),
       );
@@ -387,6 +381,7 @@ export default function Doctors() {
           d.name.toLowerCase().includes(term) ||
           d.specialty.toLowerCase().includes(term) ||
           d.crm.toLowerCase().includes(term) ||
+          (d.crmNumber || "").toLowerCase().includes(term) ||
           d.email.toLowerCase().includes(term),
       );
     }
@@ -581,7 +576,7 @@ export default function Doctors() {
                             {doctor.specialty}
                           </p>
                           <p className="text-gray-400 text-xs font-medium whitespace-nowrap">
-                            CRM: {formatCrm(doctor.crm)}
+                            CRM: {formatCrm(doctor)}
                           </p>
                         </div>
                       </div>
@@ -645,7 +640,7 @@ export default function Doctors() {
 
                       <div className="hidden md:flex items-center gap-6 text-sm text-slate-500">
                         <span className="whitespace-nowrap">
-                          CRM: {formatCrm(doctor.crm)}
+                          CRM: {formatCrm(doctor)}
                         </span>
                       </div>
 
@@ -724,7 +719,7 @@ export default function Doctors() {
                       <p className="text-slate-400 text-sm font-medium truncate">
                         {invite.doctor?.specialty || "—"}
                         {invite.doctor?.crm
-                          ? ` • CRM: ${formatCrm(invite.doctor.crm)}`
+                          ? ` • CRM: ${formatCrm(invite.doctor)}`
                           : ""}
                       </p>
                       <p className="text-[11px] text-slate-400 mt-0.5">

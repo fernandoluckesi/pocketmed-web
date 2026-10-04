@@ -24,6 +24,8 @@ import { useDialog } from "../../components/ui/Dialog";
 import { Link, useLocation } from "react-router-dom";
 import api from "../../config/api";
 import { isValidCpf, maskCpf, normalizeCpf } from "../../utils/cpf";
+import { resolveCrm } from "../../utils/crm";
+import { UF_LIST } from "../../utils/uf";
 import { fetchCep } from "../../services/cep";
 import { formatPriceBRL, type Plan } from "../../data/plans";
 
@@ -163,7 +165,10 @@ const profileSchema = Yup.object({
   gender: Yup.string().required("Gênero é obrigatório"),
   birthDate: Yup.string().required("Data de nascimento é obrigatória"),
   specialty: Yup.string().required("Especialidade é obrigatória"),
-  crm: Yup.string().required("CRM é obrigatório"),
+  crmNumber: Yup.string()
+    .required("Número do CRM é obrigatório")
+    .matches(/^\d+$/, "O CRM deve conter apenas números"),
+  crmUf: Yup.string().required("Selecione a UF do CRM"),
   cpf: Yup.string()
     .required("CPF é obrigatório")
     .test("cpf-valid", "CPF inválido", (val) => isValidCpf(val)),
@@ -708,7 +713,8 @@ export default function Account() {
       gender: user?.gender || "",
       birthDate: user?.birthDate ? String(user.birthDate).split("T")[0] : "",
       specialty: user?.specialty || "",
-      crm: user?.crm || "",
+      crmNumber: resolveCrm(user).number,
+      crmUf: resolveCrm(user).uf,
       cpf: (() => {
         const digits = (user?.cpf || "").replace(/\D/g, "");
         if (digits.length === 11) {
@@ -731,7 +737,9 @@ export default function Account() {
         if (values.gender) formData.append("gender", values.gender);
         if (values.birthDate) formData.append("birthDate", values.birthDate);
         if (values.specialty) formData.append("specialty", values.specialty);
-        if (values.crm) formData.append("crm", values.crm);
+        if (values.crmNumber)
+          formData.append("crmNumber", values.crmNumber.replace(/\D/g, ""));
+        if (values.crmUf) formData.append("crmUf", values.crmUf);
         if (values.rqe) formData.append("rqe", values.rqe);
         if (values.cpf) formData.append("cpf", normalizeCpf(values.cpf));
         if (selectedFile) formData.append("profileImage", selectedFile);
@@ -780,8 +788,10 @@ export default function Account() {
 
   // Credential fields are validated against the approved documents, so editing
   // them sends the verification back to review (enforced by the backend).
+  const storedCrm = resolveCrm(user);
   const credentialsChanged =
-    profileFormik.values.crm !== (user?.crm || "") ||
+    profileFormik.values.crmNumber !== storedCrm.number ||
+    profileFormik.values.crmUf !== storedCrm.uf ||
     profileFormik.values.rqe !== (user?.rqe || "") ||
     profileFormik.values.specialty !== (user?.specialty || "");
 
@@ -1048,17 +1058,47 @@ export default function Account() {
                       ].map((s) => ({ value: s, label: s }))}
                     />
                   </div>
+                  {/* Number and UF are separate fields — they're separate
+                      columns on the backend, and the CFM web service is
+                      queried by the pair. */}
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-on-surface-variant ml-1">
                       CRM
                     </label>
                     <input
-                      name="crm"
+                      name="crmNumber"
+                      inputMode="numeric"
                       onChange={profileFormik.handleChange}
-                      value={profileFormik.values.crm}
+                      value={profileFormik.values.crmNumber}
                       className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
-                      placeholder="123456/SP"
+                      placeholder="123456"
                     />
+                    {profileFormik.touched.crmNumber &&
+                      profileFormik.errors.crmNumber && (
+                        <p className="text-xs text-red-500 ml-1">
+                          {profileFormik.errors.crmNumber}
+                        </p>
+                      )}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-on-surface-variant ml-1">
+                      UF do CRM
+                    </label>
+                    <CustomSelect
+                      name="crmUf"
+                      value={profileFormik.values.crmUf}
+                      onChange={(val) =>
+                        profileFormik.setFieldValue("crmUf", val)
+                      }
+                      placeholder="UF"
+                      options={UF_LIST.map((uf) => ({ value: uf, label: uf }))}
+                    />
+                    {profileFormik.touched.crmUf &&
+                      profileFormik.errors.crmUf && (
+                        <p className="text-xs text-red-500 ml-1">
+                          {profileFormik.errors.crmUf}
+                        </p>
+                      )}
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-on-surface-variant ml-1">
