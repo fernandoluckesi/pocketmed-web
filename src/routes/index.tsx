@@ -8,7 +8,9 @@ import InstitutionalHome from "../pages/Institutional";
 import InstitutionalMobile from "../pages/Institutional/Mobile";
 import InstitutionalPlatform from "../pages/Institutional/Platform";
 import LegalPage from "../pages/Institutional/LegalPage";
+import SecurityPage from "../pages/Institutional/SecurityPage";
 import SupportPage from "../pages/Institutional/SupportPage";
+import DataDeletionPage from "../pages/Institutional/DataDeletionPage";
 import Verification from "../pages/Verification";
 import Dashboard from "../pages/Dashboard";
 import Consultations from "../pages/Consultations";
@@ -53,8 +55,18 @@ export default function AppRoutes() {
       <Route path="/legal" element={<LegalPage />} />
       <Route path="/termos" element={<LegalPage />} />
       <Route path="/privacidade" element={<LegalPage />} />
+      <Route path="/seguranca" element={<SecurityPage />} />
+      <Route path="/security" element={<SecurityPage />} />
       <Route path="/suporte" element={<SupportPage />} />
       <Route path="/support" element={<SupportPage />} />
+      {/* Public deletion request — these are the URLs submitted in Google
+          Play's Data Safety section. `?tipo=dados` preselects the data-only
+          option, so both required URLs point at one page. Aliases in PT and
+          EN so an existing link never 404s. */}
+      <Route path="/exclusao-de-dados" element={<DataDeletionPage />} />
+      <Route path="/exclusao-de-conta" element={<DataDeletionPage />} />
+      <Route path="/delete-account" element={<DataDeletionPage />} />
+      <Route path="/data-deletion" element={<DataDeletionPage />} />
 
       {/* Protected routes */}
       <Route

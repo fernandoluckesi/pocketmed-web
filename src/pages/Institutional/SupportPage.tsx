@@ -13,7 +13,12 @@ export default function SupportPage() {
     {
       question: "Como faço para excluir minha conta?",
       answer:
-        "No aplicativo, acesse Perfil, Configurações e toque em Excluir Conta. A exclusão é confirmada por um código enviado ao seu email cadastrado. Dados clínicos obrigatórios por lei podem ser retidos pelo prazo legal, conforme a Política de Privacidade.",
+        "No aplicativo, acesse Perfil, Configurações e toque em Excluir Conta. A exclusão é confirmada por um código enviado ao seu email cadastrado. Se você não tem mais acesso ao aplicativo, use o formulário público de exclusão disponível em /exclusao-de-dados. Dados clínicos obrigatórios por lei podem ser retidos pelo prazo legal, conforme a Política de Privacidade.",
+    },
+    {
+      question: "Posso excluir meus dados sem excluir a conta?",
+      answer:
+        "Sim. No formulário de exclusão, escolha a opção de excluir apenas os dados. A conta permanece ativa, sem o histórico armazenado. Registros que a legislação obriga a preservar, como o prontuário médico, são mantidos pelo prazo legal.",
     },
     {
       question: "Esqueci minha senha. O que devo fazer?",
@@ -94,15 +99,15 @@ export default function SupportPage() {
           </div>
         </section>
 
-        {/* Delete account highlight (required by the App Store) */}
+        {/* Delete account highlight (required by the App Store and Google Play) */}
         <section className="rounded-2xl bg-slate-50 border border-slate-100 p-5 sm:p-6 mb-10 sm:mb-12">
           <div className="flex items-center gap-2 mb-2">
             <Trash2 className="text-slate-500" size={18} />
             <h2 className="text-base font-extrabold text-slate-900">
-              Exclusão de conta
+              Exclusão de conta e dados
             </h2>
           </div>
-          <p className="text-sm text-slate-600 leading-relaxed">
+          <p className="text-sm text-slate-600 leading-relaxed mb-4">
             Você pode excluir sua conta e seus dados a qualquer momento, direto
             pelo aplicativo, em Perfil, Configurações, Excluir Conta. A ação é
             confirmada por um código enviado ao seu email. Dados clínicos
@@ -112,6 +117,16 @@ export default function SupportPage() {
               className="font-semibold text-primary hover:underline"
             >
               Política de Privacidade
+            </Link>
+            .
+          </p>
+          <p className="text-sm text-slate-600 leading-relaxed">
+            Não tem mais acesso ao aplicativo? Use o{" "}
+            <Link
+              to="/exclusao-de-dados"
+              className="font-semibold text-primary hover:underline"
+            >
+              formulário de exclusão de conta e dados
             </Link>
             .
           </p>
