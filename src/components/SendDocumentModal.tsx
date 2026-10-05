@@ -95,8 +95,21 @@ export function SendDocumentModal({
 
   async function handleContinue() {
     if (!choice) return;
-    setStep("working");
     setErrorMessage("");
+
+    // Browsers only allow `window.open` without being blocked as a popup
+    // when it runs synchronously inside a user gesture (this click). Once
+    // we `await` the signature-request call first, the gesture has expired
+    // by the time we'd call `window.open(url)` — most browsers then block
+    // it silently (no error, the tab just never appears). The fix is to
+    // open a blank tab *now*, before the await, and navigate it once we
+    // know the URL. `noopener`/`noreferrer` are deliberately omitted here:
+    // either one makes `window.open` return null, and we need the handle
+    // to redirect it later — safe since the simulator page is our own,
+    // same-origin code, not a third-party link.
+    const signingWindow = choice === "sign" ? window.open("", "_blank") : null;
+
+    setStep("working");
     try {
       if (choice === "no-signature") {
         const result = await onSendWithoutSignature();
@@ -106,11 +119,17 @@ export function SendDocumentModal({
       } else {
         const { signingUrl: url } = await onRequestSignature();
         setSigningUrl(url);
-        window.open(url, "_blank", "noopener,noreferrer");
+        if (signingWindow && !signingWindow.closed) {
+          signingWindow.location.href = url;
+        }
+        // If the tab still didn't open (some browsers/extensions block even
+        // the synchronous blank-tab open), the "Reabrir a aba de assinatura"
+        // link in the next step lets the doctor open it manually.
         setStep("awaiting-signature");
         startPolling();
       }
     } catch (err) {
+      signingWindow?.close();
       setErrorMessage(
         err instanceof Error ? err.message : "Não foi possível concluir o envio.",
       );
