@@ -16,6 +16,16 @@ const DOCUMENT_TYPE_LABELS: Record<PendingSignatureInfo["documentType"], string>
   exam: "Pedido de exame",
 };
 
+/** The feature route each document type's confirm-signature call goes to.
+ * Deliberately not a naive `${documentType}s` pluralization — "exam" would
+ * collide with the unrelated `/exams` (scheduling/results) resource, so
+ * exam-request documents live at `/exam-requests` instead. */
+const ROUTE_PREFIX: Record<PendingSignatureInfo["documentType"], string> = {
+  prescription: "prescriptions",
+  report: "reports",
+  exam: "exam-requests",
+};
+
 /**
  * Stand-in for a real e-signature provider's (DocuSign) hosted signing page —
  * no real provider is contracted yet. Opened in a new tab by
@@ -60,7 +70,7 @@ export default function SignatureSimulator() {
     setSigning(true);
     setError(null);
     try {
-      await api(`/${info.documentType}s/${info.documentId}/confirm-signature`, {
+      await api(`/${ROUTE_PREFIX[info.documentType]}/${info.documentId}/confirm-signature`, {
         method: "POST",
         body: { externalSignatureId: token },
       });

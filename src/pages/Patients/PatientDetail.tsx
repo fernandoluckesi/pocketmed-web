@@ -62,6 +62,8 @@ import { generateVaccinePrescriptionPdf } from "../../utils/generate-pdf";
 import { api, ApiError } from "../../services/api";
 import { PrescriptionDocument } from "./PrescriptionDocument";
 import type { PrescriptionItemInput } from "../../services/prescriptions";
+import { ExamRequestDocument } from "./ExamRequestDocument";
+import type { ExamRequestItemInput } from "../../services/examRequests";
 import {
   AtestadoForm,
   type CertificateRecord,
@@ -1547,6 +1549,9 @@ function ExamRequestForm({
   const [saving, setSaving] = useState(false);
   const [readingAttachment, setReadingAttachment] = useState(false);
   const [readingError, setReadingError] = useState(false);
+  const [examRequestItems, setExamRequestItems] = useState<
+    ExamRequestItemInput[] | null
+  >(null);
 
   const examOptions = [...EXAM_CATALOG]
     .sort((a, b) => a.localeCompare(b, "pt-BR"))
@@ -1616,12 +1621,28 @@ function ExamRequestForm({
         });
       }
       onSaved();
-      onClose();
+      // Instead of closing right away, offer to bundle what was just saved
+      // into a formal "pedido de exame" document (PDF) — mirrors
+      // `PrescriptionForm`'s hand-off into `PrescriptionDocument`.
+      setExamRequestItems(validExams.map((name) => ({ name })));
     } catch (err) {
       console.error("Erro ao criar exames:", err);
     } finally {
       setSaving(false);
     }
+  }
+
+  if (examRequestItems) {
+    return (
+      <div className={variant === "inline" ? "" : "p-8 pt-0"}>
+        <ExamRequestDocument
+          patientId={patientId}
+          items={examRequestItems}
+          observations={description}
+          onClose={onClose}
+        />
+      </div>
+    );
   }
 
   return (
@@ -2206,11 +2227,17 @@ function ExamFieldsList({
   onChange,
   onAdd,
   idPrefix,
+  trailingAction,
 }: {
   examNames: string[];
   onChange: (index: number, value: string) => void;
   onAdd: () => void;
   idPrefix: string;
+  /** Rendered on the same row as "Adicionar outro exame", right-aligned —
+   * e.g. a "Solicitar exame" button. Mirrors `MedicationFieldsList`'s
+   * `trailingAction` for the same reason: keeps it grouped with exam
+   * actions instead of drifting next to unrelated sections below. */
+  trailingAction?: ReactNode;
 }) {
   const examOptions = [...EXAM_CATALOG]
     .sort((a, b) => a.localeCompare(b, "pt-BR"))
@@ -2230,14 +2257,17 @@ function ExamFieldsList({
           allowFreeText
         />
       ))}
-      <button
-        type="button"
-        onClick={onAdd}
-        className="flex items-center gap-1 text-primary text-xs font-semibold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
-      >
-        <Plus className="w-3.5 h-3.5" />
-        Adicionar outro exame
-      </button>
+      <div className="flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={onAdd}
+          className="flex items-center gap-1 text-primary text-xs font-semibold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Adicionar outro exame
+        </button>
+        {trailingAction}
+      </div>
     </div>
   );
 }
@@ -2328,8 +2358,13 @@ function ConsultaForm({
   const [submissionErrors, setSubmissionErrors] = useState<string[]>([]);
   const [readingAttachment, setReadingAttachment] = useState(false);
   const [readingError, setReadingError] = useState(false);
+  const [readingExamAttachment, setReadingExamAttachment] = useState(false);
+  const [readingExamError, setReadingExamError] = useState(false);
   const [prescriptionItems, setPrescriptionItems] = useState<
     PrescriptionItemInput[] | null
+  >(null);
+  const [examRequestItems, setExamRequestItems] = useState<
+    ExamRequestItemInput[] | null
   >(null);
 
   /**
@@ -2383,6 +2418,37 @@ function ConsultaForm({
     setExamNames(updated);
   }
 
+  // Mirrors `ExamRequestForm`'s attach-and-parse: OCR-reads an uploaded exam
+  // order to prefill exam-name rows, same endpoint and shape.
+  async function handleAttachExamFile(file: File | null) {
+    if (!file) return;
+    setReadingExamAttachment(true);
+    setReadingExamError(false);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const result = await api("/exam-catalog/parse-order", {
+        method: "POST",
+        body: formData,
+        isFormData: true,
+      });
+      const matches: { name: string }[] = Array.isArray(result?.matchedExams)
+        ? result.matchedExams
+        : [];
+      if (matches.length > 0) {
+        setExamNames((prev) => {
+          const hasContent = prev.some((n) => n.trim());
+          const base = hasContent ? prev : [];
+          return [...base, ...matches.map((m) => m.name)];
+        });
+      }
+    } catch {
+      setReadingExamError(true);
+    } finally {
+      setReadingExamAttachment(false);
+    }
+  }
+
   // Mirrors `PrescriptionForm`'s attach-and-parse: OCR-reads an uploaded
   // prescription/order to prefill medication rows, same endpoint and shape.
   async function handleAttachFile(file: File | null) {
@@ -2430,12 +2496,14 @@ function ConsultaForm({
     await performSave("close");
   }
 
-  // "prescribe" skips the close/onSaved at the end and instead hands the
-  // just-saved medications to `PrescriptionDocument` — same destination the
-  // standalone `PrescriptionForm`'s "Prescrever" button leads to. Nothing
+  // "prescribe"/"request-exam" skip the close/onSaved at the end and instead
+  // hand the just-saved items to `PrescriptionDocument`/`ExamRequestDocument`
+  // — same destinations the standalone forms' own buttons lead to. Nothing
   // about the consultation itself is lost: it's saved first, exactly as the
   // normal submit would.
-  async function performSave(mode: "close" | "prescribe" = "close") {
+  async function performSave(
+    mode: "close" | "prescribe" | "request-exam" = "close",
+  ) {
     if (!date) return;
 
     setSaving(true);
@@ -2443,6 +2511,7 @@ function ConsultaForm({
     const validMeds = medications.filter(
       (m) => m.name.trim() && m.dosage.trim() && m.startDate,
     );
+    const validExamNames = examNames.filter((n) => n.trim());
 
     try {
       const dateTime = time ? `${date}T${time}:00` : `${date}T00:00:00`;
@@ -2530,8 +2599,7 @@ function ConsultaForm({
 
       // Create linked exams
       if (showClinicalSection && addExam) {
-        for (const examName of examNames) {
-          if (!examName.trim()) continue;
+        for (const examName of validExamNames) {
           const key = `exam:${examName.trim()}`;
           if (savedAttachmentsRef.current.has(key)) continue;
           try {
@@ -2570,6 +2638,8 @@ function ConsultaForm({
               : "",
           })),
         );
+      } else if (mode === "request-exam") {
+        setExamRequestItems(validExamNames.map((name) => ({ name: name.trim() })));
       } else {
         onSaved();
         onClose();
@@ -2593,6 +2663,19 @@ function ConsultaForm({
           patientId={patientId}
           appointmentId={createdAppointmentId ?? undefined}
           items={prescriptionItems}
+          onClose={onClose}
+        />
+      </div>
+    );
+  }
+
+  if (examRequestItems) {
+    return (
+      <div className={variant === "inline" ? "" : "p-8 pt-0"}>
+        <ExamRequestDocument
+          patientId={patientId}
+          appointmentId={createdAppointmentId ?? undefined}
+          items={examRequestItems}
           onClose={onClose}
         />
       </div>
@@ -2782,12 +2865,53 @@ function ConsultaForm({
           )}
 
           {addExam ? (
-            <ExamFieldsList
-              examNames={examNames}
-              onChange={handleExamChange}
-              onAdd={() => setExamNames([...examNames, ""])}
-              idPrefix="consulta"
-            />
+            <>
+              <div>
+                <FileInput
+                  label="Anexar pedido de exame (PDF ou imagem)"
+                  name="consulta-exam-file"
+                  onChange={handleAttachExamFile}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                />
+                {readingExamAttachment && (
+                  <p className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Lendo anexo...
+                  </p>
+                )}
+                {readingExamError && !readingExamAttachment && (
+                  <p className="text-xs text-red-600 mt-2">
+                    Não foi possível ler o anexo automaticamente. Preencha os
+                    campos abaixo manualmente.
+                  </p>
+                )}
+                <p className="text-xs text-slate-400 mt-2">
+                  Se anexar um arquivo, confira se os campos abaixo conferem
+                  com ele antes de enviar. Prefira gerar o pedido pela
+                  Hispora (sem anexo) — o PDF já sai pronto para assinatura
+                  digital.
+                </p>
+              </div>
+
+              <ExamFieldsList
+                examNames={examNames}
+                onChange={handleExamChange}
+                onAdd={() => setExamNames([...examNames, ""])}
+                idPrefix="consulta"
+                trailingAction={
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    loading={saving}
+                    icon={<FileText className="w-3.5 h-3.5" />}
+                    onClick={() => performSave("request-exam")}
+                  >
+                    Solicitar exame
+                  </Button>
+                }
+              />
+            </>
           ) : (
             <Button
               type="button"
@@ -2909,8 +3033,13 @@ function EditConsultaForm({
   const [submissionErrors, setSubmissionErrors] = useState<string[]>([]);
   const [readingAttachment, setReadingAttachment] = useState(false);
   const [readingError, setReadingError] = useState(false);
+  const [readingExamAttachment, setReadingExamAttachment] = useState(false);
+  const [readingExamError, setReadingExamError] = useState(false);
   const [prescriptionItems, setPrescriptionItems] = useState<
     PrescriptionItemInput[] | null
+  >(null);
+  const [examRequestItems, setExamRequestItems] = useState<
+    ExamRequestItemInput[] | null
   >(null);
 
   /**
@@ -2957,6 +3086,37 @@ function EditConsultaForm({
     const updated = [...examNames];
     updated[index] = value;
     setExamNames(updated);
+  }
+
+  // Mirrors `ExamRequestForm`'s attach-and-parse: OCR-reads an uploaded exam
+  // order to prefill exam-name rows, same endpoint and shape.
+  async function handleAttachExamFile(file: File | null) {
+    if (!file) return;
+    setReadingExamAttachment(true);
+    setReadingExamError(false);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const result = await api("/exam-catalog/parse-order", {
+        method: "POST",
+        body: formData,
+        isFormData: true,
+      });
+      const matches: { name: string }[] = Array.isArray(result?.matchedExams)
+        ? result.matchedExams
+        : [];
+      if (matches.length > 0) {
+        setExamNames((prev) => {
+          const hasContent = prev.some((n) => n.trim());
+          const base = hasContent ? prev : [];
+          return [...base, ...matches.map((m) => m.name)];
+        });
+      }
+    } catch {
+      setReadingExamError(true);
+    } finally {
+      setReadingExamAttachment(false);
+    }
   }
 
   // Mirrors `PrescriptionForm`'s attach-and-parse: OCR-reads an uploaded
@@ -3013,18 +3173,22 @@ function EditConsultaForm({
     }
   }
 
-  // "prescribe" skips the close/onSaved at the end and instead hands the
-  // just-saved medications to `PrescriptionDocument` — same destination the
-  // standalone `PrescriptionForm`'s "Prescrever" button leads to. Nothing
+  // "prescribe"/"request-exam" skip the close/onSaved at the end and instead
+  // hand the just-saved items to `PrescriptionDocument`/`ExamRequestDocument`
+  // — same destinations the standalone forms' own buttons lead to. Nothing
   // about the consultation itself is lost: it's saved first, exactly as the
   // normal submit would.
-  async function performSave(finalize: boolean, mode: "close" | "prescribe" = "close") {
+  async function performSave(
+    finalize: boolean,
+    mode: "close" | "prescribe" | "request-exam" = "close",
+  ) {
     setShowFinalizeChoice(false);
     setSaving(true);
     setSubmissionErrors([]);
     const validMeds = medications.filter(
       (m) => m.name.trim() && m.dosage.trim() && m.startDate,
     );
+    const validExamNames = examNames.filter((n) => n.trim());
     try {
       const dateTime = time ? `${date}T${time}:00` : `${date}T00:00:00`;
       await api(`/patients/${patientId}/consultations/${consultation.id}`, {
@@ -3084,8 +3248,7 @@ function EditConsultaForm({
       }
 
       if (showClinicalSection && addExam) {
-        const validExams = examNames.filter((n) => n.trim());
-        for (const examName of validExams) {
+        for (const examName of validExamNames) {
           const key = `exam:${examName.trim()}`;
           if (savedAttachmentsRef.current.has(key)) continue;
           try {
@@ -3131,6 +3294,11 @@ function EditConsultaForm({
         return;
       }
 
+      if (mode === "request-exam") {
+        setExamRequestItems(validExamNames.map((name) => ({ name: name.trim() })));
+        return;
+      }
+
       onSaved();
       onClose();
     } catch (err) {
@@ -3146,6 +3314,17 @@ function EditConsultaForm({
         patientId={patientId}
         appointmentId={consultation.id}
         items={prescriptionItems}
+        onClose={onClose}
+      />
+    );
+  }
+
+  if (examRequestItems) {
+    return (
+      <ExamRequestDocument
+        patientId={patientId}
+        appointmentId={consultation.id}
+        items={examRequestItems}
         onClose={onClose}
       />
     );
@@ -3310,12 +3489,53 @@ function EditConsultaForm({
           )}
 
           {addExam ? (
-            <ExamFieldsList
-              examNames={examNames}
-              onChange={handleExamChange}
-              onAdd={() => setExamNames([...examNames, ""])}
-              idPrefix="edit-consulta"
-            />
+            <>
+              <div>
+                <FileInput
+                  label="Anexar pedido de exame (PDF ou imagem)"
+                  name="edit-consulta-exam-file"
+                  onChange={handleAttachExamFile}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                />
+                {readingExamAttachment && (
+                  <p className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Lendo anexo...
+                  </p>
+                )}
+                {readingExamError && !readingExamAttachment && (
+                  <p className="text-xs text-red-600 mt-2">
+                    Não foi possível ler o anexo automaticamente. Preencha os
+                    campos abaixo manualmente.
+                  </p>
+                )}
+                <p className="text-xs text-slate-400 mt-2">
+                  Se anexar um arquivo, confira se os campos abaixo conferem
+                  com ele antes de enviar. Prefira gerar o pedido pela
+                  Hispora (sem anexo) — o PDF já sai pronto para assinatura
+                  digital.
+                </p>
+              </div>
+
+              <ExamFieldsList
+                examNames={examNames}
+                onChange={handleExamChange}
+                onAdd={() => setExamNames([...examNames, ""])}
+                idPrefix="edit-consulta"
+                trailingAction={
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    loading={saving}
+                    icon={<FileText className="w-3.5 h-3.5" />}
+                    onClick={() => performSave(finalizada, "request-exam")}
+                  >
+                    Solicitar exame
+                  </Button>
+                }
+              />
+            </>
           ) : (
             <Button
               type="button"
