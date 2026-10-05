@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { FileText, Download, Clock, Eye, ArrowLeft } from "lucide-react";
+import { FileText, Download, Clock, Eye, ArrowLeft, Send } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Textarea } from "../../components/ui/FormField";
 import { DocumentPreview } from "../../components/DocumentPreview";
+import { SendDocumentModal } from "../../components/SendDocumentModal";
 import { useToast } from "../../contexts/ToastContext";
 import { ApiError } from "../../services/api";
 import {
@@ -22,11 +23,17 @@ import type { DocumentSpec } from "../../services/reports";
  */
 export function PrescriptionDocument({
   patientId,
+  appointmentId,
   items: initialItems,
   observations: initialObservations,
   onClose,
 }: {
   patientId: string;
+  /** Links the prescription to the consultation it was written during, when
+   * called from within a consultation form (same relation `/medications` and
+   * `/exams` already record for this visit). Omitted for the standalone
+   * "add medication" flow, which has no consultation context. */
+  appointmentId?: string;
   items: PrescriptionItemInput[];
   observations?: string;
   onClose: () => void;
@@ -38,6 +45,7 @@ export function PrescriptionDocument({
   const [busy, setBusy] = useState(false);
   const [prescription, setPrescription] = useState<Prescription | null>(null);
   const [spec, setSpec] = useState<DocumentSpec | null>(null);
+  const [sendModalOpen, setSendModalOpen] = useState(false);
 
   function updateItem(
     index: number,
@@ -69,6 +77,7 @@ export function PrescriptionDocument({
           })
         : await prescriptionsApi.create({
             patientId,
+            appointmentId,
             items,
             observations: observations || undefined,
           });
@@ -88,6 +97,9 @@ export function PrescriptionDocument({
     try {
       setPrescription(await prescriptionsApi.generatePdf(prescription.id));
       toast.success("Receita gerada com sucesso!");
+      // Straight into "como deseja enviar?" — the doctor shouldn't have to
+      // remember a separate step to actually get the receita to the patient.
+      setSendModalOpen(true);
     } catch (err) {
       reportError(err, "Erro ao gerar a receita.");
     } finally {
@@ -104,13 +116,15 @@ export function PrescriptionDocument({
 
         {hasPdf && (
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
-            {/* Mirrors the backend's signature status — never asserts a
-                digital signature that doesn't exist. */}
+            {/* Mirrors the backend's status/signatureStatus — never asserts a
+                digital signature or delivery that didn't actually happen. */}
             <p className="flex items-center gap-1.5 text-sm font-medium text-amber-700">
               <Clock size={14} />
               {prescription?.signatureStatus === "signed"
-                ? "Documento assinado digitalmente."
-                : "Documento gerado — assinatura digital ainda não configurada."}
+                ? "Documento assinado digitalmente e enviado ao paciente."
+                : prescription?.status === "sent"
+                  ? "Documento enviado ao paciente — sem assinatura digital."
+                  : "Documento gerado — ainda não enviado ao paciente."}
             </p>
             <div className="flex gap-3">
               <a
@@ -135,7 +149,47 @@ export function PrescriptionDocument({
                 </Button>
               </a>
             </div>
+            {prescription?.status === "generated" && (
+              <Button
+                type="button"
+                onClick={() => setSendModalOpen(true)}
+                variant="primary"
+                size="md"
+                fullWidth
+                icon={<Send className="w-4 h-4" />}
+              >
+                Enviar receita
+              </Button>
+            )}
           </div>
+        )}
+
+        {prescription && (
+          <SendDocumentModal
+            isOpen={sendModalOpen}
+            onClose={() => setSendModalOpen(false)}
+            documentLabel="receita"
+            onSendWithoutSignature={async () => {
+              const updated = await prescriptionsApi.send(prescription.id);
+              setPrescription(updated);
+              return { documentUrl: updated.documentUrl };
+            }}
+            onRequestSignature={async () => {
+              const { prescription: updated, signingUrl } =
+                await prescriptionsApi.requestSignature(prescription.id);
+              setPrescription(updated);
+              return { signingUrl };
+            }}
+            onPollSignature={async () => {
+              const updated = await prescriptionsApi.getById(prescription.id);
+              setPrescription(updated);
+              return {
+                signed: updated.signatureStatus === "signed",
+                failed: updated.signatureStatus === "failed",
+                documentUrl: updated.documentUrl,
+              };
+            }}
+          />
         )}
 
         <div className="flex gap-4 pt-2">

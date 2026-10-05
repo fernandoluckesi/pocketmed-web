@@ -832,6 +832,13 @@ function SearchTabContent({
   const [searchQuery, setSearchQuery] = useState("");
   const { results, loading: searchLoading } = useSearchPatients(searchQuery);
   const { requests, refetch: refetchRequests } = useAccessRequests();
+  // The source of truth for "is access currently active" — `/patients/my`
+  // already excludes anyone whose permission was revoked. A request's own
+  // `status` field never changes on revocation (only the separate
+  // `DoctorPermission.isActive` flag does), so relying on request history
+  // alone kept showing "Acesso Concedido" — and hiding "Solicitar Acesso" —
+  // for patients who had since revoked access.
+  const { patients: myPatients, refetch: refetchMyPatients } = useMyPatients();
   const [modalPatient, setModalPatient] = useState<{
     id: string;
     name: string;
@@ -839,24 +846,26 @@ function SearchTabContent({
   } | null>(null);
   const toast = useToast();
 
-  // Build a map of patientId -> access status for quick lookup
-  const accessStatusMap = useMemo(() => {
-    const map = new Map<string, AccessStatus>();
+  const myPatientIds = useMemo(
+    () => new Set(myPatients.map((p) => p.id)),
+    [myPatients],
+  );
+
+  // Only "pending" comes from request history now — "approved" is derived
+  // from current access, and a rejected/revoked request correctly falls back
+  // to "none" so the doctor can request again.
+  const pendingPatientIds = useMemo(() => {
+    const set = new Set<string>();
     for (const req of requests) {
-      if (req.status === "approved") {
-        map.set(req.patientId, "approved");
-      } else if (req.status === "pending") {
-        // Only set pending if not already approved
-        if (!map.has(req.patientId) || map.get(req.patientId) !== "approved") {
-          map.set(req.patientId, "pending");
-        }
-      }
+      if (req.status === "pending") set.add(req.patientId);
     }
-    return map;
+    return set;
   }, [requests]);
 
   const getAccessStatus = (patientId: string): AccessStatus => {
-    return accessStatusMap.get(patientId) || "none";
+    if (myPatientIds.has(patientId)) return "approved";
+    if (pendingPatientIds.has(patientId)) return "pending";
+    return "none";
   };
 
   const handleRequestAccess = (patient: {
@@ -870,6 +879,7 @@ function SearchTabContent({
   const handleModalSuccess = () => {
     toast.success("Solicitação enviada com sucesso!");
     refetchRequests();
+    refetchMyPatients();
   };
 
   // Determine what to display: API results if search is active, otherwise mock data

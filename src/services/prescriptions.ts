@@ -39,6 +39,8 @@ export const prescriptionsApi = {
   }): Promise<Prescription> =>
     api("/prescriptions", { method: "POST", body: data }),
 
+  getById: (id: string): Promise<Prescription> => api(`/prescriptions/${id}`),
+
   update: (
     id: string,
     data: {
@@ -60,4 +62,26 @@ export const prescriptionsApi = {
 
   cancel: (id: string): Promise<Prescription> =>
     api(`/prescriptions/${id}/cancel`, { method: "POST" }),
+
+  /** "Enviar sem assinatura digital" — delivers the already-generated PDF
+   * to the patient as-is. */
+  send: (id: string): Promise<Prescription> =>
+    api(`/prescriptions/${id}/send`, { method: "POST" }),
+
+  /** "Assinar digitalmente e enviar", step 1 — starts the (simulated)
+   * signature request and returns the URL to open in a new tab. */
+  requestSignature: (
+    id: string,
+  ): Promise<{ prescription: Prescription; signingUrl: string }> =>
+    api(`/prescriptions/${id}/request-signature`, { method: "POST" }),
+
+  /** Step 2, called from the signature-simulator page once "signed". */
+  confirmSignature: (
+    id: string,
+    externalSignatureId: string,
+  ): Promise<Prescription> =>
+    api(`/prescriptions/${id}/confirm-signature`, {
+      method: "POST",
+      body: { externalSignatureId },
+    }),
 };

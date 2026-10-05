@@ -6,6 +6,7 @@ import {
 const STATUS_CLASSES: Record<DocumentStatus, string> = {
   draft: "bg-slate-100 text-slate-600",
   generated: "bg-blue-100 text-primary",
+  sent: "bg-amber-100 text-amber-700",
   signed: "bg-green-100 text-green-700",
   canceled: "bg-red-100 text-red-700",
 };

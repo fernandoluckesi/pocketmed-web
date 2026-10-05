@@ -26,7 +26,12 @@ export function reportTypeLabel(
 /** Document lifecycle, mirroring the backend `DocumentStatus`. `signed` is
  * only ever set by a real signature provider — none exists yet, so nothing
  * in the UI should present a document as digitally signed on its own. */
-export type DocumentStatus = "draft" | "generated" | "signed" | "canceled";
+export type DocumentStatus =
+  | "draft"
+  | "generated"
+  | "sent"
+  | "signed"
+  | "canceled";
 
 export type SignatureStatus =
   | "none"
@@ -38,6 +43,7 @@ export type SignatureStatus =
 export const REPORT_STATUS_LABELS: Record<DocumentStatus, string> = {
   draft: "Rascunho",
   generated: "Gerado",
+  sent: "Enviado",
   signed: "Assinado",
   canceled: "Cancelado",
 };

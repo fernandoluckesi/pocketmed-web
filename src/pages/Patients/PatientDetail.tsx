@@ -432,14 +432,14 @@ function AppointmentsSection({
                 }`}
               >
                 {apt.status === "completed"
-                  ? "Concluído"
+                  ? "Concluída"
                   : apt.status === "cancelled"
-                    ? "Cancelado"
+                    ? "Cancelada"
                     : apt.status === "rejected"
-                      ? "Recusado"
+                      ? "Recusada"
                       : apt.status === "pending_approval"
                         ? "Aguardando aprovação"
-                        : "Agendado"}
+                        : "Agendada"}
               </span>
             </div>
           </div>
@@ -1652,6 +1652,11 @@ function ExamRequestForm({
             abaixo manualmente.
           </p>
         )}
+        <p className="text-xs text-slate-400 mt-2">
+          Se anexar um arquivo, confira se os campos abaixo conferem com ele
+          antes de enviar. Prefira gerar o pedido pela Hispora (sem anexo) —
+          o PDF já sai pronto para assinatura digital.
+        </p>
       </div>
 
       {examNames.map((name, index) => (
@@ -1979,6 +1984,11 @@ function PrescriptionForm({
             abaixo manualmente.
           </p>
         )}
+        <p className="text-xs text-slate-400 mt-2">
+          Se anexar um arquivo, confira se os campos abaixo conferem com ele
+          antes de enviar. Prefira gerar a receita pela Hispora (sem anexo) —
+          o PDF já sai pronto para assinatura digital.
+        </p>
       </div>
 
       {medications.map((med, index) => (
@@ -2004,27 +2014,29 @@ function PrescriptionForm({
             onChange={(val) => updateMed(index, "dosage", val)}
             placeholder="Ex: 50mg, Comprimido"
           />
-          <SelectInput
-            label="Frequência"
-            name={`med-frequencia-${index}`}
-            value={med.frequency}
-            onChange={(val) => updateMed(index, "frequency", val)}
-            options={FREQUENCY_OPTIONS}
-          />
-          <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
-              Horários
-            </label>
-            <div className="flex flex-wrap gap-3">
-              {med.times.map((t, tIdx) => (
-                <input
-                  key={tIdx}
-                  type="time"
-                  value={t}
-                  onChange={(e) => updateMedTime(index, tIdx, e.target.value)}
-                  className="bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-900 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
-                />
-              ))}
+          <div className="grid grid-cols-2 gap-4">
+            <SelectInput
+              label="Frequência"
+              name={`med-frequencia-${index}`}
+              value={med.frequency}
+              onChange={(val) => updateMed(index, "frequency", val)}
+              options={FREQUENCY_OPTIONS}
+            />
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                Horários
+              </label>
+              <div className="flex flex-wrap gap-3">
+                {med.times.map((t, tIdx) => (
+                  <input
+                    key={tIdx}
+                    type="time"
+                    value={t}
+                    onChange={(e) => updateMedTime(index, tIdx, e.target.value)}
+                    className="bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-900 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                  />
+                ))}
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-6">
@@ -2118,28 +2130,30 @@ function MedicationFieldsList({
             onChange={(val) => onChange(index, "dosage", val)}
             placeholder="Ex: 50mg"
           />
-          <SelectInput
-            label="Frequência"
-            name={`${idPrefix}-med-frequency-${index}`}
-            value={med.frequency}
-            onChange={(val) => onChange(index, "frequency", val)}
-            options={FREQUENCY_OPTIONS}
-          />
-          <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
-              Horários
-            </label>
-            <div className="flex flex-wrap gap-3">
-              {med.times.map((t, tIdx) => (
-                <input
-                  key={tIdx}
-                  type="time"
-                  aria-label={`Horário ${tIdx + 1}`}
-                  value={t}
-                  onChange={(e) => onTimeChange(index, tIdx, e.target.value)}
-                  className="bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-900 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
-                />
-              ))}
+          <div className="grid grid-cols-2 gap-4">
+            <SelectInput
+              label="Frequência"
+              name={`${idPrefix}-med-frequency-${index}`}
+              value={med.frequency}
+              onChange={(val) => onChange(index, "frequency", val)}
+              options={FREQUENCY_OPTIONS}
+            />
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                Horários
+              </label>
+              <div className="flex flex-wrap gap-3">
+                {med.times.map((t, tIdx) => (
+                  <input
+                    key={tIdx}
+                    type="time"
+                    aria-label={`Horário ${tIdx + 1}`}
+                    value={t}
+                    onChange={(e) => onTimeChange(index, tIdx, e.target.value)}
+                    className="bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-900 text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                  />
+                ))}
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -2760,6 +2774,11 @@ function EditConsultaForm({
   ]);
   const [examNames, setExamNames] = useState<string[]>([""]);
   const [submissionErrors, setSubmissionErrors] = useState<string[]>([]);
+  const [readingAttachment, setReadingAttachment] = useState(false);
+  const [readingError, setReadingError] = useState(false);
+  const [prescriptionItems, setPrescriptionItems] = useState<
+    PrescriptionItemInput[] | null
+  >(null);
 
   /**
    * Attachments already created by an earlier submit attempt, keyed by
@@ -2807,6 +2826,48 @@ function EditConsultaForm({
     setExamNames(updated);
   }
 
+  // Mirrors `PrescriptionForm`'s attach-and-parse: OCR-reads an uploaded
+  // prescription/order to prefill medication rows, same endpoint and shape.
+  async function handleAttachFile(file: File | null) {
+    if (!file) return;
+    setReadingAttachment(true);
+    setReadingError(false);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const result = await api("/medication-catalog/parse-order", {
+        method: "POST",
+        body: formData,
+        isFormData: true,
+      });
+      const matches: { product: string }[] = Array.isArray(
+        result?.matchedMedications,
+      )
+        ? result.matchedMedications
+        : [];
+      if (matches.length > 0) {
+        setMedications((prev) => {
+          const hasContent = prev.some((m) => m.name.trim());
+          const base = hasContent ? prev : [];
+          const newRows: MedFormItem[] = matches.map((m) => ({
+            name: m.product,
+            dosage: "",
+            frequency: "once_daily",
+            times: ["08:00"],
+            startDate: "",
+            endDate: "",
+            instructions: "",
+          }));
+          return [...base, ...newRows];
+        });
+      }
+    } catch {
+      setReadingError(true);
+    } finally {
+      setReadingAttachment(false);
+    }
+  }
+
   // The form's own submit just decides whether finalization needs an
   // explicit choice — secretaries can't finalize at all (no clinical data in
   // their payload), so their save stays a single direct action.
@@ -2819,10 +2880,18 @@ function EditConsultaForm({
     }
   }
 
-  async function performSave(finalize: boolean) {
+  // "prescribe" skips the close/onSaved at the end and instead hands the
+  // just-saved medications to `PrescriptionDocument` — same destination the
+  // standalone `PrescriptionForm`'s "Prescrever" button leads to. Nothing
+  // about the consultation itself is lost: it's saved first, exactly as the
+  // normal submit would.
+  async function performSave(finalize: boolean, mode: "close" | "prescribe" = "close") {
     setShowFinalizeChoice(false);
     setSaving(true);
     setSubmissionErrors([]);
+    const validMeds = medications.filter(
+      (m) => m.name.trim() && m.dosage.trim() && m.startDate,
+    );
     try {
       const dateTime = time ? `${date}T${time}:00` : `${date}T00:00:00`;
       await api(`/patients/${patientId}/consultations/${consultation.id}`, {
@@ -2856,10 +2925,6 @@ function EditConsultaForm({
       const errors: string[] = [];
 
       if (showClinicalSection && addMedication) {
-        // Same required fields as the standalone prescription screen.
-        const validMeds = medications.filter(
-          (m) => m.name.trim() && m.dosage.trim() && m.startDate,
-        );
         for (const med of validMeds) {
           const key = `med:${med.name.trim()}`;
           if (savedAttachmentsRef.current.has(key)) continue;
@@ -2915,6 +2980,24 @@ function EditConsultaForm({
         return;
       }
 
+      if (mode === "prescribe") {
+        const frequencyLabel = (value: string) =>
+          FREQUENCY_OPTIONS.find((f) => f.value === value)?.label || value;
+        const formatBr = (isoDate: string) =>
+          isoDate ? isoDate.split("-").reverse().join("/") : "";
+
+        setPrescriptionItems(
+          validMeds.map((med) => ({
+            name: med.name.trim(),
+            posology: `${med.dosage.trim()} — ${frequencyLabel(med.frequency)}`,
+            treatmentDuration: med.endDate
+              ? `${formatBr(med.startDate)} a ${formatBr(med.endDate)}`
+              : "",
+          })),
+        );
+        return;
+      }
+
       onSaved();
       onClose();
     } catch (err) {
@@ -2922,6 +3005,17 @@ function EditConsultaForm({
     } finally {
       setSaving(false);
     }
+  }
+
+  if (prescriptionItems) {
+    return (
+      <PrescriptionDocument
+        patientId={patientId}
+        appointmentId={consultation.id}
+        items={prescriptionItems}
+        onClose={onClose}
+      />
+    );
   }
 
   return (
@@ -3021,14 +3115,54 @@ function EditConsultaForm({
           />
 
           {addMedication ? (
-            <MedicationFieldsList
-              medications={medications}
-              onChange={handleMedicationChange}
-              onTimeChange={handleMedTimeChange}
-              onAdd={() => setMedications([...medications, emptyMedication()])}
-              medicationSearch={medicationSearch}
-              idPrefix="edit-consulta"
-            />
+            <>
+              <div>
+                <FileInput
+                  label="Anexar receita/pedido (PDF ou imagem)"
+                  name="edit-consulta-prescription-file"
+                  onChange={handleAttachFile}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                />
+                {readingAttachment && (
+                  <p className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Lendo anexo...
+                  </p>
+                )}
+                {readingError && !readingAttachment && (
+                  <p className="text-xs text-red-600 mt-2">
+                    Não foi possível ler o anexo automaticamente. Preencha os
+                    campos abaixo manualmente.
+                  </p>
+                )}
+                <p className="text-xs text-slate-400 mt-2">
+                  Se anexar um arquivo, confira se os campos abaixo conferem
+                  com ele antes de enviar. Prefira gerar a receita pela
+                  Hispora (sem anexo) — o PDF já sai pronto para assinatura
+                  digital.
+                </p>
+              </div>
+
+              <MedicationFieldsList
+                medications={medications}
+                onChange={handleMedicationChange}
+                onTimeChange={handleMedTimeChange}
+                onAdd={() => setMedications([...medications, emptyMedication()])}
+                medicationSearch={medicationSearch}
+                idPrefix="edit-consulta"
+              />
+
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                loading={saving}
+                icon={<FileText className="w-3.5 h-3.5" />}
+                onClick={() => performSave(finalizada, "prescribe")}
+              >
+                Prescrever
+              </Button>
+            </>
           ) : (
             <Button
               type="button"
@@ -3307,14 +3441,14 @@ function ConsultaDetailView({
               }`}
             >
               {consultation.status === "completed"
-                ? "Concluído"
+                ? "Concluída"
                 : consultation.status === "cancelled"
-                  ? "Cancelado"
+                  ? "Cancelada"
                   : consultation.status === "rejected"
-                    ? "Recusado"
+                    ? "Recusada"
                     : consultation.status === "pending_approval"
                       ? "Aguardando aprovação"
-                      : "Agendado"}
+                      : "Agendada"}
             </span>
           </div>
         </div>

@@ -12,6 +12,7 @@ import SecurityPage from "../pages/Institutional/SecurityPage";
 import SupportPage from "../pages/Institutional/SupportPage";
 import DataDeletionPage from "../pages/Institutional/DataDeletionPage";
 import Verification from "../pages/Verification";
+import SignatureSimulator from "../pages/SignatureSimulator";
 import Dashboard from "../pages/Dashboard";
 import Consultations from "../pages/Consultations";
 import Atestados from "../pages/Atestados";
@@ -74,6 +75,18 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute>
             <Verification />
+          </ProtectedRoute>
+        }
+      />
+      {/* Stand-in for a real e-signature provider's hosted signing page —
+          opened in a new tab by `SendDocumentModal`. Deliberately outside
+          `MainLayout` (full-bleed, no sidebar) since it simulates a
+          third-party platform. */}
+      <Route
+        path="/assinatura-simulada/:token"
+        element={
+          <ProtectedRoute>
+            <SignatureSimulator />
           </ProtectedRoute>
         }
       />
