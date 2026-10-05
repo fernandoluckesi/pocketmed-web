@@ -9,6 +9,7 @@ import {
 import { CustomSelect } from "../../components/ui/CustomSelect";
 import { RichTextEditor } from "../../components/ui/RichTextEditor";
 import { useAuth } from "../../contexts/AuthContext";
+import { useToast } from "../../contexts/ToastContext";
 import { ApiError } from "../../services/api";
 import { resolveCrm } from "../../utils/crm";
 import {
@@ -84,6 +85,7 @@ export function LaudoForm({
   variant?: "modal" | "inline";
 }) {
   const { user } = useAuth();
+  const toast = useToast();
 
   const isEditing = !!initial;
   const isLocked =
@@ -129,12 +131,14 @@ export function LaudoForm({
     try {
       const updated = await reportsApi.removeFile(initial.id);
       setExistingFileUrl(updated.fileUrl);
+      toast.success("Anexo removido.");
     } catch (err) {
-      setError(
+      const message =
         err instanceof ApiError
           ? String(err.data?.message || "Erro ao remover o anexo.")
-          : "Erro ao remover o anexo.",
-      );
+          : "Erro ao remover o anexo.";
+      setError(message);
+      toast.error(message);
     }
   }
 
@@ -206,14 +210,16 @@ export function LaudoForm({
       }
 
       onSaved(saved);
+      toast.success(isEditing ? "Laudo atualizado com sucesso!" : "Laudo salvo com sucesso!");
     } catch (err) {
-      setError(
+      const message =
         err instanceof ApiError
           ? String(
               err.data?.message || "Erro ao salvar laudo. Tente novamente.",
             )
-          : "Erro ao salvar laudo. Tente novamente.",
-      );
+          : "Erro ao salvar laudo. Tente novamente.";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }

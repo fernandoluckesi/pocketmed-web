@@ -1544,6 +1544,7 @@ function ExamRequestForm({
   onSaved: () => void;
   variant?: "modal" | "inline";
 }) {
+  const toast = useToast();
   const [examNames, setExamNames] = useState<string[]>([""]);
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
@@ -1621,12 +1622,18 @@ function ExamRequestForm({
         });
       }
       onSaved();
+      toast.success("Exame(s) salvo(s) com sucesso!");
       // Instead of closing right away, offer to bundle what was just saved
       // into a formal "pedido de exame" document (PDF) — mirrors
       // `PrescriptionForm`'s hand-off into `PrescriptionDocument`.
       setExamRequestItems(validExams.map((name) => ({ name })));
     } catch (err) {
       console.error("Erro ao criar exames:", err);
+      toast.error(
+        err instanceof ApiError
+          ? String(err.data?.message || "Erro ao salvar os exames.")
+          : "Erro ao salvar os exames.",
+      );
     } finally {
       setSaving(false);
     }
@@ -1794,6 +1801,7 @@ function PrescriptionForm({
   onSaved: () => void;
   variant?: "modal" | "inline";
 }) {
+  const toast = useToast();
   const medicationSearch = useMedicationCatalogSearch();
   const [medications, setMedications] = useState<MedFormItem[]>([
     {
@@ -1924,8 +1932,14 @@ function PrescriptionForm({
 
     if (errors.length > 0) {
       setSubmissionErrors(errors);
+      toast.error(
+        errors.length === 1
+          ? `Erro ao salvar ${errors[0]}.`
+          : `Erro ao salvar ${errors.length} medicamento(s).`,
+      );
     } else {
       onSaved();
+      toast.success("Medicamento(s) salvo(s) com sucesso!");
       // Instead of closing right away, offer to bundle what was just saved
       // into a formal prescription document (PDF) — "Visualiza a receita"
       // step. Closing (without generating) is still one click away.
@@ -2322,6 +2336,7 @@ function ConsultaForm({
   onSaved: () => void;
   variant?: "modal" | "inline";
 }) {
+  const toast = useToast();
   const { user } = useAuth();
   // Secretaries can schedule but never author clinical content.
   const showClinicalSection = canWriteClinicalData(user);
@@ -2623,6 +2638,11 @@ function ConsultaForm({
         // The consultation is already persisted; only the listed attachments
         // failed. Retrying re-sends just those (see the refs above).
         setSubmissionErrors(errors);
+        toast.error(
+          errors.length === 1
+            ? `Consulta salva, mas houve erro em ${errors[0]}.`
+            : `Consulta salva, mas ${errors.length} item(ns) falharam.`,
+        );
       } else if (mode === "prescribe") {
         const frequencyLabel = (value: string) =>
           FREQUENCY_OPTIONS.find((f) => f.value === value)?.label || value;
@@ -2638,19 +2658,22 @@ function ConsultaForm({
               : "",
           })),
         );
+        toast.success("Consulta e medicamento(s) salvos com sucesso!");
       } else if (mode === "request-exam") {
         setExamRequestItems(validExamNames.map((name) => ({ name: name.trim() })));
+        toast.success("Consulta e exame(s) salvos com sucesso!");
       } else {
         onSaved();
         onClose();
+        toast.success("Consulta salva com sucesso!");
       }
     } catch (err) {
       console.error("Erro ao salvar consulta:", err);
-      setSubmissionErrors([
-        createdAppointmentId
-          ? "Não foi possível atualizar a consulta. Tente novamente."
-          : "Não foi possível salvar a consulta. Tente novamente.",
-      ]);
+      const message = createdAppointmentId
+        ? "Não foi possível atualizar a consulta. Tente novamente."
+        : "Não foi possível salvar a consulta. Tente novamente.";
+      setSubmissionErrors([message]);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -2994,6 +3017,7 @@ function EditConsultaForm({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const toast = useToast();
   const { user } = useAuth();
   const { endConsultation } = useActiveConsultation();
   // Secretaries schedule appointments but never author clinical content, so
@@ -3273,6 +3297,11 @@ function EditConsultaForm({
         // The consultation itself saved — surface only what failed so the
         // doctor doesn't resubmit the whole form and duplicate it.
         setSubmissionErrors(errors);
+        toast.error(
+          errors.length === 1
+            ? `Consulta salva, mas houve erro em ${errors[0]}.`
+            : `Consulta salva, mas ${errors.length} item(ns) falharam.`,
+        );
         return;
       }
 
@@ -3291,18 +3320,22 @@ function EditConsultaForm({
               : "",
           })),
         );
+        toast.success("Consulta e medicamento(s) salvos com sucesso!");
         return;
       }
 
       if (mode === "request-exam") {
         setExamRequestItems(validExamNames.map((name) => ({ name: name.trim() })));
+        toast.success("Consulta e exame(s) salvos com sucesso!");
         return;
       }
 
       onSaved();
       onClose();
+      toast.success("Consulta atualizada com sucesso!");
     } catch (err) {
       console.error("Erro ao atualizar consulta:", err);
+      toast.error("Não foi possível atualizar a consulta. Tente novamente.");
     } finally {
       setSaving(false);
     }
