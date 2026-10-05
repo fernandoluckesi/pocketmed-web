@@ -1603,7 +1603,10 @@ function ExamRequestForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const validExams = examNames.filter((n) => n.trim());
-    if (validExams.length === 0) return;
+    if (validExams.length === 0) {
+      toast.error("Informe ao menos um exame antes de continuar.");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -1904,7 +1907,12 @@ function PrescriptionForm({
     const validMeds = medications.filter(
       (m) => m.name.trim() && m.dosage.trim() && m.startDate,
     );
-    if (validMeds.length === 0) return;
+    if (validMeds.length === 0) {
+      toast.error(
+        "Preencha nome, dosagem e data de início de ao menos um medicamento.",
+      );
+      return;
+    }
 
     setSaving(true);
     setSubmissionErrors([]);
@@ -2519,7 +2527,13 @@ function ConsultaForm({
   async function performSave(
     mode: "close" | "prescribe" | "request-exam" = "close",
   ) {
-    if (!date) return;
+    if (!date) {
+      // Previously a silent no-op — clicking "Prescrever"/"Solicitar exame"
+      // (or even "Salvar Consulta") with no date filled in did nothing
+      // visible at all, with nothing in the console either.
+      toast.error("Informe a data da consulta antes de continuar.");
+      return;
+    }
 
     setSaving(true);
     setSubmissionErrors([]);
