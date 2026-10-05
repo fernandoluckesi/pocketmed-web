@@ -2099,6 +2099,7 @@ function MedicationFieldsList({
   onAdd,
   medicationSearch,
   idPrefix,
+  trailingAction,
 }: {
   medications: MedFormItem[];
   onChange: (index: number, field: string, value: string | string[]) => void;
@@ -2106,6 +2107,10 @@ function MedicationFieldsList({
   onAdd: () => void;
   medicationSearch: ReturnType<typeof useMedicationCatalogSearch>;
   idPrefix: string;
+  /** Rendered on the same row as "Adicionar outro medicamento", right-aligned
+   * — e.g. a "Prescrever" button. Keeps it visually grouped with medication
+   * actions instead of drifting next to the (unrelated) exam section below. */
+  trailingAction?: ReactNode;
 }) {
   return (
     <div className="space-y-4 pl-4 border-l-2 border-primary/20">
@@ -2180,14 +2185,17 @@ function MedicationFieldsList({
           />
         </div>
       ))}
-      <button
-        type="button"
-        onClick={onAdd}
-        className="flex items-center gap-1 text-primary text-xs font-semibold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
-      >
-        <Plus className="w-3.5 h-3.5" />
-        Adicionar outro medicamento
-      </button>
+      <div className="flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={onAdd}
+          className="flex items-center gap-1 text-primary text-xs font-semibold hover:opacity-80 transition-opacity cursor-pointer border-none bg-transparent p-0"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Adicionar outro medicamento
+        </button>
+        {trailingAction}
+      </div>
     </div>
   );
 }
@@ -2318,6 +2326,11 @@ function ConsultaForm({
   ]);
   const [examNames, setExamNames] = useState<string[]>([""]);
   const [submissionErrors, setSubmissionErrors] = useState<string[]>([]);
+  const [readingAttachment, setReadingAttachment] = useState(false);
+  const [readingError, setReadingError] = useState(false);
+  const [prescriptionItems, setPrescriptionItems] = useState<
+    PrescriptionItemInput[] | null
+  >(null);
 
   /**
    * Id of the consultation created by an earlier submit attempt.
@@ -2370,12 +2383,66 @@ function ConsultaForm({
     setExamNames(updated);
   }
 
+  // Mirrors `PrescriptionForm`'s attach-and-parse: OCR-reads an uploaded
+  // prescription/order to prefill medication rows, same endpoint and shape.
+  async function handleAttachFile(file: File | null) {
+    if (!file) return;
+    setReadingAttachment(true);
+    setReadingError(false);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const result = await api("/medication-catalog/parse-order", {
+        method: "POST",
+        body: formData,
+        isFormData: true,
+      });
+      const matches: { product: string }[] = Array.isArray(
+        result?.matchedMedications,
+      )
+        ? result.matchedMedications
+        : [];
+      if (matches.length > 0) {
+        setMedications((prev) => {
+          const hasContent = prev.some((m) => m.name.trim());
+          const base = hasContent ? prev : [];
+          const newRows: MedFormItem[] = matches.map((m) => ({
+            name: m.product,
+            dosage: "",
+            frequency: "once_daily",
+            times: ["08:00"],
+            startDate: "",
+            endDate: "",
+            instructions: "",
+          }));
+          return [...base, ...newRows];
+        });
+      }
+    } catch {
+      setReadingError(true);
+    } finally {
+      setReadingAttachment(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    await performSave("close");
+  }
+
+  // "prescribe" skips the close/onSaved at the end and instead hands the
+  // just-saved medications to `PrescriptionDocument` — same destination the
+  // standalone `PrescriptionForm`'s "Prescrever" button leads to. Nothing
+  // about the consultation itself is lost: it's saved first, exactly as the
+  // normal submit would.
+  async function performSave(mode: "close" | "prescribe" = "close") {
     if (!date) return;
 
     setSaving(true);
     setSubmissionErrors([]);
+    const validMeds = medications.filter(
+      (m) => m.name.trim() && m.dosage.trim() && m.startDate,
+    );
 
     try {
       const dateTime = time ? `${date}T${time}:00` : `${date}T00:00:00`;
@@ -2436,9 +2503,6 @@ function ConsultaForm({
       // `times` and `endDate` — the form renders both fields, so the shortcut
       // was silently dropping them.
       if (showClinicalSection && addMedication) {
-        const validMeds = medications.filter(
-          (m) => m.name.trim() && m.dosage.trim() && m.startDate,
-        );
         for (const med of validMeds) {
           const key = `med:${med.name.trim()}`;
           if (savedAttachmentsRef.current.has(key)) continue;
@@ -2491,6 +2555,21 @@ function ConsultaForm({
         // The consultation is already persisted; only the listed attachments
         // failed. Retrying re-sends just those (see the refs above).
         setSubmissionErrors(errors);
+      } else if (mode === "prescribe") {
+        const frequencyLabel = (value: string) =>
+          FREQUENCY_OPTIONS.find((f) => f.value === value)?.label || value;
+        const formatBr = (isoDate: string) =>
+          isoDate ? isoDate.split("-").reverse().join("/") : "";
+
+        setPrescriptionItems(
+          validMeds.map((med) => ({
+            name: med.name.trim(),
+            posology: `${med.dosage.trim()} — ${frequencyLabel(med.frequency)}`,
+            treatmentDuration: med.endDate
+              ? `${formatBr(med.startDate)} a ${formatBr(med.endDate)}`
+              : "",
+          })),
+        );
       } else {
         onSaved();
         onClose();
@@ -2505,6 +2584,19 @@ function ConsultaForm({
     } finally {
       setSaving(false);
     }
+  }
+
+  if (prescriptionItems) {
+    return (
+      <div className={variant === "inline" ? "" : "p-8 pt-0"}>
+        <PrescriptionDocument
+          patientId={patientId}
+          appointmentId={createdAppointmentId ?? undefined}
+          items={prescriptionItems}
+          onClose={onClose}
+        />
+      </div>
+    );
   }
 
   return (
@@ -2628,14 +2720,55 @@ function ConsultaForm({
           />
 
           {addMedication ? (
-            <MedicationFieldsList
-              medications={medications}
-              onChange={handleMedicationChange}
-              onTimeChange={handleMedTimeChange}
-              onAdd={() => setMedications([...medications, emptyMedication()])}
-              medicationSearch={medicationSearch}
-              idPrefix="consulta"
-            />
+            <>
+              <div>
+                <FileInput
+                  label="Anexar receita/pedido (PDF ou imagem)"
+                  name="consulta-prescription-file"
+                  onChange={handleAttachFile}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                />
+                {readingAttachment && (
+                  <p className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Lendo anexo...
+                  </p>
+                )}
+                {readingError && !readingAttachment && (
+                  <p className="text-xs text-red-600 mt-2">
+                    Não foi possível ler o anexo automaticamente. Preencha os
+                    campos abaixo manualmente.
+                  </p>
+                )}
+                <p className="text-xs text-slate-400 mt-2">
+                  Se anexar um arquivo, confira se os campos abaixo conferem
+                  com ele antes de enviar. Prefira gerar a receita pela
+                  Hispora (sem anexo) — o PDF já sai pronto para assinatura
+                  digital.
+                </p>
+              </div>
+
+              <MedicationFieldsList
+                medications={medications}
+                onChange={handleMedicationChange}
+                onTimeChange={handleMedTimeChange}
+                onAdd={() => setMedications([...medications, emptyMedication()])}
+                medicationSearch={medicationSearch}
+                idPrefix="consulta"
+                trailingAction={
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    loading={saving}
+                    icon={<FileText className="w-3.5 h-3.5" />}
+                    onClick={() => performSave("prescribe")}
+                  >
+                    Prescrever
+                  </Button>
+                }
+              />
+            </>
           ) : (
             <Button
               type="button"
@@ -3150,18 +3283,19 @@ function EditConsultaForm({
                 onAdd={() => setMedications([...medications, emptyMedication()])}
                 medicationSearch={medicationSearch}
                 idPrefix="edit-consulta"
+                trailingAction={
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    loading={saving}
+                    icon={<FileText className="w-3.5 h-3.5" />}
+                    onClick={() => performSave(finalizada, "prescribe")}
+                  >
+                    Prescrever
+                  </Button>
+                }
               />
-
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                loading={saving}
-                icon={<FileText className="w-3.5 h-3.5" />}
-                onClick={() => performSave(finalizada, "prescribe")}
-              >
-                Prescrever
-              </Button>
             </>
           ) : (
             <Button
