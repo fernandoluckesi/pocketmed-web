@@ -6,9 +6,11 @@ import {
   Loader2,
   Paperclip,
   Pencil,
+  Send,
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { DocumentPreview } from "../../components/DocumentPreview";
+import { SendDocumentModal } from "../../components/SendDocumentModal";
 import { useToast } from "../../contexts/ToastContext";
 import { ApiError } from "../../services/api";
 import {
@@ -36,6 +38,7 @@ export function LaudoDocument({
   const [spec, setSpec] = useState<DocumentSpec | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [sendModalOpen, setSendModalOpen] = useState(false);
 
   const loadPreview = useCallback(async () => {
     setLoading(true);
@@ -63,6 +66,9 @@ export function LaudoDocument({
       const updated = await reportsApi.generatePdf(report.id);
       onGenerated(updated);
       toast.success("PDF gerado com sucesso.");
+      // Straight into "como deseja enviar?" — the doctor shouldn't have to
+      // remember a separate step to actually get the laudo to the patient.
+      setSendModalOpen(true);
     } catch (err) {
       toast.error(
         err instanceof ApiError
@@ -127,13 +133,15 @@ export function LaudoDocument({
 
       {hasPdf && (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
-          {/* Mirrors the backend's signature status — never asserts a digital
-              signature that doesn't exist. */}
+          {/* Mirrors the backend's status/signatureStatus — never asserts a
+              digital signature or delivery that didn't actually happen. */}
           <p className="flex items-center gap-1.5 text-sm font-medium text-amber-700">
             <Clock size={14} />
             {report.signatureStatus === "signed"
-              ? "Documento assinado digitalmente."
-              : "Documento gerado — assinatura digital ainda não configurada."}
+              ? "Documento assinado digitalmente e enviado ao paciente."
+              : report.status === "sent"
+                ? "Documento enviado ao paciente — sem assinatura digital."
+                : "Documento gerado — ainda não enviado ao paciente."}
           </p>
           <div className="flex gap-3">
             <a
@@ -158,8 +166,45 @@ export function LaudoDocument({
               </Button>
             </a>
           </div>
+          {report.status === "generated" && (
+            <Button
+              type="button"
+              onClick={() => setSendModalOpen(true)}
+              variant="primary"
+              size="md"
+              fullWidth
+              icon={<Send className="w-4 h-4" />}
+            >
+              Enviar laudo
+            </Button>
+          )}
         </div>
       )}
+
+      <SendDocumentModal
+        isOpen={sendModalOpen}
+        onClose={() => setSendModalOpen(false)}
+        documentLabel="laudo"
+        onSendWithoutSignature={async () => {
+          const updated = await reportsApi.send(report.id);
+          onGenerated(updated);
+          return { documentUrl: updated.documentUrl };
+        }}
+        onRequestSignature={async () => {
+          const { report: updated, signingUrl } = await reportsApi.requestSignature(report.id);
+          onGenerated(updated);
+          return { signingUrl };
+        }}
+        onPollSignature={async () => {
+          const updated = await reportsApi.getById(report.id);
+          onGenerated(updated);
+          return {
+            signed: updated.signatureStatus === "signed",
+            failed: updated.signatureStatus === "failed",
+            documentUrl: updated.documentUrl,
+          };
+        }}
+      />
 
       <div className="flex gap-4">
         <Button

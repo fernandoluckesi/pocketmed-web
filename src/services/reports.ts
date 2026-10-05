@@ -140,7 +140,7 @@ export interface ReportPayload {
  * `GET /reports/:id/preview` so the on-screen preview matches the PDF
  * instead of being rebuilt (and drifting) on the frontend. */
 export interface DocumentSpec {
-  documentType: "prescription" | "report";
+  documentType: "prescription" | "report" | "exam";
   title: string;
   doctor: { name: string; crm: string; specialty?: string | null };
   patient: {
@@ -219,4 +219,23 @@ export const reportsApi = {
 
   generatePdf: (id: string): Promise<Report> =>
     api(`/reports/${id}/generate-pdf`, { method: "POST" }),
+
+  /** "Enviar sem assinatura digital" — delivers the already-generated PDF
+   * to the patient as-is. */
+  send: (id: string): Promise<Report> =>
+    api(`/reports/${id}/send`, { method: "POST" }),
+
+  /** "Assinar digitalmente e enviar", step 1 — starts the (simulated)
+   * signature request and returns the URL to open in a new tab. */
+  requestSignature: (
+    id: string,
+  ): Promise<{ report: Report; signingUrl: string }> =>
+    api(`/reports/${id}/request-signature`, { method: "POST" }),
+
+  /** Step 2, called from the signature-simulator page once "signed". */
+  confirmSignature: (id: string, externalSignatureId: string): Promise<Report> =>
+    api(`/reports/${id}/confirm-signature`, {
+      method: "POST",
+      body: { externalSignatureId },
+    }),
 };
