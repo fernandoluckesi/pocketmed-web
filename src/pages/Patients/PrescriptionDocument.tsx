@@ -1,8 +1,6 @@
-import { useState } from "react";
-import { FileText, Download, Clock, Eye, ArrowLeft, Send } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Clock, Download, FileText, Loader2, Send, XCircle } from "lucide-react";
 import { Button } from "../../components/ui/Button";
-import { Textarea } from "../../components/ui/FormField";
-import { DocumentPreview } from "../../components/DocumentPreview";
 import { SendDocumentModal } from "../../components/SendDocumentModal";
 import { useToast } from "../../contexts/ToastContext";
 import { ApiError } from "../../services/api";
@@ -11,21 +9,23 @@ import {
   type Prescription,
   type PrescriptionItemInput,
 } from "../../services/prescriptions";
-import type { DocumentSpec } from "../../services/reports";
+
+type Status = "generating" | "ready" | "error";
 
 /**
- * "Gerar receita" step, shown right after medications are saved in
- * `PrescriptionForm` — review/complete the formal prescription wording
- * (concentration/form/route aren't captured by the lighter medication-
- * tracking fields), preview the document, then generate the PDF via the
- * backend. No digital signature exists yet — the status line below is never
- * allowed to claim otherwise (it mirrors whatever the backend reports).
+ * Shown right after medications are saved in `PrescriptionForm` /
+ * `ConsultaForm` / `EditConsultaForm`'s "Prescrever" action. Immediately
+ * creates the prescription and generates its PDF — no manual review step —
+ * showing a loading state the whole time, then hands straight into the
+ * shared "Como deseja enviar?" modal. No digital signature exists unless
+ * the doctor explicitly chooses to sign there; this component never asserts
+ * otherwise.
  */
 export function PrescriptionDocument({
   patientId,
   appointmentId,
-  items: initialItems,
-  observations: initialObservations,
+  items,
+  observations,
   onClose,
 }: {
   patientId: string;
@@ -39,277 +39,164 @@ export function PrescriptionDocument({
   onClose: () => void;
 }) {
   const toast = useToast();
-  const [items, setItems] = useState(initialItems);
-  const [observations, setObservations] = useState(initialObservations || "");
-  const [step, setStep] = useState<"edit" | "preview">("edit");
-  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<Status>("generating");
+  const [errorMessage, setErrorMessage] = useState("");
   const [prescription, setPrescription] = useState<Prescription | null>(null);
-  const [spec, setSpec] = useState<DocumentSpec | null>(null);
   const [sendModalOpen, setSendModalOpen] = useState(false);
+  const startedRef = useRef(false);
 
-  function updateItem(
-    index: number,
-    field: keyof PrescriptionItemInput,
-    value: string,
-  ) {
-    setItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
-    );
-  }
-
-  function reportError(err: unknown, fallback: string) {
-    toast.error(
-      err instanceof ApiError
-        ? String(err.data?.message || fallback)
-        : fallback,
-    );
-  }
-
-  /** Saves the prescription (creating it on first pass, updating it on
-   * subsequent edits) and loads the backend's document spec for review. */
-  async function handlePreview() {
-    setBusy(true);
+  async function generate() {
+    setStatus("generating");
+    setErrorMessage("");
     try {
-      const saved = prescription
-        ? await prescriptionsApi.update(prescription.id, {
-            items,
-            observations: observations || undefined,
-          })
-        : await prescriptionsApi.create({
-            patientId,
-            appointmentId,
-            items,
-            observations: observations || undefined,
-          });
-      setPrescription(saved);
-      setSpec(await prescriptionsApi.preview(saved.id));
-      setStep("preview");
-    } catch (err) {
-      reportError(err, "Erro ao preparar a receita.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleGenerate() {
-    if (!prescription) return;
-    setBusy(true);
-    try {
-      setPrescription(await prescriptionsApi.generatePdf(prescription.id));
+      const created = await prescriptionsApi.create({
+        patientId,
+        appointmentId,
+        items,
+        observations: observations || undefined,
+      });
+      const generated = await prescriptionsApi.generatePdf(created.id);
+      setPrescription(generated);
+      setStatus("ready");
       toast.success("Receita gerada com sucesso!");
       // Straight into "como deseja enviar?" — the doctor shouldn't have to
       // remember a separate step to actually get the receita to the patient.
       setSendModalOpen(true);
     } catch (err) {
-      reportError(err, "Erro ao gerar a receita.");
-    } finally {
-      setBusy(false);
+      const message =
+        err instanceof ApiError
+          ? String(err.data?.message || "Erro ao gerar a receita.")
+          : "Erro ao gerar a receita.";
+      setErrorMessage(message);
+      setStatus("error");
+      toast.error(message);
     }
   }
 
-  const hasPdf = !!prescription?.documentUrl;
+  useEffect(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    generate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  if (step === "preview") {
+  if (status === "generating") {
     return (
-      <div className="space-y-5">
-        {spec && <DocumentPreview spec={spec} />}
+      <div className="py-16 flex flex-col items-center gap-4 text-center">
+        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+        <p className="text-sm font-bold text-slate-800">
+          Gerando PDF da receita...
+        </p>
+        <p className="text-xs text-slate-500">Isso leva só alguns segundos.</p>
+      </div>
+    );
+  }
 
-        {hasPdf && (
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
-            {/* Mirrors the backend's status/signatureStatus — never asserts a
-                digital signature or delivery that didn't actually happen. */}
-            <p className="flex items-center gap-1.5 text-sm font-medium text-amber-700">
-              <Clock size={14} />
-              {prescription?.signatureStatus === "signed"
-                ? "Documento assinado digitalmente e enviado ao paciente."
-                : prescription?.status === "sent"
-                  ? "Documento enviado ao paciente — sem assinatura digital."
-                  : "Documento gerado — ainda não enviado ao paciente."}
-            </p>
-            <div className="flex gap-3">
-              <a
-                href={prescription!.documentUrl!}
-                target="_blank"
-                rel="noreferrer"
-                className="flex-1"
-              >
-                <Button type="button" variant="outline" size="md" fullWidth>
-                  Visualizar PDF
-                </Button>
-              </a>
-              <a href={prescription!.documentUrl!} download className="flex-1">
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="md"
-                  fullWidth
-                  icon={<Download className="w-4 h-4" />}
-                >
-                  Baixar PDF
-                </Button>
-              </a>
-            </div>
-            {prescription?.status === "generated" && (
-              <Button
-                type="button"
-                onClick={() => setSendModalOpen(true)}
-                variant="primary"
-                size="md"
-                fullWidth
-                icon={<Send className="w-4 h-4" />}
-              >
-                Enviar receita
-              </Button>
-            )}
-          </div>
-        )}
-
-        {prescription && (
-          <SendDocumentModal
-            isOpen={sendModalOpen}
-            onClose={() => setSendModalOpen(false)}
-            documentLabel="receita"
-            onSendWithoutSignature={async () => {
-              const updated = await prescriptionsApi.send(prescription.id);
-              setPrescription(updated);
-              return { documentUrl: updated.documentUrl };
-            }}
-            onRequestSignature={async () => {
-              const { prescription: updated, signingUrl } =
-                await prescriptionsApi.requestSignature(prescription.id);
-              setPrescription(updated);
-              return { signingUrl };
-            }}
-            onPollSignature={async () => {
-              const updated = await prescriptionsApi.getById(prescription.id);
-              setPrescription(updated);
-              return {
-                signed: updated.signatureStatus === "signed",
-                failed: updated.signatureStatus === "failed",
-                documentUrl: updated.documentUrl,
-              };
-            }}
-          />
-        )}
-
-        <div className="flex gap-4 pt-2">
+  if (status === "error") {
+    return (
+      <div className="py-10 flex flex-col items-center gap-4 text-center">
+        <XCircle className="w-10 h-10 text-red-500" />
+        <p className="text-sm font-bold text-slate-800">{errorMessage}</p>
+        <div className="flex gap-4 w-full pt-2">
           <Button
             type="button"
-            onClick={hasPdf ? onClose : () => setStep("edit")}
+            onClick={onClose}
             variant="secondary"
             size="md"
             fullWidth
-            icon={hasPdf ? undefined : <ArrowLeft className="w-4 h-4" />}
             className="shadow-none bg-slate-100 text-slate-700 hover:bg-slate-200"
           >
-            {hasPdf ? "Fechar" : "Voltar e editar"}
+            Fechar
           </Button>
-          <Button
-            type="button"
-            onClick={handleGenerate}
-            loading={busy}
-            variant="primary"
-            size="md"
-            fullWidth
-            icon={<FileText className="w-4 h-4" />}
-          >
-            {busy
-              ? "Gerando..."
-              : hasPdf
-                ? "Gerar receita novamente"
-                : "Gerar receita"}
+          <Button type="button" onClick={generate} variant="primary" size="md" fullWidth>
+            Tentar novamente
           </Button>
         </div>
       </div>
     );
   }
 
+  const hasPdf = !!prescription?.documentUrl;
+
   return (
     <div className="space-y-5">
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
-        <FileText className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-        <p className="text-xs text-blue-800 leading-relaxed">
-          Medicamentos salvos. Complete os campos abaixo (opcionais, mas
-          recomendados para a receita formal) e clique em{" "}
-          <strong>Visualizar receita</strong> para conferir o documento antes de
-          gerar o PDF.
-        </p>
-      </div>
-
-      {items.map((item, index) => (
-        <div
-          key={index}
-          className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3"
-        >
-          <p className="text-sm font-bold text-slate-900">{item.name}</p>
-          <div className="grid grid-cols-2 gap-3">
-            <input
-              type="text"
-              placeholder="Concentração (ex: 500mg)"
-              aria-label={`Concentração de ${item.name}`}
-              value={item.concentration || ""}
-              onChange={(e) =>
-                updateItem(index, "concentration", e.target.value)
-              }
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
-            />
-            <input
-              type="text"
-              placeholder="Forma farmacêutica (ex: Comprimido)"
-              aria-label={`Forma farmacêutica de ${item.name}`}
-              value={item.pharmaceuticalForm || ""}
-              onChange={(e) =>
-                updateItem(index, "pharmaceuticalForm", e.target.value)
-              }
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
-            />
-            <input
-              type="text"
-              placeholder="Quantidade (ex: 21 comprimidos)"
-              aria-label={`Quantidade de ${item.name}`}
-              value={item.quantity || ""}
-              onChange={(e) => updateItem(index, "quantity", e.target.value)}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
-            />
-            <input
-              type="text"
-              placeholder="Via de administração (ex: Oral)"
-              aria-label={`Via de administração de ${item.name}`}
-              value={item.routeOfAdministration || ""}
-              onChange={(e) =>
-                updateItem(index, "routeOfAdministration", e.target.value)
-              }
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
-            />
-            <input
-              type="text"
-              placeholder="Posologia"
-              aria-label={`Posologia de ${item.name}`}
-              value={item.posology || ""}
-              onChange={(e) => updateItem(index, "posology", e.target.value)}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary col-span-2"
-            />
-            <input
-              type="text"
-              placeholder="Duração do tratamento (ex: 7 dias)"
-              aria-label={`Duração do tratamento de ${item.name}`}
-              value={item.treatmentDuration || ""}
-              onChange={(e) =>
-                updateItem(index, "treatmentDuration", e.target.value)
-              }
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary col-span-2"
-            />
+      {hasPdf && (
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
+          {/* Mirrors the backend's status/signatureStatus — never asserts a
+              digital signature or delivery that didn't actually happen. */}
+          <p className="flex items-center gap-1.5 text-sm font-medium text-amber-700">
+            <Clock size={14} />
+            {prescription?.signatureStatus === "signed"
+              ? "Documento assinado digitalmente e enviado ao paciente."
+              : prescription?.status === "sent"
+                ? "Documento enviado ao paciente — sem assinatura digital."
+                : "Documento gerado — ainda não enviado ao paciente."}
+          </p>
+          <div className="flex gap-3">
+            <a
+              href={prescription!.documentUrl!}
+              target="_blank"
+              rel="noreferrer"
+              className="flex-1"
+            >
+              <Button type="button" variant="outline" size="md" fullWidth>
+                Visualizar PDF
+              </Button>
+            </a>
+            <a href={prescription!.documentUrl!} download className="flex-1">
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                fullWidth
+                icon={<Download className="w-4 h-4" />}
+              >
+                Baixar PDF
+              </Button>
+            </a>
           </div>
+          {prescription?.status === "generated" && (
+            <Button
+              type="button"
+              onClick={() => setSendModalOpen(true)}
+              variant="primary"
+              size="md"
+              fullWidth
+              icon={<Send className="w-4 h-4" />}
+            >
+              Enviar receita
+            </Button>
+          )}
         </div>
-      ))}
+      )}
 
-      <Textarea
-        label="Observações (opcional)"
-        name="prescription-observations"
-        value={observations}
-        onChange={setObservations}
-        rows={2}
-      />
+      {prescription && (
+        <SendDocumentModal
+          isOpen={sendModalOpen}
+          onClose={() => setSendModalOpen(false)}
+          documentLabel="receita"
+          onSendWithoutSignature={async () => {
+            const updated = await prescriptionsApi.send(prescription.id);
+            setPrescription(updated);
+            return { documentUrl: updated.documentUrl };
+          }}
+          onRequestSignature={async () => {
+            const { prescription: updated, signingUrl } =
+              await prescriptionsApi.requestSignature(prescription.id);
+            setPrescription(updated);
+            return { signingUrl };
+          }}
+          onPollSignature={async () => {
+            const updated = await prescriptionsApi.getById(prescription.id);
+            setPrescription(updated);
+            return {
+              signed: updated.signatureStatus === "signed",
+              failed: updated.signatureStatus === "failed",
+              documentUrl: updated.documentUrl,
+            };
+          }}
+        />
+      )}
 
       <div className="flex gap-4 pt-2">
         <Button
@@ -324,14 +211,13 @@ export function PrescriptionDocument({
         </Button>
         <Button
           type="button"
-          onClick={handlePreview}
-          loading={busy}
-          variant="primary"
+          onClick={generate}
+          variant="outline"
           size="md"
           fullWidth
-          icon={<Eye className="w-4 h-4" />}
+          icon={<FileText className="w-4 h-4" />}
         >
-          {busy ? "Preparando..." : "Visualizar receita"}
+          Gerar receita novamente
         </Button>
       </div>
     </div>
