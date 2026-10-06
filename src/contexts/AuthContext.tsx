@@ -148,6 +148,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cpf: userData.cpf,
       rqe: userData.rqe,
     });
+    // Email-verification gate: the backend issues a token but blocks every
+    // protected route until the email is confirmed. Send unverified users to
+    // the Signup screen's inline code-entry step (via ?verify=<email>) instead
+    // of the dashboard, which would only 403.
+    if (userData.emailVerified === false) {
+      navigate(`/signup?verify=${encodeURIComponent(userData.email)}`);
+      return;
+    }
     navigate("/dashboard");
   }
 
@@ -202,14 +210,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       rqe: userData.rqe,
     });
 
-    // TEMP: email verification disabled (App Store review can't receive
-    // verification emails). To restore, uncomment this guard — it deferred
-    // navigation so Signup.tsx's inline code-entry step could take over —
-    // and revert the matching backend change in auth.service.ts
-    // (registerDoctor/registerPatient).
-    // if (userData.emailVerified === false) {
-    //   return;
-    // }
+    // When the account still needs email verification, defer navigation so
+    // Signup.tsx's inline code-entry step takes over (its onSubmit flips to
+    // the pendingVerification screen). Mirrors the backend returning
+    // emailVerified: false and sending the code on register.
+    if (userData.emailVerified === false) {
+      return;
+    }
     navigate("/dashboard");
   }
 

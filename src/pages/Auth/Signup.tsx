@@ -15,7 +15,7 @@ import {
   MapPin,
   Loader2,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useAuth } from "../../contexts/AuthContext";
@@ -923,6 +923,7 @@ function ClinicSignupForm({
 
 export default function Signup() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { registerDoctor } = useAuth();
   const [signupType, setSignupType] = useState<"select" | "doctor" | "clinic">(
     "select",
@@ -946,6 +947,17 @@ export default function Signup() {
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const codeInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  // Arriving from login with an unverified account (?verify=<email>): jump
+  // straight to the inline code-entry step. The backend already resent a code
+  // when it blocked the login, so start the resend cooldown too.
+  useEffect(() => {
+    const verifyEmail = searchParams.get("verify");
+    if (verifyEmail) {
+      setPendingVerification(verifyEmail);
+      setResendCooldown(60);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (resendCooldown > 0) {
