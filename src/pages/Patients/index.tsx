@@ -141,9 +141,11 @@ function APIPatientCard({
           <h5 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors font-display truncate">
             {patient.name}
           </h5>
-          <p className="text-gray-500 text-sm font-medium truncate">
-            {patient.email || ""}
-          </p>
+          {accessStatus === "approved" && (patient.email || patient.phone) && (
+            <p className="text-gray-500 text-sm font-medium truncate">
+              {patient.email || patient.phone}
+            </p>
+          )}
         </div>
       </div>
 
@@ -223,9 +225,11 @@ function APIPatientListRow({
           <h5 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors truncate font-display">
             {patient.name}
           </h5>
-          <p className="text-slate-400 text-sm font-semibold">
-            {patient.email || ""}
-          </p>
+          {accessStatus === "approved" && (patient.email || patient.phone) && (
+            <p className="text-slate-400 text-sm font-semibold">
+              {patient.email || patient.phone}
+            </p>
+          )}
         </div>
       </div>
 
