@@ -18,6 +18,7 @@ import {
   type Expense as ExpenseType,
   type CostCenter,
 } from "../../services/financial";
+import { formatDateOnly } from "../../utils/date";
 
 const CATEGORIES = [
   "Insumos",
@@ -389,7 +390,7 @@ export default function Expenses() {
                           </span>
                         </td>
                         <td className="px-6 py-3.5 text-slate-600 font-medium">
-                          {new Date(exp.dueDate).toLocaleDateString("pt-BR")}
+                          {formatDateOnly(exp.dueDate)}
                         </td>
                         <td className="px-6 py-3.5 text-right font-bold text-slate-900 font-mono">
                           R${" "}

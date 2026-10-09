@@ -7,6 +7,7 @@ import {
   type Revenue as RevenueType,
   type Convenio,
 } from "../../services/financial";
+import { formatDateOnly } from "../../utils/date";
 
 export default function Revenue() {
   const dialog = useDialog();
@@ -443,7 +444,7 @@ export default function Revenue() {
                           </span>
                         </td>
                         <td className="px-6 py-3.5 text-slate-600 font-medium">
-                          {new Date(t.dueDate).toLocaleDateString("pt-BR")}
+                          {formatDateOnly(t.dueDate)}
                         </td>
                         <td className="px-6 py-3.5 text-center">
                           <button

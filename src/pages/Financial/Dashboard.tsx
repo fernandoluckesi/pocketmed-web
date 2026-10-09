@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
 import { financialApi } from "../../services/financial";
+import { formatDateOnly } from "../../utils/date";
 
 interface KPIs {
   faturamento: number;
@@ -419,7 +420,7 @@ export default function FinancialDashboard() {
                           </span>
                         </td>
                         <td className="px-6 py-3.5 text-slate-600 font-medium">
-                          {new Date(t.dueDate).toLocaleDateString("pt-BR")}
+                          {formatDateOnly(t.dueDate)}
                         </td>
                       </tr>
                     );

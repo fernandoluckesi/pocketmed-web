@@ -69,6 +69,7 @@ import {
   type CertificateRecord,
 } from "../Atestados/AtestadoForm";
 import { formatCrm } from "../../utils/crm";
+import { formatDateOnly } from "../../utils/date";
 import { LaudoForm } from "../Laudos/LaudoForm";
 import { LaudoDocument } from "../Laudos/LaudoDocument";
 import { StatusBadge as LaudoStatusBadge } from "../Laudos/StatusBadge";
@@ -259,7 +260,7 @@ function PatientHeroFromAPI({
                   Nascimento
                 </p>
                 <p className="font-semibold text-sm">
-                  {new Date(patient.birthDate).toLocaleDateString("pt-BR")}
+                  {formatDateOnly(patient.birthDate)}
                   {age !== null && ` (${age} anos)`}
                 </p>
               </div>
@@ -885,7 +886,7 @@ function MedicationDetailView({
             </p>
             <p className="text-sm font-medium text-slate-800">
               {medication.startDate
-                ? new Date(medication.startDate).toLocaleDateString("pt-BR")
+                ? formatDateOnly(medication.startDate)
                 : "—"}
             </p>
           </div>
@@ -895,7 +896,7 @@ function MedicationDetailView({
             </p>
             <p className="text-sm font-medium text-slate-800">
               {medication.endDate
-                ? new Date(medication.endDate).toLocaleDateString("pt-BR")
+                ? formatDateOnly(medication.endDate)
                 : "—"}
             </p>
           </div>
@@ -1039,7 +1040,7 @@ function ExamsSection({
                     {group.description}
                   </p>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    {new Date(group.date).toLocaleDateString("pt-BR")} •{" "}
+                    {formatDateOnly(group.date)} •{" "}
                     {group.exams.length} exame
                     {group.exams.length > 1 ? "s" : ""}
                   </p>
@@ -1081,7 +1082,7 @@ function ExamsSection({
                         </p>
                         <p className="text-[11px] text-slate-400">
                           {exam.status === "completed" && exam.completedAt
-                            ? `Realizado em ${new Date(exam.completedAt).toLocaleDateString("pt-BR")}`
+                            ? `Realizado em ${formatDateOnly(exam.completedAt)}`
                             : "Pendente"}
                         </p>
                       </div>
@@ -1357,7 +1358,7 @@ function ExamDetailView({
             </p>
             <p className="text-sm font-medium text-slate-800">
               {exam.date
-                ? new Date(exam.date).toLocaleDateString("pt-BR")
+                ? formatDateOnly(exam.date)
                 : "—"}
             </p>
           </div>
@@ -1376,7 +1377,7 @@ function ExamDetailView({
               Realizado em
             </p>
             <p className="text-sm font-medium text-slate-800">
-              {new Date(exam.completedAt).toLocaleDateString("pt-BR")}
+              {formatDateOnly(exam.completedAt)}
             </p>
           </div>
         )}
@@ -4652,7 +4653,7 @@ function DiseaseDetailView({
               Data do Diagnóstico
             </p>
             <p className="text-sm text-slate-700">
-              {new Date(disease.diagnosisDate).toLocaleDateString("pt-BR")}
+              {formatDateOnly(disease.diagnosisDate)}
             </p>
           </div>
         )}
@@ -4663,7 +4664,7 @@ function DiseaseDetailView({
               Início do Tratamento
             </p>
             <p className="text-sm text-slate-700">
-              {new Date(disease.treatmentStartDate).toLocaleDateString("pt-BR")}
+              {formatDateOnly(disease.treatmentStartDate)}
             </p>
           </div>
         )}
@@ -4674,7 +4675,7 @@ function DiseaseDetailView({
               Fim do Tratamento
             </p>
             <p className="text-sm text-slate-700">
-              {new Date(disease.treatmentEndDate).toLocaleDateString("pt-BR")}
+              {formatDateOnly(disease.treatmentEndDate)}
             </p>
           </div>
         )}
@@ -4940,7 +4941,7 @@ function SurgeriesSection({ patientId }: { patientId: string }) {
                 <p className="text-xs text-slate-500 mt-1 truncate">
                   {[
                     surgery.date
-                      ? new Date(surgery.date).toLocaleDateString("pt-BR")
+                      ? formatDateOnly(surgery.date)
                       : null,
                     surgery.hospitalOrClinic,
                   ]
@@ -5496,7 +5497,7 @@ function SurgeryDetailView({
           label="Data da Cirurgia"
           value={
             surgery.date
-              ? new Date(surgery.date).toLocaleDateString("pt-BR")
+              ? formatDateOnly(surgery.date)
               : null
           }
         />
@@ -5566,7 +5567,7 @@ function SurgeryDetailView({
               label="Data de Alta"
               value={
                 surgery.dischargeDate
-                  ? new Date(surgery.dischargeDate).toLocaleDateString("pt-BR")
+                  ? formatDateOnly(surgery.dischargeDate)
                   : null
               }
             />
@@ -6076,7 +6077,7 @@ function AtestadoDetailView({
           </p>
           <p className="text-sm font-semibold text-slate-800">
             {certificate.issueDate
-              ? new Date(certificate.issueDate).toLocaleDateString("pt-BR")
+              ? formatDateOnly(certificate.issueDate)
               : "—"}
           </p>
         </div>
@@ -6249,7 +6250,7 @@ function AtestadosSection({ patientId }: { patientId: string }) {
                 </h4>
                 <p className="text-xs text-slate-500 mt-1">
                   {cert.issueDate
-                    ? new Date(cert.issueDate).toLocaleDateString("pt-BR")
+                    ? formatDateOnly(cert.issueDate)
                     : new Date(cert.createdAt).toLocaleDateString("pt-BR")}
                 </p>
               </div>
@@ -6406,7 +6407,7 @@ function LaudosSection({ patientId }: { patientId: string }) {
                   {reportTypeLabel(report.reportType, report.reportTypeOther)}
                   {" • "}
                   {report.issueDate
-                    ? new Date(report.issueDate).toLocaleDateString("pt-BR")
+                    ? formatDateOnly(report.issueDate)
                     : new Date(report.createdAt).toLocaleDateString("pt-BR")}
                 </p>
               </div>
@@ -6668,14 +6669,14 @@ function VaccinesSection({
                 <p className="text-xs text-slate-500 mt-1">
                   {vaccine.dose && `Dose: ${vaccine.dose}`}
                   {vaccine.applicationDate &&
-                    ` • ${new Date(vaccine.applicationDate).toLocaleDateString("pt-BR")}`}
+                    ` • ${formatDateOnly(vaccine.applicationDate)}`}
                   {vaccine.laboratory && ` • ${vaccine.laboratory}`}
                 </p>
               </div>
               {vaccine.nextDoseDate && (
                 <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-primary shrink-0">
                   Próx:{" "}
-                  {new Date(vaccine.nextDoseDate).toLocaleDateString("pt-BR")}
+                  {formatDateOnly(vaccine.nextDoseDate)}
                 </span>
               )}
             </div>
@@ -6982,7 +6983,7 @@ function VaccineDetailView({
           label="Data de Aplicação"
           value={
             vaccine.applicationDate
-              ? new Date(vaccine.applicationDate).toLocaleDateString("pt-BR")
+              ? formatDateOnly(vaccine.applicationDate)
               : null
           }
         />
@@ -6990,7 +6991,7 @@ function VaccineDetailView({
           label="Próxima Dose"
           value={
             vaccine.nextDoseDate
-              ? new Date(vaccine.nextDoseDate).toLocaleDateString("pt-BR")
+              ? formatDateOnly(vaccine.nextDoseDate)
               : null
           }
         />

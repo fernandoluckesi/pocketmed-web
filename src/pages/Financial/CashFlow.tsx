@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { ArrowUpRight, ArrowDownRight, Wallet, Filter, X } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
 import { financialApi, type CashflowEntry } from "../../services/financial";
+import { formatDateOnly } from "../../utils/date";
 
 export default function CashFlow() {
   const [entries, setEntries] = useState<CashflowEntry[]>([]);
@@ -192,7 +193,7 @@ export default function CashFlow() {
                       className="hover:bg-slate-50 transition-colors"
                     >
                       <td className="px-6 py-3.5 text-slate-600 font-medium">
-                        {new Date(entry.date).toLocaleDateString("pt-BR")}
+                        {formatDateOnly(entry.date)}
                       </td>
                       <td className="px-6 py-3.5">
                         <span
