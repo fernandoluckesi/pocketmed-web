@@ -1548,6 +1548,7 @@ function ExamRequestForm({
   const [examNames, setExamNames] = useState<string[]>([""]);
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
+  const [examErrors, setExamErrors] = useState<Record<number, string>>({});
   const [readingAttachment, setReadingAttachment] = useState(false);
   const [readingError, setReadingError] = useState(false);
   const [examRequestItems, setExamRequestItems] = useState<
@@ -1565,6 +1566,13 @@ function ExamRequestForm({
     const updated = [...examNames];
     updated[index] = value;
     setExamNames(updated);
+    if (examErrors[index]) {
+      setExamErrors((prev) => {
+        const next = { ...prev };
+        delete next[index];
+        return next;
+      });
+    }
   }
 
   function addExam() {
@@ -1604,9 +1612,14 @@ function ExamRequestForm({
     e.preventDefault();
     const validExams = examNames.filter((n) => n.trim());
     if (validExams.length === 0) {
-      toast.error("Informe ao menos um exame antes de continuar.");
+      const nextErrors: Record<number, string> = {};
+      examNames.forEach((name, index) => {
+        if (!name.trim()) nextErrors[index] = "Informe o nome do exame.";
+      });
+      setExamErrors(nextErrors);
       return;
     }
+    setExamErrors({});
 
     setSaving(true);
     try {
@@ -1700,6 +1713,7 @@ function ExamRequestForm({
           options={examOptions}
           placeholder="Pesquise ou digite o nome do exame"
           allowFreeText
+          error={examErrors[index]}
         />
       ))}
 
@@ -1819,6 +1833,9 @@ function PrescriptionForm({
   ]);
   const [saving, setSaving] = useState(false);
   const [submissionErrors, setSubmissionErrors] = useState<string[]>([]);
+  const [medErrors, setMedErrors] = useState<Record<number, MedFieldErrors>>(
+    {},
+  );
   const [readingAttachment, setReadingAttachment] = useState(false);
   const [readingError, setReadingError] = useState(false);
   const [prescriptionItems, setPrescriptionItems] = useState<
@@ -1837,6 +1854,15 @@ function PrescriptionForm({
       updated[index].times = generateDistributedTimes(count);
     }
     setMedications(updated);
+    if (medErrors[index]?.[field as keyof MedFieldErrors]) {
+      setMedErrors((prev) => {
+        const next = { ...prev };
+        const rowErrors = { ...next[index] };
+        delete rowErrors[field as keyof MedFieldErrors];
+        next[index] = rowErrors;
+        return next;
+      });
+    }
   }
 
   function updateMedTime(medIndex: number, timeIndex: number, value: string) {
@@ -1908,11 +1934,18 @@ function PrescriptionForm({
       (m) => m.name.trim() && m.dosage.trim() && m.startDate,
     );
     if (validMeds.length === 0) {
-      toast.error(
-        "Preencha nome, dosagem e data de início de ao menos um medicamento.",
-      );
+      const nextErrors: Record<number, MedFieldErrors> = {};
+      medications.forEach((med, index) => {
+        const rowErrors: MedFieldErrors = {};
+        if (!med.name.trim()) rowErrors.name = "Informe o nome do medicamento.";
+        if (!med.dosage.trim()) rowErrors.dosage = "Informe a dosagem.";
+        if (!med.startDate) rowErrors.startDate = "Informe a data de início.";
+        if (Object.keys(rowErrors).length > 0) nextErrors[index] = rowErrors;
+      });
+      setMedErrors(nextErrors);
       return;
     }
+    setMedErrors({});
 
     setSaving(true);
     setSubmissionErrors([]);
@@ -2049,6 +2082,7 @@ function PrescriptionForm({
             loading={medicationSearch.loading}
             placeholder="Pesquise o medicamento (base ANVISA)"
             allowFreeText
+            error={medErrors[index]?.name}
           />
           <TextInput
             label="Dosagem / Apresentação"
@@ -2056,6 +2090,7 @@ function PrescriptionForm({
             value={med.dosage}
             onChange={(val) => updateMed(index, "dosage", val)}
             placeholder="Ex: 50mg, Comprimido"
+            error={medErrors[index]?.dosage}
           />
           <div className="grid grid-cols-2 gap-4">
             <SelectInput
@@ -2088,6 +2123,7 @@ function PrescriptionForm({
               name={`med-start-${index}`}
               value={med.startDate}
               onChange={(val) => updateMed(index, "startDate", val)}
+              error={medErrors[index]?.startDate}
             />
             <DateInput
               label="Data de Fim"
@@ -2135,6 +2171,12 @@ function PrescriptionForm({
  * and edit consultation forms render the same inputs instead of each keeping
  * its own copy, which is how they had already drifted apart.
  */
+interface MedFieldErrors {
+  name?: string;
+  dosage?: string;
+  startDate?: string;
+}
+
 function MedicationFieldsList({
   medications,
   onChange,
@@ -2143,6 +2185,7 @@ function MedicationFieldsList({
   medicationSearch,
   idPrefix,
   trailingAction,
+  errors,
 }: {
   medications: MedFormItem[];
   onChange: (index: number, field: string, value: string | string[]) => void;
@@ -2154,6 +2197,9 @@ function MedicationFieldsList({
    * — e.g. a "Prescrever" button. Keeps it visually grouped with medication
    * actions instead of drifting next to the (unrelated) exam section below. */
   trailingAction?: ReactNode;
+  /** Per-row required-field errors, shown under the specific empty input —
+   * set on submit, not as the user types. */
+  errors?: Record<number, MedFieldErrors>;
 }) {
   return (
     <div className="space-y-4 pl-4 border-l-2 border-primary/20">
@@ -2170,6 +2216,7 @@ function MedicationFieldsList({
             loading={medicationSearch.loading}
             placeholder="Pesquise o medicamento (base ANVISA)"
             allowFreeText
+            error={errors?.[index]?.name}
           />
           <TextInput
             label="Dosagem"
@@ -2177,6 +2224,7 @@ function MedicationFieldsList({
             value={med.dosage}
             onChange={(val) => onChange(index, "dosage", val)}
             placeholder="Ex: 50mg"
+            error={errors?.[index]?.dosage}
           />
           <div className="grid grid-cols-2 gap-4">
             <SelectInput
@@ -2210,6 +2258,7 @@ function MedicationFieldsList({
               name={`${idPrefix}-med-start-${index}`}
               value={med.startDate}
               onChange={(val) => onChange(index, "startDate", val)}
+              error={errors?.[index]?.startDate}
             />
             <DateInput
               label="Data de Fim"
@@ -2250,6 +2299,7 @@ function ExamFieldsList({
   onAdd,
   idPrefix,
   trailingAction,
+  errors,
 }: {
   examNames: string[];
   onChange: (index: number, value: string) => void;
@@ -2260,6 +2310,9 @@ function ExamFieldsList({
    * `trailingAction` for the same reason: keeps it grouped with exam
    * actions instead of drifting next to unrelated sections below. */
   trailingAction?: ReactNode;
+  /** Per-row required-field error, shown under the empty exam-name input —
+   * set on submit, not as the user types. */
+  errors?: Record<number, string>;
 }) {
   const examOptions = [...EXAM_CATALOG]
     .sort((a, b) => a.localeCompare(b, "pt-BR"))
@@ -2277,6 +2330,7 @@ function ExamFieldsList({
           options={examOptions}
           placeholder="Pesquise ou digite o nome do exame"
           allowFreeText
+          error={errors?.[index]}
         />
       ))}
       <div className="flex items-center justify-between gap-3">
@@ -2379,6 +2433,11 @@ function ConsultaForm({
   ]);
   const [examNames, setExamNames] = useState<string[]>([""]);
   const [submissionErrors, setSubmissionErrors] = useState<string[]>([]);
+  const [dateError, setDateError] = useState<string | null>(null);
+  const [medErrors, setMedErrors] = useState<Record<number, MedFieldErrors>>(
+    {},
+  );
+  const [examErrors, setExamErrors] = useState<Record<number, string>>({});
   const [readingAttachment, setReadingAttachment] = useState(false);
   const [readingError, setReadingError] = useState(false);
   const [readingExamAttachment, setReadingExamAttachment] = useState(false);
@@ -2421,6 +2480,15 @@ function ConsultaForm({
       updated[index].times = generateDistributedTimes(count);
     }
     setMedications(updated);
+    if (medErrors[index]?.[field as keyof MedFieldErrors]) {
+      setMedErrors((prev) => {
+        const next = { ...prev };
+        const rowErrors = { ...next[index] };
+        delete rowErrors[field as keyof MedFieldErrors];
+        next[index] = rowErrors;
+        return next;
+      });
+    }
   }
 
   function handleMedTimeChange(
@@ -2439,6 +2507,13 @@ function ConsultaForm({
     const updated = [...examNames];
     updated[index] = value;
     setExamNames(updated);
+    if (examErrors[index]) {
+      setExamErrors((prev) => {
+        const next = { ...prev };
+        delete next[index];
+        return next;
+      });
+    }
   }
 
   // Mirrors `ExamRequestForm`'s attach-and-parse: OCR-reads an uploaded exam
@@ -2531,16 +2606,42 @@ function ConsultaForm({
       // Previously a silent no-op — clicking "Prescrever"/"Solicitar exame"
       // (or even "Salvar Consulta") with no date filled in did nothing
       // visible at all, with nothing in the console either.
-      toast.error("Informe a data da consulta antes de continuar.");
+      setDateError("Informe a data da consulta.");
       return;
     }
+    setDateError(null);
 
-    setSaving(true);
-    setSubmissionErrors([]);
     const validMeds = medications.filter(
       (m) => m.name.trim() && m.dosage.trim() && m.startDate,
     );
     const validExamNames = examNames.filter((n) => n.trim());
+
+    if (mode === "prescribe" && validMeds.length === 0) {
+      const nextErrors: Record<number, MedFieldErrors> = {};
+      medications.forEach((med, index) => {
+        const rowErrors: MedFieldErrors = {};
+        if (!med.name.trim()) rowErrors.name = "Informe o nome do medicamento.";
+        if (!med.dosage.trim()) rowErrors.dosage = "Informe a dosagem.";
+        if (!med.startDate) rowErrors.startDate = "Informe a data de início.";
+        if (Object.keys(rowErrors).length > 0) nextErrors[index] = rowErrors;
+      });
+      setMedErrors(nextErrors);
+      return;
+    }
+    setMedErrors({});
+
+    if (mode === "request-exam" && validExamNames.length === 0) {
+      const nextErrors: Record<number, string> = {};
+      examNames.forEach((name, index) => {
+        if (!name.trim()) nextErrors[index] = "Informe o nome do exame.";
+      });
+      setExamErrors(nextErrors);
+      return;
+    }
+    setExamErrors({});
+
+    setSaving(true);
+    setSubmissionErrors([]);
 
     try {
       const dateTime = time ? `${date}T${time}:00` : `${date}T00:00:00`;
@@ -2753,7 +2854,11 @@ function ConsultaForm({
           label="Data"
           name="consulta-data"
           value={date}
-          onChange={setDate}
+          onChange={(val) => {
+            setDate(val);
+            if (dateError) setDateError(null);
+          }}
+          error={dateError}
         />
         <div className="space-y-1.5">
           <label
@@ -2875,6 +2980,7 @@ function ConsultaForm({
                 onAdd={() => setMedications([...medications, emptyMedication()])}
                 medicationSearch={medicationSearch}
                 idPrefix="consulta"
+                errors={medErrors}
                 trailingAction={
                   <Button
                     type="button"
@@ -2935,6 +3041,7 @@ function ConsultaForm({
                 onChange={handleExamChange}
                 onAdd={() => setExamNames([...examNames, ""])}
                 idPrefix="consulta"
+                errors={examErrors}
                 trailingAction={
                   <Button
                     type="button"
@@ -3069,6 +3176,10 @@ function EditConsultaForm({
   ]);
   const [examNames, setExamNames] = useState<string[]>([""]);
   const [submissionErrors, setSubmissionErrors] = useState<string[]>([]);
+  const [medErrors, setMedErrors] = useState<Record<number, MedFieldErrors>>(
+    {},
+  );
+  const [examErrors, setExamErrors] = useState<Record<number, string>>({});
   const [readingAttachment, setReadingAttachment] = useState(false);
   const [readingError, setReadingError] = useState(false);
   const [readingExamAttachment, setReadingExamAttachment] = useState(false);
@@ -3106,6 +3217,15 @@ function EditConsultaForm({
       updated[index].times = generateDistributedTimes(count);
     }
     setMedications(updated);
+    if (medErrors[index]?.[field as keyof MedFieldErrors]) {
+      setMedErrors((prev) => {
+        const next = { ...prev };
+        const rowErrors = { ...next[index] };
+        delete rowErrors[field as keyof MedFieldErrors];
+        next[index] = rowErrors;
+        return next;
+      });
+    }
   }
 
   function handleMedTimeChange(
@@ -3124,6 +3244,13 @@ function EditConsultaForm({
     const updated = [...examNames];
     updated[index] = value;
     setExamNames(updated);
+    if (examErrors[index]) {
+      setExamErrors((prev) => {
+        const next = { ...prev };
+        delete next[index];
+        return next;
+      });
+    }
   }
 
   // Mirrors `ExamRequestForm`'s attach-and-parse: OCR-reads an uploaded exam
@@ -3220,13 +3347,38 @@ function EditConsultaForm({
     finalize: boolean,
     mode: "close" | "prescribe" | "request-exam" = "close",
   ) {
-    setShowFinalizeChoice(false);
-    setSaving(true);
-    setSubmissionErrors([]);
     const validMeds = medications.filter(
       (m) => m.name.trim() && m.dosage.trim() && m.startDate,
     );
     const validExamNames = examNames.filter((n) => n.trim());
+
+    if (mode === "prescribe" && validMeds.length === 0) {
+      const nextErrors: Record<number, MedFieldErrors> = {};
+      medications.forEach((med, index) => {
+        const rowErrors: MedFieldErrors = {};
+        if (!med.name.trim()) rowErrors.name = "Informe o nome do medicamento.";
+        if (!med.dosage.trim()) rowErrors.dosage = "Informe a dosagem.";
+        if (!med.startDate) rowErrors.startDate = "Informe a data de início.";
+        if (Object.keys(rowErrors).length > 0) nextErrors[index] = rowErrors;
+      });
+      setMedErrors(nextErrors);
+      return;
+    }
+    setMedErrors({});
+
+    if (mode === "request-exam" && validExamNames.length === 0) {
+      const nextErrors: Record<number, string> = {};
+      examNames.forEach((name, index) => {
+        if (!name.trim()) nextErrors[index] = "Informe o nome do exame.";
+      });
+      setExamErrors(nextErrors);
+      return;
+    }
+    setExamErrors({});
+
+    setShowFinalizeChoice(false);
+    setSaving(true);
+    setSubmissionErrors([]);
     try {
       const dateTime = time ? `${date}T${time}:00` : `${date}T00:00:00`;
       await api(`/patients/${patientId}/consultations/${consultation.id}`, {
@@ -3509,6 +3661,7 @@ function EditConsultaForm({
                 onAdd={() => setMedications([...medications, emptyMedication()])}
                 medicationSearch={medicationSearch}
                 idPrefix="edit-consulta"
+                errors={medErrors}
                 trailingAction={
                   <Button
                     type="button"
@@ -3569,6 +3722,7 @@ function EditConsultaForm({
                 onChange={handleExamChange}
                 onAdd={() => setExamNames([...examNames, ""])}
                 idPrefix="edit-consulta"
+                errors={examErrors}
                 trailingAction={
                   <Button
                     type="button"

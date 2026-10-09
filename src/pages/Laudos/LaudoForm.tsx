@@ -118,6 +118,11 @@ export function LaudoForm({
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    title?: string;
+    issueDate?: string;
+    reportTypeOther?: string;
+  }>({});
 
   // When editing, the snapshot is a single string by design (it records what
   // the document printed at issue time), so it has to be parsed. For a new
@@ -145,17 +150,17 @@ export function LaudoForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
 
-    if (!title.trim()) {
-      setError("Informe o título do laudo.");
-      return;
-    }
-    if (!issueDate) {
-      setError("Informe a data de emissão.");
-      return;
-    }
+    const nextFieldErrors: typeof fieldErrors = {};
+    if (!title.trim()) nextFieldErrors.title = "Informe o título do laudo.";
+    if (!issueDate) nextFieldErrors.issueDate = "Informe a data de emissão.";
     if (reportType === "outro" && !reportTypeOther.trim()) {
-      setError('Descreva o tipo de laudo ao escolher "Outro".');
+      nextFieldErrors.reportTypeOther =
+        'Descreva o tipo de laudo ao escolher "Outro".';
+    }
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors);
       return;
     }
 
@@ -285,9 +290,14 @@ export function LaudoForm({
           label="Descreva o Tipo"
           name="report-type-other"
           value={reportTypeOther}
-          onChange={setReportTypeOther}
+          onChange={(val) => {
+            setReportTypeOther(val);
+            if (fieldErrors.reportTypeOther)
+              setFieldErrors((f) => ({ ...f, reportTypeOther: undefined }));
+          }}
           placeholder="Ex: Laudo para prática esportiva"
           disabled={isLocked}
+          error={fieldErrors.reportTypeOther}
         />
       )}
 
@@ -295,9 +305,13 @@ export function LaudoForm({
         label="Título"
         name="report-title"
         value={title}
-        onChange={setTitle}
+        onChange={(val) => {
+          setTitle(val);
+          if (fieldErrors.title) setFieldErrors((f) => ({ ...f, title: undefined }));
+        }}
         placeholder="Ex: Laudo de acompanhamento clínico"
         disabled={isLocked}
+        error={fieldErrors.title}
       />
 
       <div className="grid grid-cols-2 gap-6">
@@ -305,7 +319,12 @@ export function LaudoForm({
           label="Data de Emissão"
           name="report-issue-date"
           value={issueDate}
-          onChange={setIssueDate}
+          onChange={(val) => {
+            setIssueDate(val);
+            if (fieldErrors.issueDate)
+              setFieldErrors((f) => ({ ...f, issueDate: undefined }));
+          }}
+          error={fieldErrors.issueDate}
         />
         <DateInput
           label="Data do Atendimento"

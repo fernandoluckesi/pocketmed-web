@@ -15,6 +15,7 @@ interface SearchableSelectProps {
   loading?: boolean;
   onSearch?: (query: string) => void;
   allowFreeText?: boolean;
+  error?: string | null;
 }
 
 export function SearchableSelect({
@@ -27,6 +28,7 @@ export function SearchableSelect({
   loading,
   onSearch,
   allowFreeText = true,
+  error,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(value);
@@ -119,7 +121,11 @@ export function SearchableSelect({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           autoComplete="off"
-          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 px-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 focus:border-primary"
+          className={`w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 ${
+            error
+              ? "border-red-400 focus:border-red-400"
+              : "border-slate-200 focus:border-primary"
+          }`}
         />
 
         {showDropdown && (
@@ -156,6 +162,7 @@ export function SearchableSelect({
           </div>
         )}
       </div>
+      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
     </div>
   );
 }
