@@ -250,14 +250,15 @@ export function DocumentPreview({ spec }: { spec: DocumentSpec }) {
       <div className="pt-8 space-y-2">
         <hr className="border-slate-400" />
         <p className="text-xs text-slate-500 text-center">Assinatura</p>
-        {/* Only claims a digital signature when one actually exists. No
-            provider is contracted yet, so in practice this is always the
-            "not configured" line — driven by the backend's status, not by
-            a hardcoded string here. */}
+        {/* Only claims a digital signature when one actually exists
+            (driven by the backend's status). Deliberately generic — naming
+            a specific standard like "ICP-Brasil" would be a false claim
+            about *how* it was signed while the only wired-in provider is
+            MockSignatureProvider (a UX simulation, not a real integration). */}
         {isSigned ? (
           <p className="flex items-center justify-center gap-1.5 text-xs font-semibold text-green-700">
             <ShieldCheck size={13} />
-            Documento assinado digitalmente (ICP-Brasil).
+            Documento assinado digitalmente.
           </p>
         ) : (
           <p className="flex items-center justify-center gap-1.5 text-xs font-medium text-amber-700 italic">
