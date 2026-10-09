@@ -94,8 +94,8 @@ export default function Expenses() {
     () => expenses.reduce((sum, item) => sum + (Number(item.netValue) || 0), 0),
     [expenses],
   );
-  const pendingBillsCount = useMemo(
-    () => expenses.filter((item) => item.status !== "PAGO").length,
+  const overdueBillsCount = useMemo(
+    () => expenses.filter((item) => item.status === "VENCIDO").length,
     [expenses],
   );
   const overdueTotal = useMemo(
@@ -226,7 +226,7 @@ export default function Expenses() {
               </h2>
               <p className="text-xs text-slate-500 font-bold flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-amber-500" />
-                {pendingBillsCount} faturas pendentes
+                {overdueBillsCount} faturas vencidas
               </p>
             </div>
             <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 border border-blue-100">
