@@ -103,6 +103,15 @@ export default function Revenue() {
     }
   };
 
+  const handleReceive = async (id: string) => {
+    try {
+      await financialApi.updateRevenueStatus(id, "RECEBIDO");
+      loadRevenues();
+    } catch {
+      // ignore
+    }
+  };
+
   const filtered = revenues.filter((t) => {
     const matchesSearch =
       (t.procedure || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -394,7 +403,7 @@ export default function Revenue() {
                   <th className="px-6 py-3 font-bold text-right">Valor</th>
                   <th className="px-6 py-3 font-bold text-center">Status</th>
                   <th className="px-6 py-3 font-bold">Vencimento</th>
-                  <th className="px-6 py-3 font-bold text-center">Excluir</th>
+                  <th className="px-6 py-3 font-bold text-center">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
@@ -447,12 +456,22 @@ export default function Revenue() {
                           {formatDateOnly(t.dueDate)}
                         </td>
                         <td className="px-6 py-3.5 text-center">
-                          <button
-                            onClick={() => handleDelete(t.id)}
-                            className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-md transition-all cursor-pointer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center justify-center gap-1">
+                            {t.status !== "PAGO" && t.status !== "RECEBIDO" && (
+                              <button
+                                onClick={() => handleReceive(t.id)}
+                                className="text-emerald-600 hover:bg-emerald-50 px-2 py-1 rounded text-[10px] font-bold cursor-pointer"
+                              >
+                                Receber
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDelete(t.id)}
+                              className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-md transition-all cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
