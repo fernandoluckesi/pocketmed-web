@@ -910,6 +910,11 @@ export default function Account() {
                       className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
                       placeholder="Dr. João Silva"
                     />
+                    {profileFormik.touched.name && profileFormik.errors.name && (
+                      <p className="text-xs text-red-500 ml-1">
+                        {profileFormik.errors.name}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-on-surface-variant ml-1">
@@ -930,10 +935,16 @@ export default function Account() {
                     <input
                       name="phone"
                       onChange={profileFormik.handleChange}
+                      onBlur={profileFormik.handleBlur}
                       value={profileFormik.values.phone}
                       className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
                       placeholder="(11) 99999-9999"
                     />
+                    {profileFormik.touched.phone && profileFormik.errors.phone && (
+                      <p className="text-xs text-red-500 ml-1">
+                        {profileFormik.errors.phone}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-on-surface-variant ml-1">
@@ -956,6 +967,12 @@ export default function Account() {
                         },
                       ]}
                     />
+                    {profileFormik.touched.gender &&
+                      profileFormik.errors.gender && (
+                        <p className="text-xs text-red-500 ml-1">
+                          {profileFormik.errors.gender}
+                        </p>
+                      )}
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-on-surface-variant ml-1">
@@ -965,9 +982,16 @@ export default function Account() {
                       type="date"
                       name="birthDate"
                       onChange={profileFormik.handleChange}
+                      onBlur={profileFormik.handleBlur}
                       value={profileFormik.values.birthDate}
                       className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
                     />
+                    {profileFormik.touched.birthDate &&
+                      profileFormik.errors.birthDate && (
+                        <p className="text-xs text-red-500 ml-1">
+                          {profileFormik.errors.birthDate}
+                        </p>
+                      )}
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-on-surface-variant ml-1">
@@ -982,11 +1006,17 @@ export default function Account() {
                           maskCpf(e.target.value),
                         );
                       }}
+                      onBlur={profileFormik.handleBlur}
                       className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
                       placeholder="000.000.000-00"
                       inputMode="numeric"
                       maxLength={14}
                     />
+                    {profileFormik.touched.cpf && profileFormik.errors.cpf && (
+                      <p className="text-xs text-red-500 ml-1">
+                        {profileFormik.errors.cpf}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-on-surface-variant ml-1">
@@ -1057,6 +1087,12 @@ export default function Account() {
                         "Urologia",
                       ].map((s) => ({ value: s, label: s }))}
                     />
+                    {profileFormik.touched.specialty &&
+                      profileFormik.errors.specialty && (
+                        <p className="text-xs text-red-500 ml-1">
+                          {profileFormik.errors.specialty}
+                        </p>
+                      )}
                   </div>
                   {/* Number and UF are separate fields — they're separate
                       columns on the backend, and the CFM web service is
@@ -1069,6 +1105,7 @@ export default function Account() {
                       name="crmNumber"
                       inputMode="numeric"
                       onChange={profileFormik.handleChange}
+                      onBlur={profileFormik.handleBlur}
                       value={profileFormik.values.crmNumber}
                       className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
                       placeholder="123456"
