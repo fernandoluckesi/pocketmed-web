@@ -123,7 +123,7 @@ function APIPatientCard({
       whileHover={{ y: -8 }}
       className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-soft hover:shadow-xl transition-all flex flex-col justify-between group"
     >
-      <div className="flex items-start gap-4 mb-5">
+      <div className="flex items-center gap-4 mb-5">
         <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
           {patient.profileImage ? (
             <img
