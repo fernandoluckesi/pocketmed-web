@@ -503,7 +503,7 @@ function MedicationsSection({
               </span>
             </div>
             <p className="text-sm text-slate-500 mt-1">
-              {med.dosage} • {med.frequency}
+              {med.dosage} • {getMedicationFrequencyLabel(med.frequency)}
             </p>
           </div>
         </div>
