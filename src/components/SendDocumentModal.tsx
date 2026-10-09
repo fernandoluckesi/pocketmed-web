@@ -144,6 +144,7 @@ export function SendDocumentModal({
       label="Envio"
       title="Como deseja enviar?"
       showFooter={false}
+      maxWidth="max-w-md"
     >
       <div className="px-8 pb-8 space-y-5">
         {step === "choose" && (
@@ -271,28 +272,17 @@ export function SendDocumentModal({
                 ? "Foi assinada digitalmente e enviada ao paciente."
                 : "Foi enviada ao paciente, sem assinatura digital."}
             </p>
-            <div className="flex gap-3 w-full pt-2">
+            <div className="flex flex-col items-center gap-3 w-full pt-2">
+              <Button type="button" onClick={onClose} variant="primary" size="md">
+                Fechar
+              </Button>
               {resultUrl && (
-                <a
-                  href={resultUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex-1"
-                >
-                  <Button type="button" variant="outline" size="md" fullWidth>
+                <a href={resultUrl} target="_blank" rel="noreferrer">
+                  <Button type="button" variant="outline" size="md">
                     Visualizar documento
                   </Button>
                 </a>
               )}
-              <Button
-                type="button"
-                onClick={onClose}
-                variant="primary"
-                size="md"
-                fullWidth
-              >
-                Fechar
-              </Button>
             </div>
           </div>
         )}
