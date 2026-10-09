@@ -17,6 +17,7 @@ import { motion } from "motion/react";
 import { MainLayout } from "../../components/MainLayout";
 import { VerificationStatusCard } from "../../components/VerificationStatusCard";
 import { Button } from "../../components/ui/Button";
+import { Modal } from "../../components/ui/Modal";
 import { useAuth } from "../../contexts/AuthContext";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 import { PasswordStrengthIndicator } from "../../components/PasswordStrengthIndicator";
@@ -705,6 +706,79 @@ export default function Account() {
     }
   }
 
+  interface ProfileFormValues {
+    name: string;
+    phone: string;
+    gender: string;
+    birthDate: string;
+    specialty: string;
+    crmNumber: string;
+    crmUf: string;
+    cpf: string;
+    rqe: string;
+  }
+
+  // Mirrors the backend's own "sensitive field" list (auth.service.ts
+  // updateProfile): these require an emailed verification code, name/photo
+  // don't.
+  const SENSITIVE_PROFILE_FIELDS = [
+    "phone",
+    "gender",
+    "birthDate",
+    "specialty",
+    "crmNumber",
+    "crmUf",
+    "cpf",
+    "rqe",
+  ] as const;
+
+  function hasSensitiveProfileChanges(
+    values: ProfileFormValues,
+    initial: ProfileFormValues,
+  ): boolean {
+    return SENSITIVE_PROFILE_FIELDS.some((f) => values[f] !== initial[f]);
+  }
+
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [verifyCode, setVerifyCode] = useState("");
+  const [verifyError, setVerifyError] = useState("");
+  const [sendingVerification, setSendingVerification] = useState(false);
+  const [pendingProfileValues, setPendingProfileValues] =
+    useState<ProfileFormValues | null>(null);
+
+  async function submitProfileUpdate(
+    values: ProfileFormValues,
+    verificationCode?: string,
+  ) {
+    const formData = new FormData();
+    if (values.name) formData.append("name", values.name);
+    if (values.phone) formData.append("phone", values.phone.replace(/\D/g, ""));
+    if (values.gender) formData.append("gender", values.gender);
+    if (values.birthDate) formData.append("birthDate", values.birthDate);
+    if (values.specialty) formData.append("specialty", values.specialty);
+    if (values.crmNumber)
+      formData.append("crmNumber", values.crmNumber.replace(/\D/g, ""));
+    if (values.crmUf) formData.append("crmUf", values.crmUf);
+    if (values.rqe) formData.append("rqe", values.rqe);
+    if (values.cpf) formData.append("cpf", normalizeCpf(values.cpf));
+    if (selectedFile) formData.append("profileImage", selectedFile);
+    if (verificationCode) formData.append("verificationCode", verificationCode);
+
+    const response = await api.patch("/auth/profile", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    if (response.data.profileImage) {
+      const storedUser = localStorage.getItem("pocketmed_user");
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        parsed.profileImage = response.data.profileImage;
+        parsed.name = values.name || parsed.name;
+        localStorage.setItem("pocketmed_user", JSON.stringify(parsed));
+      }
+    }
+  }
+
   const profileFormik = useFormik({
     initialValues: {
       name: user?.name || "",
@@ -727,38 +801,32 @@ export default function Account() {
     enableReinitialize: true,
     validationSchema: profileSchema,
     onSubmit: async (values) => {
+      // Changing a sensitive field (everything but name/photo) requires the
+      // emailed verification code the backend enforces — send it and ask the
+      // user for the code before actually submitting the update.
+      if (
+        hasSensitiveProfileChanges(values, profileFormik.initialValues)
+      ) {
+        setPendingProfileValues(values);
+        setSaving(true);
+        setSuccessMsg("");
+        try {
+          await api.post("/auth/profile/send-verification");
+          setVerifyError("");
+          setShowVerifyModal(true);
+        } catch (_err) {
+          setSuccessMsg("Erro ao enviar código de verificação. Tente novamente.");
+          setTimeout(() => setSuccessMsg(""), 3000);
+        } finally {
+          setSaving(false);
+        }
+        return;
+      }
+
       setSaving(true);
       setSuccessMsg("");
       try {
-        const formData = new FormData();
-        if (values.name) formData.append("name", values.name);
-        if (values.phone)
-          formData.append("phone", values.phone.replace(/\D/g, ""));
-        if (values.gender) formData.append("gender", values.gender);
-        if (values.birthDate) formData.append("birthDate", values.birthDate);
-        if (values.specialty) formData.append("specialty", values.specialty);
-        if (values.crmNumber)
-          formData.append("crmNumber", values.crmNumber.replace(/\D/g, ""));
-        if (values.crmUf) formData.append("crmUf", values.crmUf);
-        if (values.rqe) formData.append("rqe", values.rqe);
-        if (values.cpf) formData.append("cpf", normalizeCpf(values.cpf));
-        if (selectedFile) formData.append("profileImage", selectedFile);
-
-        const response = await api.patch("/auth/profile", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-
-        // Update local storage with new profile image
-        if (response.data.profileImage) {
-          const storedUser = localStorage.getItem("pocketmed_user");
-          if (storedUser) {
-            const parsed = JSON.parse(storedUser);
-            parsed.profileImage = response.data.profileImage;
-            parsed.name = values.name || parsed.name;
-            localStorage.setItem("pocketmed_user", JSON.stringify(parsed));
-          }
-        }
-
+        await submitProfileUpdate(values);
         setSuccessMsg("Perfil atualizado com sucesso!");
         setSelectedFile(null);
         // Reload to reflect changes in header
@@ -772,17 +840,49 @@ export default function Account() {
     },
   });
 
+  const handleConfirmProfileVerification = async () => {
+    if (!pendingProfileValues) return;
+    setVerifyError("");
+    setSendingVerification(true);
+    try {
+      await submitProfileUpdate(pendingProfileValues, verifyCode);
+      setShowVerifyModal(false);
+      setVerifyCode("");
+      setPendingProfileValues(null);
+      setSuccessMsg("Perfil atualizado com sucesso!");
+      setSelectedFile(null);
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (err: any) {
+      setVerifyError(
+        err?.response?.data?.message || "Código inválido. Tente novamente.",
+      );
+    } finally {
+      setSendingVerification(false);
+    }
+  };
+
   const passwordFormik = useFormik({
     initialValues: { oldPassword: "", newPassword: "", confirmPassword: "" },
     validationSchema: passwordSchema,
-    onSubmit: async () => {
+    onSubmit: async (values) => {
       setSaving(true);
       setSuccessMsg("");
-      await new Promise((r) => setTimeout(r, 1000));
-      setSaving(false);
-      setSuccessMsg("Senha alterada com sucesso!");
-      passwordFormik.resetForm();
-      setTimeout(() => setSuccessMsg(""), 3000);
+      try {
+        await api.post("/auth/change-password", {
+          oldPassword: values.oldPassword,
+          newPassword: values.newPassword,
+        });
+        setSuccessMsg("Senha alterada com sucesso!");
+        passwordFormik.resetForm();
+      } catch (err: any) {
+        setSuccessMsg(
+          err?.response?.data?.message ||
+            "Erro ao alterar senha. Verifique a senha atual.",
+        );
+      } finally {
+        setSaving(false);
+        setTimeout(() => setSuccessMsg(""), 3000);
+      }
     },
   });
 
@@ -2364,6 +2464,54 @@ export default function Account() {
           </div>
         )}
       </motion.div>
+
+      <Modal
+        isOpen={showVerifyModal}
+        onClose={() => {
+          setShowVerifyModal(false);
+          setVerifyCode("");
+          setVerifyError("");
+          setPendingProfileValues(null);
+        }}
+        label="Confirmação por e-mail"
+        title="Confirme a alteração"
+        showFooter={false}
+      >
+        <div className="px-8 pb-8 space-y-4">
+          <p className="text-sm text-on-surface-variant">
+            Enviamos um código de verificação para o seu e-mail. Digite-o
+            abaixo para confirmar a alteração dos seus dados de perfil.
+          </p>
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-on-surface-variant ml-1">
+              Código de verificação
+            </label>
+            <input
+              value={verifyCode}
+              onChange={(e) => setVerifyCode(e.target.value)}
+              className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none tracking-widest text-center text-lg"
+              placeholder="000000"
+              inputMode="numeric"
+              maxLength={6}
+              autoFocus
+            />
+            {verifyError && (
+              <p className="text-xs text-red-500 ml-1">{verifyError}</p>
+            )}
+          </div>
+          <Button
+            type="button"
+            variant="primary"
+            size="md"
+            fullWidth
+            disabled={sendingVerification || !verifyCode}
+            loading={sendingVerification}
+            onClick={handleConfirmProfileVerification}
+          >
+            Confirmar
+          </Button>
+        </div>
+      </Modal>
     </MainLayout>
   );
 }
