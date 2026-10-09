@@ -853,8 +853,16 @@ export default function Account() {
       setSelectedFile(null);
       setTimeout(() => window.location.reload(), 1000);
     } catch (err: any) {
+      const backendMsg = err?.response?.data?.message;
+      const translated: Record<string, string> = {
+        "Invalid verification code": "Código inválido. Tente novamente.",
+        "Verification code expired":
+          "Código expirado. Feche e salve novamente para receber um novo.",
+      };
       setVerifyError(
-        err?.response?.data?.message || "Código inválido. Tente novamente.",
+        translated[backendMsg] ||
+          backendMsg ||
+          "Código inválido. Tente novamente.",
       );
     } finally {
       setSendingVerification(false);
@@ -875,9 +883,11 @@ export default function Account() {
         setSuccessMsg("Senha alterada com sucesso!");
         passwordFormik.resetForm();
       } catch (err: any) {
+        const backendMsg = err?.response?.data?.message;
         setSuccessMsg(
-          err?.response?.data?.message ||
-            "Erro ao alterar senha. Verifique a senha atual.",
+          backendMsg === "Invalid old password"
+            ? "Senha atual incorreta."
+            : backendMsg || "Erro ao alterar senha. Verifique a senha atual.",
         );
       } finally {
         setSaving(false);
