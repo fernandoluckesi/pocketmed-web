@@ -1637,11 +1637,13 @@ function ExamRequestForm({
           },
         });
       }
-      onSaved();
       toast.success("Exame(s) salvo(s) com sucesso!");
-      // Instead of closing right away, offer to bundle what was just saved
-      // into a formal "pedido de exame" document (PDF) — mirrors
-      // `PrescriptionForm`'s hand-off into `PrescriptionDocument`.
+      // Hands off into `ExamRequestDocument` (generates the PDF, opens
+      // "como deseja enviar?") instead of closing right away. Calling
+      // `onSaved` here — before that view ever renders — used to unmount
+      // this form immediately (the parent's onSaved closes it), so the
+      // document/signature step never appeared. `onSaved` now runs when the
+      // doctor closes *that* view instead (see the `onClose={onSaved}` below).
       setExamRequestItems(validExams.map((name) => ({ name })));
     } catch (err) {
       console.error("Erro ao criar exames:", err);
@@ -1662,7 +1664,7 @@ function ExamRequestForm({
           patientId={patientId}
           items={examRequestItems}
           observations={description}
-          onClose={onClose}
+          onClose={onSaved}
         />
       </div>
     );
@@ -1979,11 +1981,13 @@ function PrescriptionForm({
           : `Erro ao salvar ${errors.length} medicamento(s).`,
       );
     } else {
-      onSaved();
       toast.success("Medicamento(s) salvo(s) com sucesso!");
-      // Instead of closing right away, offer to bundle what was just saved
-      // into a formal prescription document (PDF) — "Visualiza a receita"
-      // step. Closing (without generating) is still one click away.
+      // Hands off into `PrescriptionDocument` (generates the PDF, opens
+      // "como deseja enviar?") instead of closing right away. Calling
+      // `onSaved` here — before that view ever renders — used to unmount
+      // this form immediately (the parent's onSaved closes it), so the
+      // document/signature step never appeared. `onSaved` now runs when the
+      // doctor closes *that* view instead (see the `onClose={onSaved}` below).
       const frequencyLabel = (value: string) =>
         FREQUENCY_OPTIONS.find((f) => f.value === value)?.label || value;
       const formatBr = (isoDate: string) =>
@@ -2008,7 +2012,7 @@ function PrescriptionForm({
         <PrescriptionDocument
           patientId={patientId}
           items={prescriptionItems}
-          onClose={onClose}
+          onClose={onSaved}
         />
       </div>
     );
