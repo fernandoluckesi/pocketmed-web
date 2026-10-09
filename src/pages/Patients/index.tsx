@@ -149,14 +149,14 @@ function APIPatientCard({
         </div>
       </div>
 
-      <div className="pt-4 border-t border-gray-100">
+      <div className="pt-3 border-t border-gray-100">
         {accessStatus === "approved" ? (
-          <div className="w-full py-4 bg-green-50 rounded-2xl font-bold flex items-center justify-center gap-2 text-green-700 cursor-default">
+          <div className="w-full py-2.5 bg-green-50 rounded-2xl font-bold flex items-center justify-center gap-2 text-green-700 cursor-default">
             <CheckCircle className="w-5 h-5" />
             Acesso Concedido
           </div>
         ) : accessStatus === "pending" ? (
-          <div className="w-full py-4 bg-amber-50 rounded-2xl font-bold flex items-center justify-center gap-2 text-amber-700 cursor-default">
+          <div className="w-full py-2.5 bg-amber-50 rounded-2xl font-bold flex items-center justify-center gap-2 text-amber-700 cursor-default">
             <Clock className="w-5 h-5" />
             Aguardando Resposta
           </div>
@@ -167,7 +167,7 @@ function APIPatientCard({
             size="md"
             iconRight={<ArrowRight className="w-5 h-5 cursor-pointer" />}
             fullWidth
-            className="py-4 rounded-2xl text-gray-700 bg-gray-50 hover:bg-primary hover:text-white"
+            className="py-2.5 rounded-2xl text-gray-700 bg-gray-50 hover:bg-primary hover:text-white"
           >
             Solicitar Acesso
           </Button>
