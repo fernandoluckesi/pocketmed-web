@@ -105,7 +105,7 @@ export default function Revenue() {
 
   const handleReceive = async (id: string) => {
     try {
-      await financialApi.updateRevenueStatus(id, "RECEBIDO");
+      await financialApi.updateRevenueStatus(id, "PAGO");
       loadRevenues();
     } catch {
       // ignore
