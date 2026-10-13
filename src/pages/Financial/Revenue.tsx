@@ -1,7 +1,9 @@
-import { useDialog } from "../../components/ui/Dialog";
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Search, Trash2, X } from "lucide-react";
+import { Plus, Search, X } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
+import { ActionsMenu } from "../../components/ui/ActionsMenu";
+import { ConfirmModal } from "../../components/ConfirmModal";
+import { useToast } from "../../contexts/ToastContext";
 import {
   financialApi,
   type Revenue as RevenueType,
@@ -10,7 +12,7 @@ import {
 import { formatDateOnly } from "../../utils/date";
 
 export default function Revenue() {
-  const dialog = useDialog();
+  const toast = useToast();
   const [showAddForm, setShowAddForm] = useState(false);
   const [revenues, setRevenues] = useState<RevenueType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,21 +96,58 @@ export default function Revenue() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const [deleteTarget, setDeleteTarget] = useState<RevenueType | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // Optimistic: flips the status in local state immediately, before the
+  // request resolves. On success nothing else happens — the UI already shows
+  // the right state, so there's no need to refetch. On failure, revert back
+  // and surface the error via toast (this is the only feedback shown; a
+  // successful change is silent by design).
+  const handleToggleStatus = async (revenue: RevenueType) => {
+    const previousStatus = revenue.status;
+    const isPaid = previousStatus === "PAGO" || previousStatus === "RECEBIDO";
+    const nextStatus = isPaid ? "PENDENTE" : "PAGO";
+
+    setRevenues((prev) =>
+      prev.map((r) => (r.id === revenue.id ? { ...r, status: nextStatus } : r)),
+    );
+
     try {
-      await financialApi.deleteRevenue(id);
-      loadRevenues();
+      await financialApi.updateRevenueStatus(revenue.id, nextStatus);
     } catch {
-      dialog.showError("Apenas receitas pendentes podem ser excluídas.");
+      setRevenues((prev) =>
+        prev.map((r) =>
+          r.id === revenue.id ? { ...r, status: previousStatus } : r,
+        ),
+      );
+      toast.error("Não foi possível atualizar o status. Tente novamente.");
     }
   };
 
-  const handleReceive = async (id: string) => {
+  // Optimistic delete: removes the row right away and only re-inserts it (at
+  // its original position) if the request actually fails.
+  const handleConfirmDelete = async () => {
+    const target = deleteTarget;
+    if (!target) return;
+    const index = revenues.findIndex((r) => r.id === target.id);
+
+    setDeleting(true);
+    setRevenues((prev) => prev.filter((r) => r.id !== target.id));
+
     try {
-      await financialApi.updateRevenueStatus(id, "PAGO");
-      loadRevenues();
+      await financialApi.deleteRevenue(target.id);
+      toast.success("Receita excluída com sucesso.");
     } catch {
-      // ignore
+      setRevenues((prev) => {
+        const next = [...prev];
+        next.splice(index, 0, target);
+        return next;
+      });
+      toast.error("Apenas receitas pendentes podem ser excluídas.");
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -456,22 +495,23 @@ export default function Revenue() {
                           {formatDateOnly(t.dueDate)}
                         </td>
                         <td className="px-6 py-3.5 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            {t.status !== "PAGO" && t.status !== "RECEBIDO" && (
-                              <button
-                                onClick={() => handleReceive(t.id)}
-                                className="text-emerald-600 hover:bg-emerald-50 px-2 py-1 rounded text-[10px] font-bold cursor-pointer"
-                              >
-                                Receber
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleDelete(t.id)}
-                              className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-md transition-all cursor-pointer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                          <ActionsMenu
+                            items={[
+                              {
+                                label:
+                                  t.status === "PAGO" ||
+                                  t.status === "RECEBIDO"
+                                    ? "Marcar como Pendente"
+                                    : "Marcar como Pago",
+                                onClick: () => handleToggleStatus(t),
+                              },
+                              {
+                                label: "Excluir",
+                                onClick: () => setDeleteTarget(t),
+                                variant: "danger",
+                              },
+                            ]}
+                          />
                         </td>
                       </tr>
                     );
@@ -482,6 +522,16 @@ export default function Revenue() {
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title="Excluir Receita"
+        description={`Tem certeza que deseja excluir "${deleteTarget?.procedure}"? Esta ação não pode ser desfeita.`}
+        confirmLabel="Excluir"
+        loading={deleting}
+      />
     </MainLayout>
   );
 }
