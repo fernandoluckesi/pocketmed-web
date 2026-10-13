@@ -20,6 +20,7 @@ import {
   type CostCenter,
 } from "../../services/financial";
 import { formatDateOnly } from "../../utils/date";
+import { maskCurrencyBRL, parseCurrencyBRL } from "../../utils/currency";
 
 const CATEGORIES = [
   "Insumos",
@@ -45,6 +46,8 @@ export default function Expenses() {
   const [costCenterFilter, setCostCenterFilter] = useState("Todos");
   const [startDateFilter, setStartDateFilter] = useState("");
   const [endDateFilter, setEndDateFilter] = useState("");
+  const [minValueFilter, setMinValueFilter] = useState("");
+  const [maxValueFilter, setMaxValueFilter] = useState("");
   const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -56,6 +59,10 @@ export default function Expenses() {
       if (costCenterFilter !== "Todos") filters.costCenterId = costCenterFilter;
       if (startDateFilter) filters.startDate = startDateFilter;
       if (endDateFilter) filters.endDate = endDateFilter;
+      const minValue = parseCurrencyBRL(minValueFilter);
+      const maxValue = parseCurrencyBRL(maxValueFilter);
+      if (minValue !== null) filters.minValue = String(minValue);
+      if (maxValue !== null) filters.maxValue = String(maxValue);
       const result = await financialApi.listExpenses(filters);
       setExpenses(result.data || []);
     } catch {
@@ -63,7 +70,15 @@ export default function Expenses() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, categoryFilter, costCenterFilter, startDateFilter, endDateFilter]);
+  }, [
+    statusFilter,
+    categoryFilter,
+    costCenterFilter,
+    startDateFilter,
+    endDateFilter,
+    minValueFilter,
+    maxValueFilter,
+  ]);
 
   useEffect(() => {
     loadData();
@@ -81,7 +96,9 @@ export default function Expenses() {
     categoryFilter !== "Todos" ||
     costCenterFilter !== "Todos" ||
     !!startDateFilter ||
-    !!endDateFilter;
+    !!endDateFilter ||
+    !!minValueFilter ||
+    !!maxValueFilter;
 
   const clearFilters = () => {
     setStatusFilter("Todos");
@@ -89,6 +106,8 @@ export default function Expenses() {
     setCostCenterFilter("Todos");
     setStartDateFilter("");
     setEndDateFilter("");
+    setMinValueFilter("");
+    setMaxValueFilter("");
   };
 
   const totalExpensesMonth = useMemo(
@@ -365,6 +384,30 @@ export default function Expenses() {
                 value={endDateFilter}
                 onChange={(e) => setEndDateFilter(e.target.value)}
                 className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            <div className="flex items-center gap-1.5 text-xs">
+              <label className="text-[10px] font-bold text-slate-500 uppercase">
+                Valor de
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="R$ 0,00"
+                value={minValueFilter}
+                onChange={(e) => setMinValueFilter(maskCurrencyBRL(e.target.value))}
+                className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs w-28 focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              <label className="text-[10px] font-bold text-slate-500 uppercase">
+                até
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="R$ 0,00"
+                value={maxValueFilter}
+                onChange={(e) => setMaxValueFilter(maskCurrencyBRL(e.target.value))}
+                className="bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs w-28 focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
             {hasActiveFilters && (

@@ -10,6 +10,7 @@ import {
   type Convenio,
 } from "../../services/financial";
 import { formatDateOnly } from "../../utils/date";
+import { maskCurrencyBRL, parseCurrencyBRL } from "../../utils/currency";
 
 export default function Revenue() {
   const toast = useToast();
@@ -21,6 +22,8 @@ export default function Revenue() {
   const [filterConvenio, setFilterConvenio] = useState("Todos");
   const [filterStartDate, setFilterStartDate] = useState("");
   const [filterEndDate, setFilterEndDate] = useState("");
+  const [filterMinValue, setFilterMinValue] = useState("");
+  const [filterMaxValue, setFilterMaxValue] = useState("");
   const [convenios, setConvenios] = useState<Convenio[]>([]);
 
   // Form state
@@ -40,6 +43,10 @@ export default function Revenue() {
       if (filterConvenio !== "Todos") filters.convenioId = filterConvenio;
       if (filterStartDate) filters.startDate = filterStartDate;
       if (filterEndDate) filters.endDate = filterEndDate;
+      const minValue = parseCurrencyBRL(filterMinValue);
+      const maxValue = parseCurrencyBRL(filterMaxValue);
+      if (minValue !== null) filters.minValue = String(minValue);
+      if (maxValue !== null) filters.maxValue = String(maxValue);
       const result = await financialApi.listRevenues(filters);
       setRevenues(result.data || []);
     } catch {
@@ -47,7 +54,14 @@ export default function Revenue() {
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, filterConvenio, filterStartDate, filterEndDate]);
+  }, [
+    filterStatus,
+    filterConvenio,
+    filterStartDate,
+    filterEndDate,
+    filterMinValue,
+    filterMaxValue,
+  ]);
 
   useEffect(() => {
     loadRevenues();
@@ -64,13 +78,17 @@ export default function Revenue() {
     filterStatus !== "Todos" ||
     filterConvenio !== "Todos" ||
     !!filterStartDate ||
-    !!filterEndDate;
+    !!filterEndDate ||
+    !!filterMinValue ||
+    !!filterMaxValue;
 
   const clearFilters = () => {
     setFilterStatus("Todos");
     setFilterConvenio("Todos");
     setFilterStartDate("");
     setFilterEndDate("");
+    setFilterMinValue("");
+    setFilterMaxValue("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -416,6 +434,32 @@ export default function Revenue() {
                 value={filterEndDate}
                 onChange={(e) => setFilterEndDate(e.target.value)}
                 className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase">
+                Valor de
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="R$ 0,00"
+                value={filterMinValue}
+                onChange={(e) => setFilterMinValue(maskCurrencyBRL(e.target.value))}
+                className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs w-28 focus:ring-1 focus:ring-primary focus:outline-hidden"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase">
+                até
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="R$ 0,00"
+                value={filterMaxValue}
+                onChange={(e) => setFilterMaxValue(maskCurrencyBRL(e.target.value))}
+                className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs w-28 focus:ring-1 focus:ring-primary focus:outline-hidden"
               />
             </div>
             {hasActiveFilters && (
