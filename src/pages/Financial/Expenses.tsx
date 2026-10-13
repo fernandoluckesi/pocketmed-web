@@ -1,4 +1,3 @@
-import { useDialog } from "../../components/ui/Dialog";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   TrendingUp,
@@ -9,10 +8,12 @@ import {
   AlertCircle,
   X,
   Plus,
-  Trash2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { MainLayout } from "../../components/MainLayout";
+import { ActionsMenu } from "../../components/ui/ActionsMenu";
+import { ConfirmModal } from "../../components/ConfirmModal";
+import { useToast } from "../../contexts/ToastContext";
 import {
   financialApi,
   type Expense as ExpenseType,
@@ -35,7 +36,7 @@ const CATEGORIES = [
 ];
 
 export default function Expenses() {
-  const dialog = useDialog();
+  const toast = useToast();
   const [expenses, setExpenses] = useState<ExpenseType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -139,21 +140,61 @@ export default function Expenses() {
     }
   };
 
-  const handleDeleteExpense = async (id: string) => {
+  const [deleteTarget, setDeleteTarget] = useState<ExpenseType | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // Optimistic: flips the status badge immediately, before the request
+  // resolves. Success is silent (the UI already shows the right state);
+  // failure reverts the status locally and surfaces a toast — the toast is
+  // the only feedback shown, and only on error.
+  const handleToggleStatus = async (expense: ExpenseType) => {
+    const previousStatus = expense.status;
+    const isPaid = previousStatus === "PAGO";
+    const nextStatus = isPaid ? "PENDENTE" : "PAGO";
+
+    setExpenses((prev) =>
+      prev.map((e) => (e.id === expense.id ? { ...e, status: nextStatus } : e)),
+    );
+
     try {
-      await financialApi.deleteExpense(id);
-      loadData();
+      if (isPaid) {
+        await financialApi.updateExpense(expense.id, { status: "PENDENTE" });
+      } else {
+        await financialApi.payExpense(expense.id);
+      }
     } catch {
-      dialog.showError("Apenas despesas pendentes podem ser excluídas.");
+      setExpenses((prev) =>
+        prev.map((e) =>
+          e.id === expense.id ? { ...e, status: previousStatus } : e,
+        ),
+      );
+      toast.error("Não foi possível atualizar o status. Tente novamente.");
     }
   };
 
-  const handlePayExpense = async (id: string) => {
+  // Optimistic delete: removes the row right away and only re-inserts it (at
+  // its original position) if the request actually fails.
+  const handleConfirmDelete = async () => {
+    const target = deleteTarget;
+    if (!target) return;
+    const index = expenses.findIndex((e) => e.id === target.id);
+
+    setDeleting(true);
+    setExpenses((prev) => prev.filter((e) => e.id !== target.id));
+
     try {
-      await financialApi.payExpense(id);
-      loadData();
+      await financialApi.deleteExpense(target.id);
+      toast.success("Despesa excluída com sucesso.");
     } catch {
-      // ignore
+      setExpenses((prev) => {
+        const next = [...prev];
+        next.splice(index, 0, target);
+        return next;
+      });
+      toast.error("Apenas despesas pendentes podem ser excluídas.");
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -405,21 +446,23 @@ export default function Expenses() {
                             {info.label}
                           </span>
                         </td>
-                        <td className="px-6 py-3.5 text-center flex items-center justify-center gap-1">
-                          {exp.status !== "PAGO" && (
-                            <button
-                              onClick={() => handlePayExpense(exp.id)}
-                              className="text-emerald-600 hover:bg-emerald-50 px-2 py-1 rounded text-[10px] font-bold cursor-pointer"
-                            >
-                              Pagar
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDeleteExpense(exp.id)}
-                            className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1 rounded cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                        <td className="px-6 py-3.5 text-center">
+                          <ActionsMenu
+                            items={[
+                              {
+                                label:
+                                  exp.status === "PAGO"
+                                    ? "Marcar como Pendente"
+                                    : "Marcar como Pago",
+                                onClick: () => handleToggleStatus(exp),
+                              },
+                              {
+                                label: "Excluir",
+                                onClick: () => setDeleteTarget(exp),
+                                variant: "danger",
+                              },
+                            ]}
+                          />
                         </td>
                       </tr>
                     );
@@ -437,6 +480,16 @@ export default function Expenses() {
           onAdd={handleAddExpense}
         />
       </div>
+
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title="Excluir Despesa"
+        description={`Tem certeza que deseja excluir "${deleteTarget?.provider}"? Esta ação não pode ser desfeita.`}
+        confirmLabel="Excluir"
+        loading={deleting}
+      />
     </MainLayout>
   );
 }
