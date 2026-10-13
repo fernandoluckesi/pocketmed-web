@@ -610,14 +610,13 @@ function AddPatientModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-      >
-        <div className="p-8 pb-4 flex justify-between items-start">
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+    >
+      <div className="p-8 pb-4 flex justify-between items-start">
           <div>
             <div className="text-primary font-black text-[10px] uppercase tracking-widest mb-2">
               Novo Cadastro
@@ -813,14 +812,13 @@ function AddPatientModal({
           </form>
         )}
 
-        <div className="bg-blue-50/50 p-4 flex items-center justify-center gap-2 border-t border-outline-variant/5">
-          <ShieldCheck size={16} className="text-primary fill-primary/10" />
-          <p className="text-[10px] font-bold text-blue-700 tracking-wide uppercase">
-            Dados protegidos por criptografia Hispora
-          </p>
-        </div>
-      </motion.div>
-    </div>
+      <div className="bg-blue-50/50 p-4 flex items-center justify-center gap-2 border-t border-outline-variant/5">
+        <ShieldCheck size={16} className="text-primary fill-primary/10" />
+        <p className="text-[10px] font-bold text-blue-700 tracking-wide uppercase">
+          Dados protegidos por criptografia Hispora
+        </p>
+      </div>
+    </motion.div>
   );
 }
 
@@ -1445,6 +1443,17 @@ export default function Patients() {
                 </button>
               ))}
             </div>
+
+            {/* Add Patient Form */}
+            <AnimatePresence>
+              {isModalOpen && (
+                <AddPatientModal
+                  isOpen={isModalOpen}
+                  onClose={() => setIsModalOpen(false)}
+                  onSuccess={handlePatientCreated}
+                />
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Tab Content */}
@@ -1458,17 +1467,6 @@ export default function Patients() {
             <MyPatientsContent refetchRef={refetchPatientsRef} />
           </div>
         </div>
-
-        {/* Add Patient Modal */}
-        <AnimatePresence>
-          {isModalOpen && (
-            <AddPatientModal
-              isOpen={isModalOpen}
-              onClose={() => setIsModalOpen(false)}
-              onSuccess={handlePatientCreated}
-            />
-          )}
-        </AnimatePresence>
       </div>
     </MainLayout>
   );

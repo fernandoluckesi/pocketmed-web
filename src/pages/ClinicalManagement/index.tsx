@@ -825,44 +825,9 @@ export default function ClinicalManagement() {
           </button>
         </div>
 
-        <StatsGrid overview={overview} />
-
-        <MembersSection
-          members={members}
-          total={total}
-          page={page}
-          totalPages={totalPages}
-          search={search}
-          onSearchChange={(v) => {
-            setSearch(v);
-            setPage(1);
-          }}
-          roleFilter={roleFilter}
-          onRoleFilterChange={(v) => {
-            setRoleFilter(v);
-            setPage(1);
-          }}
-          onPageChange={setPage}
-          onRemove={handleRemove}
-          onEdit={handleEdit}
-          onViewProfile={(member) =>
-            navigate(`/doctors/${member.professional?.id}/profile`)
-          }
-          onResendCode={handleResendCode}
-          resendCooldown={resendCooldown}
-        />
-
-        <LinkedPatientsSection patients={patients} />
-      </motion.div>
-
-      {/* Add Member Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-pointer"
-            onClick={() => setShowAddModal(false)}
-          />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full">
+        {/* Add/Edit Member Form */}
+        {showAddModal && (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100">
             <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
               <h2 className="text-lg font-extrabold text-slate-900">
                 {editingMember
@@ -965,8 +930,37 @@ export default function ClinicalManagement() {
               </div>
             </form>
           </div>
-        </div>
-      )}
+        )}
+
+        <StatsGrid overview={overview} />
+
+        <MembersSection
+          members={members}
+          total={total}
+          page={page}
+          totalPages={totalPages}
+          search={search}
+          onSearchChange={(v) => {
+            setSearch(v);
+            setPage(1);
+          }}
+          roleFilter={roleFilter}
+          onRoleFilterChange={(v) => {
+            setRoleFilter(v);
+            setPage(1);
+          }}
+          onPageChange={setPage}
+          onRemove={handleRemove}
+          onEdit={handleEdit}
+          onViewProfile={(member) =>
+            navigate(`/doctors/${member.professional?.id}/profile`)
+          }
+          onResendCode={handleResendCode}
+          resendCooldown={resendCooldown}
+        />
+
+        <LinkedPatientsSection patients={patients} />
+      </motion.div>
 
       {/* Remove Confirmation Dialog */}
       {removeTarget && (

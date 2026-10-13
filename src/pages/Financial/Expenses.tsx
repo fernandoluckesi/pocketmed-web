@@ -7,9 +7,7 @@ import {
   Clock,
   AlertCircle,
   X,
-  Plus,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
 import { MainLayout } from "../../components/MainLayout";
 import { ActionsMenu } from "../../components/ui/ActionsMenu";
 import { ConfirmModal } from "../../components/ConfirmModal";
@@ -49,7 +47,15 @@ export default function Expenses() {
   const [minValueFilter, setMinValueFilter] = useState("");
   const [maxValueFilter, setMaxValueFilter] = useState("");
   const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  // Add-expense form state
+  const [category, setCategory] = useState("Insumos");
+  const [provider, setProvider] = useState("");
+  const [value, setValue] = useState("");
+  const [dueDate, setDueDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
 
   const loadData = useCallback(async () => {
     try {
@@ -135,24 +141,23 @@ export default function Expenses() {
     });
   }, [expenses, searchQuery]);
 
-  const handleAddExpense = async (data: {
-    category: string;
-    provider: string;
-    grossValue: number;
-    dueDate: string;
-    status: string;
-  }) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!provider || !value || isNaN(parseFloat(value))) return;
     try {
       await financialApi.createExpense({
-        category: data.category,
-        provider: data.provider,
-        grossValue: data.grossValue,
-        netValue: data.grossValue,
+        category,
+        provider,
+        grossValue: parseFloat(value),
+        netValue: parseFloat(value),
         paymentMethod: "Transferência",
-        status: data.status,
-        dueDate: data.dueDate,
+        status: "PENDENTE",
+        dueDate,
         recurrence: "AVULSO",
       });
+      setProvider("");
+      setValue("");
+      setShowAddForm(false);
       loadData();
     } catch {
       // ignore
@@ -304,7 +309,7 @@ export default function Expenses() {
             </div>
             <div className="mt-4 flex items-center justify-between">
               <button
-                onClick={() => setIsAddModalOpen(true)}
+                onClick={() => setShowAddForm(!showAddForm)}
                 className="bg-white text-blue-600 hover:bg-slate-50 font-bold text-xs py-2.5 px-4 rounded-lg shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <PlusCircle className="w-4 h-4" /> Lançar Despesa
@@ -312,6 +317,101 @@ export default function Expenses() {
             </div>
           </div>
         </section>
+
+        {showAddForm && (
+          <form
+            onSubmit={handleSubmit}
+            className="bg-white border border-blue-100 rounded-xl p-6 shadow-sm flex flex-col gap-4"
+          >
+            <div className="border-b border-slate-100 pb-3">
+              <h3 className="text-sm font-bold text-slate-900">
+                Lançar Nova Despesa
+              </h3>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">
+                Categoria
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  "Insumos",
+                  "Folha de Pagamento",
+                  "Aluguel",
+                  "Energia",
+                  "Marketing",
+                  "Seguros",
+                  "Tecnologia",
+                  "Outros",
+                ].map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setCategory(cat)}
+                    className={`py-2 px-3 text-xs font-semibold rounded-lg border transition-all text-center cursor-pointer ${category === cat ? "bg-blue-50 border-blue-600 text-blue-600" : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50"}`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                  Fornecedor
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: MedSupply Brasil"
+                  value={provider}
+                  onChange={(e) => setProvider(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                  Valor (R$)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  placeholder="0,00"
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                  Vencimento
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
+              <button
+                type="button"
+                onClick={() => setShowAddForm(false)}
+                className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-50 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="bg-primary text-white hover:bg-primary-dark px-5 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all active:scale-95 shadow-sm"
+              >
+                Confirmar Lançamento
+              </button>
+            </div>
+          </form>
+        )}
 
         {/* Filters + Table */}
         <section className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
@@ -516,12 +616,6 @@ export default function Expenses() {
           </div>
         </section>
 
-        {/* Add Modal */}
-        <AddExpenseModal
-          isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          onAdd={handleAddExpense}
-        />
       </div>
 
       <ConfirmModal
@@ -534,163 +628,5 @@ export default function Expenses() {
         loading={deleting}
       />
     </MainLayout>
-  );
-}
-
-function AddExpenseModal({
-  isOpen,
-  onClose,
-  onAdd,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  onAdd: (data: {
-    category: string;
-    provider: string;
-    grossValue: number;
-    dueDate: string;
-    status: string;
-  }) => void;
-}) {
-  const [category, setCategory] = useState("Insumos");
-  const [provider, setProvider] = useState("");
-  const [value, setValue] = useState("");
-  const [dueDate, setDueDate] = useState(
-    new Date().toISOString().split("T")[0],
-  );
-  const [status] = useState("PENDENTE");
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!provider || !value || isNaN(parseFloat(value))) return;
-    onAdd({
-      category,
-      provider,
-      grossValue: parseFloat(value),
-      dueDate,
-      status,
-    });
-    setProvider("");
-    setValue("");
-    onClose();
-  };
-
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.6 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm cursor-pointer"
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl overflow-hidden"
-          >
-            <div className="flex justify-between items-center bg-primary p-5 text-white">
-              <div className="flex items-center gap-2">
-                <Plus className="w-5 h-5" />
-                <h3 className="font-semibold text-lg">Lançar Nova Despesa</h3>
-              </div>
-              <button
-                onClick={onClose}
-                className="text-white/80 hover:text-white p-1.5 rounded-full cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase text-slate-500 mb-2">
-                  Categoria
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    "Insumos",
-                    "Folha de Pagamento",
-                    "Aluguel",
-                    "Energia",
-                    "Marketing",
-                    "Seguros",
-                    "Tecnologia",
-                    "Outros",
-                  ].map((cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => setCategory(cat)}
-                      className={`py-2 px-3 text-xs font-semibold rounded-lg border transition-all text-center cursor-pointer ${category === cat ? "bg-blue-50 border-blue-600 text-blue-600" : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50"}`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold uppercase text-slate-500 mb-1.5">
-                  Fornecedor
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ex: MedSupply Brasil"
-                  value={provider}
-                  onChange={(e) => setProvider(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-500 mb-1.5">
-                    Valor (R$)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    placeholder="0,00"
-                    value={value}
-                    onChange={(e) => setValue(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 font-semibold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-slate-500 mb-1.5">
-                    Vencimento
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-3 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="flex-1 py-2.5 border border-slate-200 hover:bg-slate-50 rounded-lg text-sm text-slate-500 font-medium cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-semibold cursor-pointer active:scale-95"
-                >
-                  Confirmar
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
   );
 }
