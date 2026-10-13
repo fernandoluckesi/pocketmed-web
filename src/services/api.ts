@@ -30,6 +30,22 @@ export class ApiError extends Error {
   }
 }
 
+// Several backend handlers (e.g. DELETE endpoints whose service method
+// returns void) send a 200/204 with an empty body. `response.json()` throws
+// a SyntaxError on an empty body even when the request actually succeeded —
+// that exception used to propagate as if the request itself had failed,
+// turning a successful delete into a false error. Read the raw text first and
+// only parse it when there's something to parse.
+async function parseResponseBody(response: Response) {
+  const text = await response.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
 export async function api(path: string, options: ApiOptions = {}) {
   const method = options.method || "GET";
 
@@ -87,16 +103,16 @@ export async function api(path: string, options: ApiOptions = {}) {
       localStorage.removeItem("pocketmed_user");
       window.location.href = "/login";
     }
-    const data = await response
-      .json()
-      .catch(() => ({ message: "Unauthorized" }));
+    const data = (await parseResponseBody(response)) || {
+      message: "Unauthorized",
+    };
     throw new ApiError(401, data);
   }
 
-  const data = await response.json();
+  const data = await parseResponseBody(response);
 
   if (!response.ok) {
-    throw new ApiError(response.status, data);
+    throw new ApiError(response.status, data || {});
   }
 
   return data;
