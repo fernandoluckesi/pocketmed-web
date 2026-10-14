@@ -12,6 +12,14 @@ import {
 import { formatDateOnly } from "../../utils/date";
 import { maskCurrencyBRL, parseCurrencyBRL } from "../../utils/currency";
 
+const BASE_SPECIALTIES = [
+  "Cardiologia",
+  "Ortopedia",
+  "Pediatria",
+  "Clínica Geral",
+  "Dermatologia",
+];
+
 export default function Revenue() {
   const toast = useToast();
   const [showAddForm, setShowAddForm] = useState(false);
@@ -115,6 +123,10 @@ export default function Revenue() {
       })
       .catch(() => {});
   }, []);
+
+  const specialtyOptions = [
+    ...new Set([...BASE_SPECIALTIES, ...doctors.map((d) => d.specialty).filter(Boolean)]),
+  ];
 
   const selectedDoctor = doctors.find((d) => d.id === doctorId);
   const effectiveTransferPercentage =
@@ -355,7 +367,12 @@ export default function Revenue() {
                 </label>
                 <select
                   value={doctorId}
-                  onChange={(e) => setDoctorId(e.target.value)}
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    setDoctorId(id);
+                    const chosen = doctors.find((d) => d.id === id);
+                    if (chosen?.specialty) setSpecialty(chosen.specialty);
+                  }}
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
                   required
                 >
@@ -418,11 +435,11 @@ export default function Revenue() {
                   onChange={(e) => setSpecialty(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
                 >
-                  <option value="Cardiologia">Cardiologia</option>
-                  <option value="Ortopedia">Ortopedia</option>
-                  <option value="Pediatria">Pediatria</option>
-                  <option value="Clínica Geral">Clínica Geral</option>
-                  <option value="Dermatologia">Dermatologia</option>
+                  {specialtyOptions.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
