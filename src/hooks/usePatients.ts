@@ -29,6 +29,7 @@ export interface PatientFromAPI {
   profileImage: string | null;
   type: string;
   isShadow: boolean;
+  inviteEmailStatus?: "sent" | "failed" | null;
   createdByDoctorId?: string;
   appointments?: Appointment[];
   medications?: Medication[];
@@ -471,16 +472,21 @@ export function useCreateShadowPatient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [inviteEmailStatus, setInviteEmailStatus] = useState<
+    "sent" | "failed" | null
+  >(null);
 
   const createPatient = useCallback(async (data: CreateShadowPatientData) => {
     setLoading(true);
     setError(null);
     setSuccess(false);
+    setInviteEmailStatus(null);
     try {
-      await api("/auth/register/patient-shadow", {
+      const result = await api("/auth/register/patient-shadow", {
         method: "POST",
         body: data,
       });
+      setInviteEmailStatus(result?.inviteEmailStatus ?? "sent");
       setSuccess(true);
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
@@ -500,7 +506,31 @@ export function useCreateShadowPatient() {
     setLoading(false);
     setError(null);
     setSuccess(false);
+    setInviteEmailStatus(null);
   }, []);
 
-  return { createPatient, loading, error, success, reset };
+  return { createPatient, loading, error, success, inviteEmailStatus, reset };
+}
+
+// --- useResendInvite ---
+
+export function useResendInvite() {
+  const [resendingId, setResendingId] = useState<string | null>(null);
+
+  const resendInvite = useCallback(
+    async (patientId: string): Promise<"sent" | "failed"> => {
+      setResendingId(patientId);
+      try {
+        const result = await api(`/patients/${patientId}/resend-invite`, {
+          method: "POST",
+        });
+        return result?.inviteEmailStatus ?? "failed";
+      } finally {
+        setResendingId((current) => (current === patientId ? null : current));
+      }
+    },
+    [],
+  );
+
+  return { resendInvite, resendingId };
 }

@@ -12,6 +12,8 @@ export interface Patient {
   profileImage: string | null;
   type: string;
   isShadow: boolean;
+  inviteEmailStatus?: "sent" | "failed" | null;
+  inviteEmailSentAt?: string | null;
   cpf?: string;
   bloodType?: string;
   allergies?: string[];
@@ -170,4 +172,8 @@ export const patientsApi = {
   // Access log (audit)
   getAccessLog: (patientId: string): Promise<Array<{ id: string; patientId: string; accessedBy: string; action: string; details: string | null; createdAt: string }>> =>
     api(`/patients/${patientId}/access-log`),
+
+  // Resend the welcome/invite email for a shadow patient whose previous attempt failed
+  resendInvite: (patientId: string): Promise<{ inviteEmailStatus: "sent" | "failed" }> =>
+    api(`/patients/${patientId}/resend-invite`, { method: "POST" }),
 };

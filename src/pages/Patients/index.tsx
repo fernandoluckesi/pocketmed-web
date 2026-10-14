@@ -17,6 +17,7 @@ import {
   Loader2,
   Clock,
   UserPlus,
+  AlertTriangle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
@@ -33,6 +34,7 @@ import {
   useCancelAccessRequest,
   useRequestAccess,
   useCreateShadowPatient,
+  useResendInvite,
 } from "../../hooks/usePatients";
 import type { AccessRequest } from "../../hooks/usePatients";
 import { RequestAccessModal } from "../../components/RequestAccessModal";
@@ -558,7 +560,7 @@ function AddPatientModal({
   onClose: () => void;
   onSuccess?: () => void;
 }) {
-  const { createPatient, loading, error, success, reset } =
+  const { createPatient, loading, error, success, inviteEmailStatus, reset } =
     useCreateShadowPatient();
   const { user } = useAuth();
   const toast = useToast();
@@ -588,17 +590,26 @@ function AddPatientModal({
   // Handle success: show message, then close and refetch
   useEffect(() => {
     if (success) {
-      toast.success("Paciente cadastrado com sucesso!");
-      const timer = setTimeout(() => {
-        onClose();
-        onSuccess?.();
-        formik.resetForm();
-        reset();
-      }, 1500);
+      if (inviteEmailStatus === "failed") {
+        toast.error(
+          "Paciente cadastrado, mas o e-mail de convite não pôde ser enviado. Você pode reenviar na lista de pacientes.",
+        );
+      } else {
+        toast.success("Paciente cadastrado com sucesso!");
+      }
+      const timer = setTimeout(
+        () => {
+          onClose();
+          onSuccess?.();
+          formik.resetForm();
+          reset();
+        },
+        inviteEmailStatus === "failed" ? 3000 : 1500,
+      );
       return () => clearTimeout(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [success]);
+  }, [success, inviteEmailStatus]);
 
   // Reset state when modal closes
   const handleClose = () => {
@@ -641,7 +652,11 @@ function AddPatientModal({
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200, damping: 15 }}
             >
-              <CheckCircle className="w-16 h-16 text-green-500" />
+              {inviteEmailStatus === "failed" ? (
+                <AlertTriangle className="w-16 h-16 text-amber-500" />
+              ) : (
+                <CheckCircle className="w-16 h-16 text-green-500" />
+              )}
             </motion.div>
             <div className="text-center">
               <h5 className="text-xl font-bold text-on-surface font-display">
@@ -651,6 +666,12 @@ function AddPatientModal({
                 <span className="font-semibold">{formik.values.name}</span> foi
                 adicionado(a) com sucesso.
               </p>
+              {inviteEmailStatus === "failed" && (
+                <p className="text-amber-600 text-sm font-medium mt-3 max-w-xs">
+                  O e-mail de convite não pôde ser enviado agora. Você pode
+                  reenviar depois na lista de pacientes.
+                </p>
+              )}
             </div>
           </div>
         ) : (
@@ -1092,6 +1113,27 @@ function MyPatientsContent({
   const [view, setView] = useState<"grid" | "list">("grid");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const { resendInvite, resendingId } = useResendInvite();
+  const toast = useToast();
+
+  const handleResendInvite = async (
+    e: React.MouseEvent,
+    patientId: string,
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const status = await resendInvite(patientId);
+      if (status === "sent") {
+        toast.success("Convite reenviado com sucesso!");
+      } else {
+        toast.error("Falha ao reenviar o convite. Tente novamente mais tarde.");
+      }
+      refetch();
+    } catch {
+      toast.error("Falha ao reenviar o convite. Tente novamente mais tarde.");
+    }
+  };
 
   // Expose refetch to parent via ref
   useEffect(() => {
@@ -1255,6 +1297,22 @@ function MyPatientsContent({
                     <ArrowRight className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                 </Link>
+                {patient.isShadow && patient.inviteEmailStatus === "failed" && (
+                  <div className="mt-2 flex items-center justify-between gap-2 px-2">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600">
+                      <AlertTriangle size={12} /> Convite não enviado
+                    </span>
+                    <button
+                      onClick={(e) => handleResendInvite(e, patient.id)}
+                      disabled={resendingId === patient.id}
+                      className="text-[11px] font-bold text-primary hover:underline cursor-pointer disabled:opacity-50"
+                    >
+                      {resendingId === patient.id
+                        ? "Enviando..."
+                        : "Reenviar convite"}
+                    </button>
+                  </div>
+                )}
               </motion.div>
             ) : (
               <motion.div
@@ -1302,6 +1360,22 @@ function MyPatientsContent({
                     </div>
                   </div>
                 </Link>
+                {patient.isShadow && patient.inviteEmailStatus === "failed" && (
+                  <div className="mt-2 flex items-center justify-between gap-2 px-2">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600">
+                      <AlertTriangle size={12} /> Convite não enviado
+                    </span>
+                    <button
+                      onClick={(e) => handleResendInvite(e, patient.id)}
+                      disabled={resendingId === patient.id}
+                      className="text-[11px] font-bold text-primary hover:underline cursor-pointer disabled:opacity-50"
+                    >
+                      {resendingId === patient.id
+                        ? "Enviando..."
+                        : "Reenviar convite"}
+                    </button>
+                  </div>
+                )}
               </motion.div>
             ),
           )}
