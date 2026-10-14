@@ -96,6 +96,17 @@ export interface Expense {
   costCenter?: CostCenter;
 }
 
+export interface CalculatedTransfer {
+  doctorId: string;
+  referenceMonth: string;
+  totalRevenue: number;
+  transferPercentage: number;
+  transferAmount: number;
+  deductions: number;
+  netTransfer: number;
+  proceduresCount: number;
+}
+
 export interface DoctorTransfer {
   id: string;
   clinicId: string;
@@ -208,8 +219,10 @@ export const financialApi = {
     const params = new URLSearchParams(filters || {}).toString();
     return api(`/financial/transfers${params ? `?${params}` : ""}`);
   },
-  calculateTransfers: (month: string) => api(`/financial/transfers/calculate?month=${month}`),
-  generateTransfers: (month: string) => api("/financial/transfers/generate", { method: "POST", body: { month } }),
+  calculateTransfers: (month: string): Promise<CalculatedTransfer[]> =>
+    api(`/financial/transfers/calculate?month=${month}`),
+  generateTransfers: (month: string): Promise<DoctorTransfer[]> =>
+    api("/financial/transfers/generate", { method: "POST", body: { month } }),
   approveTransfer: (id: string) => api(`/financial/transfers/${id}/approve`, { method: "PATCH" }),
   payTransfer: (id: string) => api(`/financial/transfers/${id}/pay`, { method: "PATCH" }),
   getMyTransfers: () => api("/financial/transfers/my"),

@@ -1,20 +1,48 @@
 import { useState, useEffect, useCallback } from "react";
-import { Coins, CheckCircle, Clock, FileCheck, Filter, X } from "lucide-react";
+import {
+  Coins,
+  CheckCircle,
+  Clock,
+  FileCheck,
+  Filter,
+  X,
+  Plus,
+  Calculator,
+} from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
-import { financialApi, type DoctorTransfer } from "../../services/financial";
+import {
+  financialApi,
+  type DoctorTransfer,
+  type CalculatedTransfer,
+} from "../../services/financial";
+import { ApiError } from "../../services/api";
+import { useToast } from "../../contexts/ToastContext";
 
 interface ClinicDoctor {
   id: string;
   name: string;
 }
 
+function currentMonth(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
 export default function Transfers() {
+  const toast = useToast();
   const [transfers, setTransfers] = useState<DoctorTransfer[]>([]);
   const [loading, setLoading] = useState(true);
   const [monthFilter, setMonthFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("Todos");
   const [doctorFilter, setDoctorFilter] = useState("Todos");
   const [doctors, setDoctors] = useState<ClinicDoctor[]>([]);
+
+  // Generate transfers panel
+  const [showGenerate, setShowGenerate] = useState(false);
+  const [generateMonth, setGenerateMonth] = useState(currentMonth());
+  const [preview, setPreview] = useState<CalculatedTransfer[] | null>(null);
+  const [calculating, setCalculating] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -78,6 +106,41 @@ export default function Transfers() {
     }
   };
 
+  const doctorName = (id: string) =>
+    doctors.find((d) => d.id === id)?.name || "Médico não identificado";
+
+  const handleCalculatePreview = async () => {
+    setCalculating(true);
+    setPreview(null);
+    try {
+      const result = await financialApi.calculateTransfers(generateMonth);
+      setPreview(result);
+    } catch {
+      toast.error("Não foi possível calcular os repasses. Tente novamente.");
+    } finally {
+      setCalculating(false);
+    }
+  };
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    try {
+      await financialApi.generateTransfers(generateMonth);
+      toast.success("Repasses gerados com sucesso.");
+      setShowGenerate(false);
+      setPreview(null);
+      loadData();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        toast.error("Os repasses deste mês já foram gerados anteriormente.");
+      } else {
+        toast.error("Não foi possível gerar os repasses. Tente novamente.");
+      }
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const statusMap: Record<
     string,
     { label: string; classes: string; icon: typeof CheckCircle }
@@ -113,16 +176,28 @@ export default function Transfers() {
     <MainLayout>
       <div className="flex flex-col gap-6">
         <div className="bg-white p-4 rounded-xl border border-slate-200">
-          <div className="flex items-center gap-3 mb-4">
-            <Coins className="w-5 h-5 text-blue-600" />
-            <div>
-              <h2 className="text-lg font-bold text-slate-900 tracking-tight leading-none">
-                Repasses Médicos
-              </h2>
-              <p className="text-xs text-slate-500 mt-1 font-medium">
-                Controle de repasses por profissional
-              </p>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <Coins className="w-5 h-5 text-blue-600" />
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 tracking-tight leading-none">
+                  Repasses Médicos
+                </h2>
+                <p className="text-xs text-slate-500 mt-1 font-medium">
+                  Controle de repasses por profissional
+                </p>
+              </div>
             </div>
+            <button
+              onClick={() => {
+                setShowGenerate(!showGenerate);
+                setPreview(null);
+              }}
+              className="bg-primary text-white hover:bg-primary-dark px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 cursor-pointer active:scale-95 transition-all shadow-xs"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Gerar Repasses</span>
+            </button>
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-slate-50 p-3 rounded-lg">
@@ -158,6 +233,116 @@ export default function Transfers() {
             </div>
           </div>
         </div>
+
+        {showGenerate && (
+          <div className="bg-white border border-blue-100 rounded-xl p-6 shadow-sm flex flex-col gap-4">
+            <div className="border-b border-slate-100 pb-3">
+              <h3 className="text-sm font-bold text-slate-900">
+                Gerar Repasses do Mês
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Calcula o repasse de cada médico com base nas receitas pagas
+                no mês escolhido, usando o percentual padrão configurado para
+                a clínica. Só considera receitas que têm um médico associado.
+              </p>
+            </div>
+
+            <div className="flex items-end gap-3">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                  Mês de Referência
+                </label>
+                <input
+                  type="month"
+                  value={generateMonth}
+                  onChange={(e) => {
+                    setGenerateMonth(e.target.value);
+                    setPreview(null);
+                  }}
+                  className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                />
+              </div>
+              <button
+                onClick={handleCalculatePreview}
+                disabled={calculating}
+                className="bg-slate-100 text-slate-700 hover:bg-slate-200 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 cursor-pointer transition-all disabled:opacity-50"
+              >
+                <Calculator className="w-3.5 h-3.5" />
+                {calculating ? "Calculando..." : "Calcular Prévia"}
+              </button>
+            </div>
+
+            {preview && preview.length === 0 && (
+              <p className="text-xs text-slate-400 py-4 text-center">
+                Nenhuma receita paga com médico associado foi encontrada para
+                este mês.
+              </p>
+            )}
+
+            {preview && preview.length > 0 && (
+              <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-400 font-bold text-[10px] uppercase tracking-wider border-b border-slate-200">
+                      <th className="px-4 py-2 font-bold">Médico</th>
+                      <th className="px-4 py-2 font-bold text-right">
+                        Receita Total
+                      </th>
+                      <th className="px-4 py-2 font-bold text-center">%</th>
+                      <th className="px-4 py-2 font-bold text-right">
+                        Valor Repasse
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs">
+                    {preview.map((p) => (
+                      <tr key={p.doctorId}>
+                        <td className="px-4 py-2.5 font-bold text-slate-900">
+                          {doctorName(p.doctorId)}
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-mono text-slate-700">
+                          R${" "}
+                          {Number(p.totalRevenue).toLocaleString("pt-BR", {
+                            minimumFractionDigits: 2,
+                          })}
+                        </td>
+                        <td className="px-4 py-2.5 text-center font-bold text-blue-600">
+                          {p.transferPercentage}%
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-bold text-slate-900 font-mono">
+                          R${" "}
+                          {Number(p.netTransfer).toLocaleString("pt-BR", {
+                            minimumFractionDigits: 2,
+                          })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowGenerate(false);
+                  setPreview(null);
+                }}
+                className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-50 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleGenerate}
+                disabled={!preview || preview.length === 0 || generating}
+                className="bg-primary text-white hover:bg-primary-dark px-5 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {generating ? "Gerando..." : "Confirmar e Gerar"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-wrap items-center gap-2">

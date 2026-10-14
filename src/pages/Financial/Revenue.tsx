@@ -25,10 +25,15 @@ export default function Revenue() {
   const [filterMinValue, setFilterMinValue] = useState("");
   const [filterMaxValue, setFilterMaxValue] = useState("");
   const [convenios, setConvenios] = useState<Convenio[]>([]);
+  const [doctors, setDoctors] = useState<
+    { id: string; name: string; specialty: string }[]
+  >([]);
+  const [filterDoctor, setFilterDoctor] = useState("Todos");
 
   // Form state
   const [procedure, setProcedure] = useState("");
   const [specialty, setSpecialty] = useState("Cardiologia");
+  const [doctorId, setDoctorId] = useState("");
   const [grossValue, setGrossValue] = useState("");
   const [status, setStatus] = useState("PENDENTE");
   const [paymentMethod, setPaymentMethod] = useState("Particular");
@@ -41,6 +46,7 @@ export default function Revenue() {
       const filters: Record<string, string> = {};
       if (filterStatus !== "Todos") filters.status = filterStatus;
       if (filterConvenio !== "Todos") filters.convenioId = filterConvenio;
+      if (filterDoctor !== "Todos") filters.doctorId = filterDoctor;
       if (filterStartDate) filters.startDate = filterStartDate;
       if (filterEndDate) filters.endDate = filterEndDate;
       const minValue = parseCurrencyBRL(filterMinValue);
@@ -57,6 +63,7 @@ export default function Revenue() {
   }, [
     filterStatus,
     filterConvenio,
+    filterDoctor,
     filterStartDate,
     filterEndDate,
     filterMinValue,
@@ -74,9 +81,17 @@ export default function Revenue() {
       .catch(() => setConvenios([]));
   }, []);
 
+  useEffect(() => {
+    financialApi
+      .listClinicDoctors()
+      .then((data) => setDoctors(Array.isArray(data) ? data : []))
+      .catch(() => setDoctors([]));
+  }, []);
+
   const hasActiveFilters =
     filterStatus !== "Todos" ||
     filterConvenio !== "Todos" ||
+    filterDoctor !== "Todos" ||
     !!filterStartDate ||
     !!filterEndDate ||
     !!filterMinValue ||
@@ -85,6 +100,7 @@ export default function Revenue() {
   const clearFilters = () => {
     setFilterStatus("Todos");
     setFilterConvenio("Todos");
+    setFilterDoctor("Todos");
     setFilterStartDate("");
     setFilterEndDate("");
     setFilterMinValue("");
@@ -93,11 +109,12 @@ export default function Revenue() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!procedure || !grossValue) return;
+    if (!procedure || !grossValue || !doctorId) return;
     try {
       await financialApi.createRevenue({
         procedure,
         specialty,
+        doctorId,
         grossValue: parseFloat(grossValue),
         discountValue: 0,
         netValue: parseFloat(grossValue),
@@ -254,7 +271,7 @@ export default function Revenue() {
                 Inserir Nova Guia / Lançamento Financeiro
               </h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
                   Procedimento
@@ -267,6 +284,24 @@ export default function Revenue() {
                   placeholder="Consulta, Ecocardiograma..."
                   required
                 />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                  Médico
+                </label>
+                <select
+                  value={doctorId}
+                  onChange={(e) => setDoctorId(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  required
+                >
+                  <option value="">Selecione...</option>
+                  {doctors.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
@@ -362,7 +397,7 @@ export default function Revenue() {
 
         {/* Filter Options */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
             <div className="relative md:col-span-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
               <input
@@ -397,6 +432,20 @@ export default function Revenue() {
                 {convenios.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <select
+                value={filterDoctor}
+                onChange={(e) => setFilterDoctor(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+              >
+                <option value="Todos">Médico: Todos</option>
+                {doctors.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
                   </option>
                 ))}
               </select>
