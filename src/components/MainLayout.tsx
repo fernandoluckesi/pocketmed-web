@@ -198,8 +198,12 @@ export function MainLayout({ children }: MainLayoutProps) {
   return (
     <div className="min-h-screen flex bg-surface text-on-surface">
       {/* Sidebar */}
-      <aside className="h-screen w-64 fixed left-0 top-0 bg-slate-100 border-r border-slate-200 flex flex-col p-6 space-y-8 z-50">
-        <div className="flex items-center px-2">
+      <aside className="h-screen w-64 fixed left-0 top-0 bg-slate-100 border-r border-slate-200 flex flex-col z-50">
+        {/* Logo block: fixed height matching the header's, so both are
+            vertically centered against each other across the top of the
+            page, instead of the old p-6 + large gap that pushed the menu
+            down and cut off items at the bottom on shorter screens. */}
+        <div className="h-20 shrink-0 flex items-center px-8">
           <img
             src={logoHorizontal}
             alt="Hispora"
@@ -207,7 +211,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           />
         </div>
 
-        <nav className="flex-grow space-y-1">
+        <nav className="flex-grow min-h-0 overflow-y-auto space-y-1 px-6 pt-4 pb-6">
           {displayFinancialMenu ? (
             <>
               {/* Financial Submenu */}
