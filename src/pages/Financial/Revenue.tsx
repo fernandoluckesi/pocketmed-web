@@ -9,6 +9,7 @@ import {
   type Revenue as RevenueType,
   type Convenio,
   type ConvenioProcedure,
+  type TussProcedureOption,
 } from "../../services/financial";
 import { formatDateOnly } from "../../utils/date";
 import { maskCurrencyBRL, parseCurrencyBRL } from "../../utils/currency";
@@ -68,6 +69,8 @@ export default function Revenue() {
   const [convenioProcedures, setConvenioProcedures] = useState<
     ConvenioProcedure[]
   >([]);
+  const [tussOptions, setTussOptions] = useState<TussProcedureOption[]>([]);
+  const [showTussOptions, setShowTussOptions] = useState(false);
 
   const loadRevenues = useCallback(async () => {
     try {
@@ -114,6 +117,26 @@ export default function Revenue() {
       .then((data) => setConvenioProcedures(Array.isArray(data) ? data : []))
       .catch(() => setConvenioProcedures([]));
   }, [formConvenioId]);
+
+  // Debounced lookup against the official ANS TUSS table, so the user can
+  // search by code or by name instead of having to know the 8-digit code.
+  useEffect(() => {
+    if (procedureCode.trim().length < 2) {
+      setTussOptions([]);
+      return;
+    }
+    const timeout = setTimeout(() => {
+      financialApi
+        .searchTussProcedures(procedureCode.trim())
+        .then((data) => {
+          const options = Array.isArray(data) ? data : [];
+          setTussOptions(options);
+          setShowTussOptions(options.length > 0);
+        })
+        .catch(() => setTussOptions([]));
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [procedureCode]);
 
   useEffect(() => {
     financialApi
@@ -190,14 +213,27 @@ export default function Revenue() {
   // typed code matches one already registered — editable afterward, same as
   // the repasse % above. Never overwrites a value the convênio table doesn't
   // know about, so an unregistered code just leaves the field as-is.
-  const handleProcedureCodeBlur = () => {
-    if (!formConvenioId || !procedureCode) return;
+  const applyConvenioProcedureValue = (code: string) => {
+    if (!formConvenioId || !code) return;
     const match = convenioProcedures.find(
-      (p) => p.procedureCode === procedureCode.trim(),
+      (p) => p.procedureCode === code.trim(),
     );
     if (match) {
       setGrossValue(String(match.value));
     }
+  };
+
+  const handleProcedureCodeBlur = () => {
+    applyConvenioProcedureValue(procedureCode);
+    // Delay so a click on a dropdown option (onMouseDown) fires before the
+    // list disappears — otherwise the blur closes it first.
+    setTimeout(() => setShowTussOptions(false), 150);
+  };
+
+  const handleSelectTussOption = (option: TussProcedureOption) => {
+    setProcedureCode(option.code);
+    setShowTussOptions(false);
+    applyConvenioProcedureValue(option.code);
   };
 
   const hasActiveFilters =
@@ -584,14 +620,36 @@ export default function Revenue() {
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
                       Código do Procedimento (TUSS)
                     </label>
-                    <input
-                      type="text"
-                      value={procedureCode}
-                      onChange={(e) => setProcedureCode(e.target.value)}
-                      onBlur={handleProcedureCodeBlur}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:ring-1 focus:ring-primary focus:outline-hidden"
-                      placeholder="Ex: 10101012"
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={procedureCode}
+                        onChange={(e) => setProcedureCode(e.target.value)}
+                        onFocus={() => setShowTussOptions(tussOptions.length > 0)}
+                        onBlur={handleProcedureCodeBlur}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:ring-1 focus:ring-primary focus:outline-hidden"
+                        placeholder="Digite o código ou o nome do procedimento"
+                        autoComplete="off"
+                      />
+                      {showTussOptions && tussOptions.length > 0 && (
+                        <ul className="absolute z-10 mt-1 w-full max-h-56 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg">
+                          {tussOptions.map((option) => (
+                            <li key={option.code}>
+                              <button
+                                type="button"
+                                onMouseDown={() => handleSelectTussOption(option)}
+                                className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 border-b border-slate-50 last:border-b-0"
+                              >
+                                <span className="font-mono font-bold text-slate-700">
+                                  {option.code}
+                                </span>
+                                <span className="text-slate-500"> — {option.name}</span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">

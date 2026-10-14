@@ -86,6 +86,11 @@ export interface ConvenioProcedure {
   active: boolean;
 }
 
+export interface TussProcedureOption {
+  code: string;
+  name: string;
+}
+
 export interface Expense {
   id: string;
   clinicId: string;
@@ -220,6 +225,10 @@ export const financialApi = {
     api(`/financial/convenios/${convenioId}/procedures/${id}`, { method: "PUT", body: data }),
   deleteConvenioProcedure: (convenioId: string, id: string): Promise<void> =>
     api(`/financial/convenios/${convenioId}/procedures/${id}`, { method: "DELETE" }),
+
+  // Official ANS TUSS code lookup (autocomplete for the Código do Procedimento field)
+  searchTussProcedures: (q: string): Promise<TussProcedureOption[]> =>
+    api(`/financial/tuss-procedures/search?q=${encodeURIComponent(q)}`),
 
   // Revenues
   listRevenues: (filters?: Record<string, string>) => {
