@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Search, X } from "lucide-react";
+import { Plus, Search, X, Pencil, Check } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
 import { ActionsMenu } from "../../components/ui/ActionsMenu";
 import { ConfirmModal } from "../../components/ConfirmModal";
@@ -26,9 +26,20 @@ export default function Revenue() {
   const [filterMaxValue, setFilterMaxValue] = useState("");
   const [convenios, setConvenios] = useState<Convenio[]>([]);
   const [doctors, setDoctors] = useState<
-    { id: string; name: string; specialty: string }[]
+    {
+      id: string;
+      name: string;
+      specialty: string;
+      membershipId: string | null;
+      transferPercentage: number | null;
+    }[]
   >([]);
   const [filterDoctor, setFilterDoctor] = useState("Todos");
+  const [defaultTransferPercentage, setDefaultTransferPercentage] =
+    useState(50);
+  const [editingPercentage, setEditingPercentage] = useState(false);
+  const [percentageDraft, setPercentageDraft] = useState("");
+  const [savingPercentage, setSavingPercentage] = useState(false);
 
   // Form state
   const [procedure, setProcedure] = useState("");
@@ -81,12 +92,65 @@ export default function Revenue() {
       .catch(() => setConvenios([]));
   }, []);
 
-  useEffect(() => {
+  const loadDoctors = useCallback(() => {
     financialApi
       .listClinicDoctors()
       .then((data) => setDoctors(Array.isArray(data) ? data : []))
       .catch(() => setDoctors([]));
   }, []);
+
+  useEffect(() => {
+    loadDoctors();
+  }, [loadDoctors]);
+
+  useEffect(() => {
+    financialApi
+      .getSettings()
+      .then((data) => {
+        if (data?.defaultDoctorTransferPercentage !== undefined) {
+          setDefaultTransferPercentage(
+            Number(data.defaultDoctorTransferPercentage) || 50,
+          );
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const selectedDoctor = doctors.find((d) => d.id === doctorId);
+  const effectiveTransferPercentage =
+    selectedDoctor?.transferPercentage ?? defaultTransferPercentage;
+  const estimatedTransfer =
+    doctorId && grossValue
+      ? (parseFloat(grossValue) * effectiveTransferPercentage) / 100
+      : null;
+
+  const handleStartEditPercentage = () => {
+    setPercentageDraft(String(effectiveTransferPercentage));
+    setEditingPercentage(true);
+  };
+
+  const handleSavePercentage = async () => {
+    if (!selectedDoctor?.membershipId) return;
+    const value = parseFloat(percentageDraft);
+    if (isNaN(value) || value < 0 || value > 100) {
+      toast.error("Informe um percentual entre 0 e 100.");
+      return;
+    }
+    setSavingPercentage(true);
+    try {
+      await financialApi.updateDoctorTransferPercentage(
+        selectedDoctor.membershipId,
+        value,
+      );
+      toast.success("Percentual de repasse atualizado.");
+      setEditingPercentage(false);
+      loadDoctors();
+    } catch {
+      toast.error("Não foi possível atualizar o percentual. Tente novamente.");
+    } finally {
+      setSavingPercentage(false);
+    }
+  };
 
   const hasActiveFilters =
     filterStatus !== "Todos" ||
@@ -302,6 +366,48 @@ export default function Revenue() {
                     </option>
                   ))}
                 </select>
+                {doctorId && (
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    {editingPercentage ? (
+                      <>
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={percentageDraft}
+                          onChange={(e) => setPercentageDraft(e.target.value)}
+                          className="w-16 bg-white border border-slate-200 rounded px-1.5 py-0.5 text-[11px]"
+                          autoFocus
+                        />
+                        <span className="text-[11px] text-slate-400">%</span>
+                        <button
+                          type="button"
+                          onClick={handleSavePercentage}
+                          disabled={savingPercentage}
+                          className="text-emerald-600 hover:bg-emerald-50 rounded p-0.5 cursor-pointer disabled:opacity-50"
+                        >
+                          <Check className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingPercentage(false)}
+                          className="text-slate-400 hover:bg-slate-100 rounded p-0.5 cursor-pointer"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleStartEditPercentage}
+                        className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-primary cursor-pointer"
+                      >
+                        Repasse: {effectiveTransferPercentage}%
+                        <Pencil className="w-2.5 h-2.5" />
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
@@ -332,6 +438,17 @@ export default function Revenue() {
                   placeholder="0.00"
                   required
                 />
+                {estimatedTransfer !== null && (
+                  <p className="mt-1.5 text-[11px] text-slate-500">
+                    Repasse estimado:{" "}
+                    <span className="font-bold text-blue-600">
+                      R${" "}
+                      {estimatedTransfer.toLocaleString("pt-BR", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </span>
+                  </p>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

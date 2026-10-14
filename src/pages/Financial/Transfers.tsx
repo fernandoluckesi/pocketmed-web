@@ -21,6 +21,8 @@ import { useToast } from "../../contexts/ToastContext";
 interface ClinicDoctor {
   id: string;
   name: string;
+  membershipId: string | null;
+  transferPercentage: number | null;
 }
 
 function currentMonth(): string {
@@ -119,6 +121,52 @@ export default function Transfers() {
       toast.error("Não foi possível calcular os repasses. Tente novamente.");
     } finally {
       setCalculating(false);
+    }
+  };
+
+  const [savingPercentageFor, setSavingPercentageFor] = useState<
+    string | null
+  >(null);
+
+  // Lets the admin adjust a doctor's repasse % directly in the preview,
+  // before confirming generation. Persists the override on the clinic
+  // membership and recomputes this row's amount locally (no need to
+  // re-calculate the whole preview from the server).
+  const handleRowPercentageChange = async (doctorId: string, raw: string) => {
+    const value = parseFloat(raw);
+    if (isNaN(value) || value < 0 || value > 100) return;
+    const doctor = doctors.find((d) => d.id === doctorId);
+    if (!doctor?.membershipId) return;
+
+    setSavingPercentageFor(doctorId);
+    try {
+      await financialApi.updateDoctorTransferPercentage(
+        doctor.membershipId,
+        value,
+      );
+      setDoctors((prev) =>
+        prev.map((d) =>
+          d.id === doctorId ? { ...d, transferPercentage: value } : d,
+        ),
+      );
+      setPreview((prev) =>
+        prev
+          ? prev.map((p) =>
+              p.doctorId === doctorId
+                ? {
+                    ...p,
+                    transferPercentage: value,
+                    transferAmount: (p.totalRevenue * value) / 100,
+                    netTransfer: (p.totalRevenue * value) / 100,
+                  }
+                : p,
+            )
+          : prev,
+      );
+    } catch {
+      toast.error("Não foi possível atualizar o percentual. Tente novamente.");
+    } finally {
+      setSavingPercentageFor(null);
     }
   };
 
@@ -306,8 +354,28 @@ export default function Transfers() {
                             minimumFractionDigits: 2,
                           })}
                         </td>
-                        <td className="px-4 py-2.5 text-center font-bold text-blue-600">
-                          {p.transferPercentage}%
+                        <td className="px-4 py-2.5 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              defaultValue={p.transferPercentage}
+                              key={p.transferPercentage}
+                              onBlur={(e) =>
+                                e.target.value !== String(p.transferPercentage) &&
+                                handleRowPercentageChange(
+                                  p.doctorId,
+                                  e.target.value,
+                                )
+                              }
+                              disabled={savingPercentageFor === p.doctorId}
+                              className="w-14 bg-slate-50 border border-slate-200 rounded px-1.5 py-1 text-xs text-center font-bold text-blue-600 focus:ring-1 focus:ring-primary focus:outline-hidden disabled:opacity-50"
+                            />
+                            <span className="text-xs font-bold text-blue-600">
+                              %
+                            </span>
+                          </div>
                         </td>
                         <td className="px-4 py-2.5 text-right font-bold text-slate-900 font-mono">
                           R${" "}

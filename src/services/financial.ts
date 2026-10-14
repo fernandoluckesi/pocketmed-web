@@ -175,7 +175,7 @@ export interface PaginatedResponse<T> {
 // Settings
 export const financialApi = {
   // Settings
-  getSettings: () => api("/financial/settings"),
+  getSettings: (): Promise<FinancialSettings> => api("/financial/settings"),
   updateSettings: (data: Partial<FinancialSettings>) => api("/financial/settings", { method: "PUT", body: data }),
 
   // Cost Centers
@@ -262,6 +262,25 @@ export const financialApi = {
 
   // Clinic doctors (for filter dropdowns — admin/secretary scoped to active clinic)
   listClinicDoctors: (): Promise<
-    { id: string; name: string; email: string; specialty: string; crm: string }[]
+    {
+      id: string;
+      name: string;
+      email: string;
+      specialty: string;
+      crm: string;
+      membershipId: string | null;
+      transferPercentage: number | null;
+    }[]
   > => api("/clinic-admin/doctors"),
+
+  // Per-doctor repasse percentage override (admin only). Null clears the
+  // override, falling back to the clinic's default percentage.
+  updateDoctorTransferPercentage: (
+    membershipId: string,
+    transferPercentage: number | null,
+  ): Promise<{ id: string; professionalId: string; transferPercentage: number | null }> =>
+    api(`/clinic-admin/members/${membershipId}/transfer-percentage`, {
+      method: "PATCH",
+      body: { transferPercentage },
+    }),
 };
