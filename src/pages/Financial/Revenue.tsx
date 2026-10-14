@@ -8,6 +8,7 @@ import {
   financialApi,
   type Revenue as RevenueType,
   type Convenio,
+  type ConvenioProcedure,
 } from "../../services/financial";
 import { formatDateOnly } from "../../utils/date";
 import { maskCurrencyBRL, parseCurrencyBRL } from "../../utils/currency";
@@ -59,6 +60,14 @@ export default function Revenue() {
   const [dueDate, setDueDate] = useState(
     new Date().toISOString().split("T")[0],
   );
+  const [formConvenioId, setFormConvenioId] = useState("");
+  const [procedureCode, setProcedureCode] = useState("");
+  const [authorizationNumber, setAuthorizationNumber] = useState("");
+  const [insurancePlanName, setInsurancePlanName] = useState("");
+  const [insuranceCardNumber, setInsuranceCardNumber] = useState("");
+  const [convenioProcedures, setConvenioProcedures] = useState<
+    ConvenioProcedure[]
+  >([]);
 
   const loadRevenues = useCallback(async () => {
     try {
@@ -92,6 +101,19 @@ export default function Revenue() {
   useEffect(() => {
     loadRevenues();
   }, [loadRevenues]);
+
+  // Loads this convênio's own remuneration table so the procedure code can
+  // auto-fill the value it actually pays (see handleProcedureCodeBlur below).
+  useEffect(() => {
+    if (!formConvenioId) {
+      setConvenioProcedures([]);
+      return;
+    }
+    financialApi
+      .listConvenioProcedures(formConvenioId)
+      .then((data) => setConvenioProcedures(Array.isArray(data) ? data : []))
+      .catch(() => setConvenioProcedures([]));
+  }, [formConvenioId]);
 
   useEffect(() => {
     financialApi
@@ -164,6 +186,20 @@ export default function Revenue() {
     }
   };
 
+  // Auto-fills Valor from the convênio's own remuneration table when the
+  // typed code matches one already registered — editable afterward, same as
+  // the repasse % above. Never overwrites a value the convênio table doesn't
+  // know about, so an unregistered code just leaves the field as-is.
+  const handleProcedureCodeBlur = () => {
+    if (!formConvenioId || !procedureCode) return;
+    const match = convenioProcedures.find(
+      (p) => p.procedureCode === procedureCode.trim(),
+    );
+    if (match) {
+      setGrossValue(String(match.value));
+    }
+  };
+
   const hasActiveFilters =
     filterStatus !== "Todos" ||
     filterConvenio !== "Todos" ||
@@ -191,6 +227,11 @@ export default function Revenue() {
         procedure,
         specialty,
         doctorId,
+        convenioId: formConvenioId || null,
+        procedureCode: procedureCode || null,
+        authorizationNumber: authorizationNumber || null,
+        insurancePlanName: insurancePlanName || null,
+        insuranceCardNumber: insuranceCardNumber || null,
         grossValue: parseFloat(grossValue),
         discountValue: 0,
         netValue: parseFloat(grossValue),
@@ -200,6 +241,10 @@ export default function Revenue() {
       });
       setProcedure("");
       setGrossValue("");
+      setProcedureCode("");
+      setAuthorizationNumber("");
+      setInsurancePlanName("");
+      setInsuranceCardNumber("");
       setShowAddForm(false);
       loadRevenues();
     } catch {
@@ -511,6 +556,85 @@ export default function Revenue() {
                 </select>
               </div>
             </div>
+
+            {paymentMethod === "Convênio" && (
+              <div className="border-t border-slate-100 pt-4 flex flex-col gap-4">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Dados da Guia
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                      Convênio
+                    </label>
+                    <select
+                      value={formConvenioId}
+                      onChange={(e) => setFormConvenioId(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                    >
+                      <option value="">Selecione...</option>
+                      {convenios.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                      Código do Procedimento (TUSS)
+                    </label>
+                    <input
+                      type="text"
+                      value={procedureCode}
+                      onChange={(e) => setProcedureCode(e.target.value)}
+                      onBlur={handleProcedureCodeBlur}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono focus:ring-1 focus:ring-primary focus:outline-hidden"
+                      placeholder="Ex: 10101012"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                      Nº Autorização
+                    </label>
+                    <input
+                      type="text"
+                      value={authorizationNumber}
+                      onChange={(e) => setAuthorizationNumber(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                      placeholder="Opcional"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                      Plano
+                    </label>
+                    <input
+                      type="text"
+                      value={insurancePlanName}
+                      onChange={(e) => setInsurancePlanName(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                      placeholder="Ex: Premium, Básico..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                      Nº Carteirinha
+                    </label>
+                    <input
+                      type="text"
+                      value={insuranceCardNumber}
+                      onChange={(e) => setInsuranceCardNumber(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                      placeholder="Opcional"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
               <button
                 type="button"

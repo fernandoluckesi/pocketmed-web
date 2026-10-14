@@ -67,10 +67,23 @@ export interface Revenue {
   paidAt: string | null;
   invoiceNumber: string | null;
   guideNumber: string | null;
+  authorizationNumber: string | null;
+  insurancePlanName: string | null;
+  insuranceCardNumber: string | null;
   glosaValue: number | null;
   glosaReason: string | null;
   notes: string | null;
   convenio?: Convenio;
+}
+
+export interface ConvenioProcedure {
+  id: string;
+  clinicId: string;
+  convenioId: string;
+  procedureCode: string;
+  procedureName: string;
+  value: number;
+  active: boolean;
 }
 
 export interface Expense {
@@ -190,6 +203,23 @@ export const financialApi = {
   updateConvenio: (id: string, data: Partial<Convenio>) => api(`/financial/convenios/${id}`, { method: "PUT", body: data }),
   toggleConvenio: (id: string) => api(`/financial/convenios/${id}/toggle`, { method: "PATCH" }),
   deleteConvenio: (id: string) => api(`/financial/convenios/${id}`, { method: "DELETE" }),
+
+  // Convenio remuneration table (how much this convênio pays per procedure code)
+  listConvenioProcedures: (convenioId: string): Promise<ConvenioProcedure[]> =>
+    api(`/financial/convenios/${convenioId}/procedures`),
+  createConvenioProcedure: (
+    convenioId: string,
+    data: { procedureCode: string; procedureName: string; value: number },
+  ): Promise<ConvenioProcedure> =>
+    api(`/financial/convenios/${convenioId}/procedures`, { method: "POST", body: data }),
+  updateConvenioProcedure: (
+    convenioId: string,
+    id: string,
+    data: Partial<ConvenioProcedure>,
+  ): Promise<ConvenioProcedure> =>
+    api(`/financial/convenios/${convenioId}/procedures/${id}`, { method: "PUT", body: data }),
+  deleteConvenioProcedure: (convenioId: string, id: string): Promise<void> =>
+    api(`/financial/convenios/${convenioId}/procedures/${id}`, { method: "DELETE" }),
 
   // Revenues
   listRevenues: (filters?: Record<string, string>) => {
