@@ -18,6 +18,7 @@ import {
   type Revenue as RevenueType,
   type Convenio,
   type ConvenioProcedure,
+  type ConvenioPlan,
   type TussProcedureOption,
 } from "../../services/financial";
 import { formatDateOnly } from "../../utils/date";
@@ -78,6 +79,7 @@ export default function Revenue() {
   const [convenioProcedures, setConvenioProcedures] = useState<
     ConvenioProcedure[]
   >([]);
+  const [convenioPlans, setConvenioPlans] = useState<ConvenioPlan[]>([]);
   const [tussOptions, setTussOptions] = useState<TussProcedureOption[]>([]);
   const [showTussOptions, setShowTussOptions] = useState(false);
   const [procedureOptions, setProcedureOptions] = useState<TussProcedureOption[]>([]);
@@ -130,6 +132,20 @@ export default function Revenue() {
       .listConvenioProcedures(formConvenioId)
       .then((data) => setConvenioProcedures(Array.isArray(data) ? data : []))
       .catch(() => setConvenioProcedures([]));
+  }, [formConvenioId]);
+
+  // Loads this convênio's registered plans so Plano can be a select instead
+  // of free text.
+  useEffect(() => {
+    if (!formConvenioId) {
+      setConvenioPlans([]);
+      setInsurancePlanName("");
+      return;
+    }
+    financialApi
+      .listConvenioPlans(formConvenioId)
+      .then((data) => setConvenioPlans(Array.isArray(data) ? data : []))
+      .catch(() => setConvenioPlans([]));
   }, [formConvenioId]);
 
   // Debounced lookup against the official ANS TUSS table, so the user can
@@ -818,13 +834,22 @@ export default function Revenue() {
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
                       Plano
                     </label>
-                    <input
-                      type="text"
+                    <select
                       value={insurancePlanName}
                       onChange={(e) => setInsurancePlanName(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
-                      placeholder="Ex: Premium, Básico..."
-                    />
+                    >
+                      <option value="">
+                        {convenioPlans.length === 0
+                          ? "Nenhum plano cadastrado para este convênio"
+                          : "Selecione..."}
+                      </option>
+                      {convenioPlans.map((p) => (
+                        <option key={p.id} value={p.name}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">

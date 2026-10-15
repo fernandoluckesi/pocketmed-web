@@ -91,6 +91,14 @@ export interface TussProcedureOption {
   name: string;
 }
 
+export interface ConvenioPlan {
+  id: string;
+  clinicId: string;
+  convenioId: string;
+  name: string;
+  active: boolean;
+}
+
 export interface Expense {
   id: string;
   clinicId: string;
@@ -225,6 +233,20 @@ export const financialApi = {
     api(`/financial/convenios/${convenioId}/procedures/${id}`, { method: "PUT", body: data }),
   deleteConvenioProcedure: (convenioId: string, id: string): Promise<void> =>
     api(`/financial/convenios/${convenioId}/procedures/${id}`, { method: "DELETE" }),
+
+  // Convênio insurance plans (populate the Plano select in Receitas)
+  listConvenioPlans: (convenioId: string): Promise<ConvenioPlan[]> =>
+    api(`/financial/convenios/${convenioId}/plans`),
+  createConvenioPlan: (convenioId: string, data: { name: string }): Promise<ConvenioPlan> =>
+    api(`/financial/convenios/${convenioId}/plans`, { method: "POST", body: data }),
+  updateConvenioPlan: (
+    convenioId: string,
+    id: string,
+    data: Partial<ConvenioPlan>,
+  ): Promise<ConvenioPlan> =>
+    api(`/financial/convenios/${convenioId}/plans/${id}`, { method: "PUT", body: data }),
+  deleteConvenioPlan: (convenioId: string, id: string): Promise<void> =>
+    api(`/financial/convenios/${convenioId}/plans/${id}`, { method: "DELETE" }),
 
   // Official ANS TUSS code lookup (autocomplete for the Código do Procedimento field)
   searchTussProcedures: (q: string): Promise<TussProcedureOption[]> =>

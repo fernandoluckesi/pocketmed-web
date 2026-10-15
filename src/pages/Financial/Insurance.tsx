@@ -10,6 +10,7 @@ import {
   Save,
   Handshake,
   Table2,
+  Tag,
   X,
   Check,
 } from "lucide-react";
@@ -19,6 +20,7 @@ import {
   financialApi,
   type Convenio,
   type ConvenioProcedure,
+  type ConvenioPlan,
 } from "../../services/financial";
 
 export default function Insurance() {
@@ -41,6 +43,14 @@ export default function Insurance() {
     null,
   );
   const [editProcedureValue, setEditProcedureValue] = useState("");
+
+  // Insurance plans (e.g. "Premium", "Básico") — populates the Plano select in Receitas
+  const [managingPlansFor, setManagingPlansFor] = useState<Convenio | null>(null);
+  const [plans, setPlans] = useState<ConvenioPlan[]>([]);
+  const [loadingPlans, setLoadingPlans] = useState(false);
+  const [newPlanName, setNewPlanName] = useState("");
+  const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
+  const [editPlanName, setEditPlanName] = useState("");
 
   // Form state
   const [name, setName] = useState("");
@@ -66,6 +76,7 @@ export default function Insurance() {
 
   const openAdd = () => {
     setManagingProceduresFor(null);
+    setManagingPlansFor(null);
     setEditData(null);
     setName("");
     setAnsCode("");
@@ -77,6 +88,7 @@ export default function Insurance() {
 
   const openEdit = (conv: Convenio) => {
     setManagingProceduresFor(null);
+    setManagingPlansFor(null);
     setEditData(conv);
     setName(conv.name);
     setAnsCode(conv.ansCode);
@@ -100,11 +112,78 @@ export default function Insurance() {
 
   const openManageProcedures = (conv: Convenio) => {
     setShowForm(false);
+    setManagingPlansFor(null);
     setManagingProceduresFor(conv);
     setNewProcedureCode("");
     setNewProcedureName("");
     setNewProcedureValue("");
     loadProcedures(conv.id);
+  };
+
+  const loadPlans = useCallback(async (convenioId: string) => {
+    setLoadingPlans(true);
+    try {
+      const data = await financialApi.listConvenioPlans(convenioId);
+      setPlans(Array.isArray(data) ? data : []);
+    } catch {
+      setPlans([]);
+    } finally {
+      setLoadingPlans(false);
+    }
+  }, []);
+
+  const openManagePlans = (conv: Convenio) => {
+    setShowForm(false);
+    setManagingProceduresFor(null);
+    setManagingPlansFor(conv);
+    setNewPlanName("");
+    loadPlans(conv.id);
+  };
+
+  const handleAddPlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!managingPlansFor || !newPlanName.trim()) return;
+    try {
+      await financialApi.createConvenioPlan(managingPlansFor.id, {
+        name: newPlanName.trim(),
+      });
+      setNewPlanName("");
+      loadPlans(managingPlansFor.id);
+    } catch {
+      toast.error("Não foi possível adicionar. Verifique se o plano já existe.");
+    }
+  };
+
+  const handleStartEditPlan = (p: ConvenioPlan) => {
+    setEditingPlanId(p.id);
+    setEditPlanName(p.name);
+  };
+
+  const handleSaveEditPlan = async (p: ConvenioPlan) => {
+    if (!managingPlansFor || !editPlanName.trim()) return;
+    try {
+      await financialApi.updateConvenioPlan(managingPlansFor.id, p.id, {
+        name: editPlanName.trim(),
+      });
+      setEditingPlanId(null);
+      loadPlans(managingPlansFor.id);
+    } catch {
+      toast.error("Não foi possível atualizar o plano. Tente novamente.");
+    }
+  };
+
+  const handleDeletePlan = async (p: ConvenioPlan) => {
+    if (!managingPlansFor) return;
+    const confirmed = await dialog.showConfirm(
+      `Remover o plano "${p.name}" deste convênio?`,
+    );
+    if (!confirmed) return;
+    try {
+      await financialApi.deleteConvenioPlan(managingPlansFor.id, p.id);
+      loadPlans(managingPlansFor.id);
+    } catch {
+      toast.error("Não foi possível remover. Tente novamente.");
+    }
   };
 
   const handleAddProcedure = async (e: React.FormEvent) => {
@@ -515,6 +594,133 @@ export default function Insurance() {
           </div>
         )}
 
+        {managingPlansFor && (
+          <div className="bg-white border border-blue-100 rounded-xl p-6 shadow-sm flex flex-col gap-4">
+            <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">
+                  Planos — {managingPlansFor.name}
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Os planos deste convênio (ex: Premium, Básico). Usado para
+                  listar as opções do campo Plano ao faturar uma guia.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setManagingPlansFor(null)}
+                className="text-on-surface-variant hover:text-on-surface p-2 bg-surface-container-low rounded-full transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form
+              onSubmit={handleAddPlan}
+              className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end"
+            >
+              <div className="md:col-span-3">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                  Nome do Plano
+                </label>
+                <input
+                  type="text"
+                  value={newPlanName}
+                  onChange={(e) => setNewPlanName(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  placeholder="Ex: Premium, Básico, Nacional Flex..."
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="bg-primary text-white hover:bg-primary-dark px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all active:scale-95 shadow-sm"
+              >
+                Adicionar
+              </button>
+            </form>
+
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-400 font-bold text-[10px] uppercase tracking-wider border-b border-slate-200">
+                    <th className="px-4 py-2 font-bold">Plano</th>
+                    <th className="px-4 py-2 font-bold text-center">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {loadingPlans ? (
+                    <tr>
+                      <td colSpan={2} className="text-center py-8 text-slate-400">
+                        Carregando...
+                      </td>
+                    </tr>
+                  ) : plans.length === 0 ? (
+                    <tr>
+                      <td colSpan={2} className="text-center py-8 text-slate-400">
+                        Nenhum plano cadastrado pra este convênio.
+                      </td>
+                    </tr>
+                  ) : (
+                    plans.map((p) => (
+                      <tr key={p.id}>
+                        <td className="px-4 py-2.5 font-bold text-slate-900">
+                          {editingPlanId === p.id ? (
+                            <input
+                              type="text"
+                              autoFocus
+                              value={editPlanName}
+                              onChange={(e) => setEditPlanName(e.target.value)}
+                              className="w-full bg-slate-50 border border-slate-200 rounded px-1.5 py-1 text-xs"
+                            />
+                          ) : (
+                            p.name
+                          )}
+                        </td>
+                        <td className="px-4 py-2.5 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            {editingPlanId === p.id ? (
+                              <>
+                                <button
+                                  onClick={() => handleSaveEditPlan(p)}
+                                  className="text-emerald-600 hover:bg-emerald-50 rounded p-1 cursor-pointer"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => setEditingPlanId(null)}
+                                  className="text-slate-400 hover:bg-slate-100 rounded p-1 cursor-pointer"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => handleStartEditPlan(p)}
+                                  className="text-slate-500 hover:bg-slate-100 rounded p-1 cursor-pointer"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeletePlan(p)}
+                                  className="text-rose-500 hover:bg-rose-50 rounded p-1 cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {convenios.map((conv) => (
@@ -538,6 +744,13 @@ export default function Insurance() {
                     className="p-1.5 hover:bg-blue-50 rounded-md transition-colors cursor-pointer"
                   >
                     <Table2 className="w-3.5 h-3.5 text-blue-500" />
+                  </button>
+                  <button
+                    onClick={() => openManagePlans(conv)}
+                    title="Planos"
+                    className="p-1.5 hover:bg-indigo-50 rounded-md transition-colors cursor-pointer"
+                  >
+                    <Tag className="w-3.5 h-3.5 text-indigo-500" />
                   </button>
                   <button
                     onClick={() => openEdit(conv)}
