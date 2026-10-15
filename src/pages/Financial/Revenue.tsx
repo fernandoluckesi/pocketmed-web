@@ -1,5 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
-import { Plus, Search, X, Pencil, Check } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  TrendingUp,
+  PlusCircle,
+  Clock,
+  AlertCircle,
+  Search,
+  X,
+  Pencil,
+  Check,
+} from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
 import { ActionsMenu } from "../../components/ui/ActionsMenu";
 import { ConfirmModal } from "../../components/ConfirmModal";
@@ -355,6 +364,22 @@ export default function Revenue() {
     0,
   );
 
+  const totalRevenuesAll = useMemo(
+    () => revenues.reduce((sum, item) => sum + (Number(item.netValue) || 0), 0),
+    [revenues],
+  );
+  const overdueRevenuesCount = useMemo(
+    () => revenues.filter((item) => item.status === "VENCIDO").length,
+    [revenues],
+  );
+  const overdueRevenuesTotal = useMemo(
+    () =>
+      revenues
+        .filter((item) => item.status === "VENCIDO")
+        .reduce((sum, item) => sum + (Number(item.netValue) || 0), 0),
+    [revenues],
+  );
+
   const statusMap: Record<string, { label: string; classes: string }> = {
     PAGO: {
       label: "Pago",
@@ -399,24 +424,63 @@ export default function Revenue() {
   return (
     <MainLayout>
       <div className="flex flex-col gap-6">
-        <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 tracking-tight leading-none">
-              Receitas Médicas
-            </h2>
-            <p className="text-xs text-slate-500 mt-1 font-medium">
-              Controle de faturamento, guias de convênios e pagamentos
-              particulares
-            </p>
+        {/* Metrics Cards */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white border border-slate-200 p-6 rounded-xl flex items-center justify-between hover:shadow-lg transition-all duration-300">
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                Total Receitas
+              </p>
+              <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                R${" "}
+                {totalRevenuesAll.toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                })}
+              </h2>
+            </div>
+            <div className="w-12 h-12 bg-rose-50 rounded-lg flex items-center justify-center text-rose-600 border border-rose-100">
+              <TrendingUp className="w-6 h-6" />
+            </div>
           </div>
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="bg-primary text-white hover:bg-primary-dark px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 cursor-pointer active:scale-95 transition-all shadow-xs"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Faturar Guia / Consulta</span>
-          </button>
-        </div>
+          <div className="bg-white border border-slate-200 p-6 rounded-xl flex items-center justify-between hover:shadow-lg transition-all duration-300">
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                Vencidos
+              </p>
+              <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                R${" "}
+                {overdueRevenuesTotal.toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                })}
+              </h2>
+              <p className="text-xs text-slate-500 font-bold flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-amber-500" />
+                {overdueRevenuesCount} faturas vencidas
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 border border-blue-100">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+          </div>
+          <div className="bg-primary text-white p-6 rounded-xl relative overflow-hidden flex flex-col justify-between shadow-md">
+            <div>
+              <p className="text-[10px] uppercase font-extrabold tracking-widest text-blue-200">
+                Ação Administrativa
+              </p>
+              <h4 className="font-bold text-base mt-1">
+                Faturamento de Receitas
+              </h4>
+            </div>
+            <div className="mt-4 flex items-center justify-between">
+              <button
+                onClick={() => setShowAddForm(!showAddForm)}
+                className="bg-white text-blue-600 hover:bg-slate-50 font-bold text-xs py-2.5 px-4 rounded-lg shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4" /> Faturar Guia / Consulta
+              </button>
+            </div>
+          </div>
+        </section>
 
         {showAddForm && (
           <form
