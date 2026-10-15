@@ -230,6 +230,10 @@ export const financialApi = {
   searchTussProcedures: (q: string): Promise<TussProcedureOption[]> =>
     api(`/financial/tuss-procedures/search?q=${encodeURIComponent(q)}`),
 
+  // This clinic's most-billed TUSS codes, shown as a head start on focus
+  getCommonTussProcedures: (): Promise<TussProcedureOption[]> =>
+    api(`/financial/tuss-procedures/common`),
+
   // Revenues
   listRevenues: (filters?: Record<string, string>) => {
     const params = new URLSearchParams(filters || {}).toString();

@@ -82,6 +82,9 @@ export default function Revenue() {
   const [showTussOptions, setShowTussOptions] = useState(false);
   const [procedureOptions, setProcedureOptions] = useState<TussProcedureOption[]>([]);
   const [showProcedureOptions, setShowProcedureOptions] = useState(false);
+  const [commonProcedureOptions, setCommonProcedureOptions] = useState<
+    TussProcedureOption[]
+  >([]);
 
   const loadRevenues = useCallback(async () => {
     try {
@@ -170,6 +173,14 @@ export default function Revenue() {
     return () => clearTimeout(timeout);
   }, [procedure]);
 
+  // Loaded once: shown as a head start when Procedimento is focused empty.
+  useEffect(() => {
+    financialApi
+      .getCommonTussProcedures()
+      .then((data) => setCommonProcedureOptions(Array.isArray(data) ? data : []))
+      .catch(() => setCommonProcedureOptions([]));
+  }, []);
+
   useEffect(() => {
     financialApi
       .listConvenios()
@@ -204,6 +215,13 @@ export default function Revenue() {
   const specialtyOptions = [
     ...new Set([...BASE_SPECIALTIES, ...doctors.map((d) => d.specialty).filter(Boolean)]),
   ];
+
+  // Below 3 characters there's no live search yet (see the debounce effects
+  // above), so the dropdown falls back to this clinic's most-billed codes.
+  const isShowingCommonProcedures = procedure.trim().length < 3;
+  const displayedProcedureOptions = isShowingCommonProcedures
+    ? commonProcedureOptions
+    : procedureOptions;
 
   const selectedDoctor = doctors.find((d) => d.id === doctorId);
   const effectiveTransferPercentage =
@@ -541,16 +559,21 @@ export default function Revenue() {
                     type="text"
                     value={procedure}
                     onChange={(e) => setProcedure(e.target.value)}
-                    onFocus={() => setShowProcedureOptions(procedureOptions.length > 0)}
+                    onFocus={() => setShowProcedureOptions(displayedProcedureOptions.length > 0)}
                     onBlur={handleProcedureBlur}
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
-                    placeholder="Consulta, Ecocardiograma..."
+                    placeholder="Buscar por código ou nome"
                     autoComplete="off"
                     required
                   />
-                  {showProcedureOptions && procedureOptions.length > 0 && (
+                  {showProcedureOptions && displayedProcedureOptions.length > 0 && (
                     <ul className="absolute z-10 mt-1 w-full max-h-56 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg">
-                      {procedureOptions.map((option) => (
+                      {isShowingCommonProcedures && (
+                        <li className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50 border-b border-slate-100">
+                          Mais usados por esta clínica
+                        </li>
+                      )}
+                      {displayedProcedureOptions.map((option) => (
                         <li key={option.code}>
                           <button
                             type="button"
