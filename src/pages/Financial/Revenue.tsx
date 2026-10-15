@@ -130,7 +130,7 @@ export default function Revenue() {
   // Debounced lookup against the official ANS TUSS table, so the user can
   // search by code or by name instead of having to know the 8-digit code.
   useEffect(() => {
-    if (procedureCode.trim().length < 2) {
+    if (procedureCode.trim().length < 3) {
       setTussOptions([]);
       return;
     }
