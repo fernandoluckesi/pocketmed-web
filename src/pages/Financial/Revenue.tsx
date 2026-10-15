@@ -80,6 +80,8 @@ export default function Revenue() {
   >([]);
   const [tussOptions, setTussOptions] = useState<TussProcedureOption[]>([]);
   const [showTussOptions, setShowTussOptions] = useState(false);
+  const [procedureOptions, setProcedureOptions] = useState<TussProcedureOption[]>([]);
+  const [showProcedureOptions, setShowProcedureOptions] = useState(false);
 
   const loadRevenues = useCallback(async () => {
     try {
@@ -146,6 +148,27 @@ export default function Revenue() {
     }, 300);
     return () => clearTimeout(timeout);
   }, [procedureCode]);
+
+  // Same TUSS lookup, but for the always-visible "Procedimento" field at the
+  // top of the form (unlike Código do Procedimento above, which only shows up
+  // once "Convênio" is picked as the payment method).
+  useEffect(() => {
+    if (procedure.trim().length < 3) {
+      setProcedureOptions([]);
+      return;
+    }
+    const timeout = setTimeout(() => {
+      financialApi
+        .searchTussProcedures(procedure.trim())
+        .then((data) => {
+          const options = Array.isArray(data) ? data : [];
+          setProcedureOptions(options);
+          setShowProcedureOptions(options.length > 0);
+        })
+        .catch(() => setProcedureOptions([]));
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [procedure]);
 
   useEffect(() => {
     financialApi
@@ -242,6 +265,22 @@ export default function Revenue() {
   const handleSelectTussOption = (option: TussProcedureOption) => {
     setProcedureCode(option.code);
     setShowTussOptions(false);
+    applyConvenioProcedureValue(option.code);
+  };
+
+  const handleProcedureBlur = () => {
+    // Delay so a click on a dropdown option (onMouseDown) fires before the
+    // list disappears — otherwise the blur closes it first.
+    setTimeout(() => setShowProcedureOptions(false), 150);
+  };
+
+  // Picking a procedure from the TUSS list also fills in its code, so the
+  // convênio-guide code field (and its value auto-fill) is already correct if
+  // the user later switches the payment method to Convênio.
+  const handleSelectProcedureOption = (option: TussProcedureOption) => {
+    setProcedure(option.name);
+    setProcedureCode(option.code);
+    setShowProcedureOptions(false);
     applyConvenioProcedureValue(option.code);
   };
 
@@ -497,14 +536,37 @@ export default function Revenue() {
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
                   Procedimento
                 </label>
-                <input
-                  type="text"
-                  value={procedure}
-                  onChange={(e) => setProcedure(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
-                  placeholder="Consulta, Ecocardiograma..."
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={procedure}
+                    onChange={(e) => setProcedure(e.target.value)}
+                    onFocus={() => setShowProcedureOptions(procedureOptions.length > 0)}
+                    onBlur={handleProcedureBlur}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
+                    placeholder="Consulta, Ecocardiograma..."
+                    autoComplete="off"
+                    required
+                  />
+                  {showProcedureOptions && procedureOptions.length > 0 && (
+                    <ul className="absolute z-10 mt-1 w-full max-h-56 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg">
+                      {procedureOptions.map((option) => (
+                        <li key={option.code}>
+                          <button
+                            type="button"
+                            onMouseDown={() => handleSelectProcedureOption(option)}
+                            className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 border-b border-slate-50 last:border-b-0"
+                          >
+                            <span className="font-mono font-bold text-slate-700">
+                              {option.code}
+                            </span>
+                            <span className="text-slate-500"> — {option.name}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
