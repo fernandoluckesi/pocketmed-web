@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   TrendingUp,
   PlusCircle,
@@ -148,9 +148,21 @@ export default function Revenue() {
       .catch(() => setConvenioPlans([]));
   }, [formConvenioId]);
 
+  // Set right before a dropdown selection programmatically changes
+  // procedureCode/procedure, so the debounce effects below don't treat that
+  // change as the user typing and immediately re-search (which would find
+  // the just-selected option again by its own name/code and pop the
+  // dropdown back open right after it was closed).
+  const skipTussCodeSearchRef = useRef(false);
+  const skipProcedureSearchRef = useRef(false);
+
   // Debounced lookup against the official ANS TUSS table, so the user can
   // search by code or by name instead of having to know the 8-digit code.
   useEffect(() => {
+    if (skipTussCodeSearchRef.current) {
+      skipTussCodeSearchRef.current = false;
+      return;
+    }
     if (procedureCode.trim().length < 3) {
       setTussOptions([]);
       return;
@@ -172,6 +184,10 @@ export default function Revenue() {
   // top of the form (unlike Código do Procedimento above, which only shows up
   // once "Convênio" is picked as the payment method).
   useEffect(() => {
+    if (skipProcedureSearchRef.current) {
+      skipProcedureSearchRef.current = false;
+      return;
+    }
     if (procedure.trim().length < 3) {
       setProcedureOptions([]);
       return;
@@ -297,6 +313,7 @@ export default function Revenue() {
   };
 
   const handleSelectTussOption = (option: TussProcedureOption) => {
+    skipTussCodeSearchRef.current = true;
     setProcedureCode(option.code);
     setShowTussOptions(false);
     applyConvenioProcedureValue(option.code);
@@ -312,6 +329,8 @@ export default function Revenue() {
   // convênio-guide code field (and its value auto-fill) is already correct if
   // the user later switches the payment method to Convênio.
   const handleSelectProcedureOption = (option: TussProcedureOption) => {
+    skipProcedureSearchRef.current = true;
+    skipTussCodeSearchRef.current = true;
     setProcedure(option.name);
     setProcedureCode(option.code);
     setShowProcedureOptions(false);
