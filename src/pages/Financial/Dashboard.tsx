@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   PiggyBank,
   ArrowUpRight,
@@ -10,12 +11,12 @@ import {
   Filter,
   Calendar,
   Download,
-  BrainCircuit,
+  Sparkles,
   Lightbulb,
   ChevronRight,
 } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
-import { financialApi } from "../../services/financial";
+import { financialApi, type FinancialHighlights } from "../../services/financial";
 import { formatDateOnly } from "../../utils/date";
 
 interface KPIs {
@@ -70,9 +71,11 @@ const MONTH_OPTIONS = [
 ];
 
 export default function FinancialDashboard() {
+  const navigate = useNavigate();
   const [kpis, setKpis] = useState<KPIs | null>(null);
   const [specialties, setSpecialties] = useState<SpecialtyData[]>([]);
   const [transactions, setTransactions] = useState<RevenueTransaction[]>([]);
+  const [highlights, setHighlights] = useState<FinancialHighlights | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(
     String(new Date().getMonth() + 1).padStart(2, "0"),
@@ -86,16 +89,18 @@ export default function FinancialDashboard() {
     try {
       const year = parseInt(selectedYear, 10);
       const month = parseInt(selectedMonth, 10);
-      const [kpiData, specData, txData] = await Promise.all([
+      const [kpiData, specData, txData, highlightsData] = await Promise.all([
         financialApi.getDashboardKPIs(year, month).catch(() => null),
         financialApi.getRevenueBySpecialty(year, month).catch(() => []),
         financialApi
           .getRecentTransactions(10, statusFilter !== "Todos" ? statusFilter : undefined)
           .catch(() => []),
+        financialApi.getDashboardHighlights(year, month).catch(() => null),
       ]);
       if (kpiData) setKpis(kpiData as KPIs);
       setSpecialties(Array.isArray(specData) ? specData : []);
       setTransactions(Array.isArray(txData) ? txData : []);
+      setHighlights(highlightsData);
     } catch {
       // ignore
     } finally {
@@ -119,6 +124,58 @@ export default function FinancialDashboard() {
     link.click();
     document.body.removeChild(link);
   };
+
+  // Second highlight card: pick the single most relevant finding after the
+  // financial summary (always shown), in priority order — a real risk beats
+  // a neutral/positive note.
+  const secondaryHighlight = (() => {
+    if (!highlights) return null;
+    if (highlights.riscoInadimplencia.nivel !== "baixo") {
+      const h = highlights.riscoInadimplencia;
+      return {
+        title: "Inadimplência",
+        value: `${h.percentual.toFixed(1)}%`,
+        valueClass: "text-rose-400",
+        text:
+          h.nivel === "alto"
+            ? `Atenção: ${formatCurrency(h.valorVencido)} em atraso. Considere revisar as políticas de cobrança.`
+            : `${formatCurrency(h.valorVencido)} em atraso. Vale acompanhar de perto.`,
+      };
+    }
+    if (highlights.convenioComMaisGlosa) {
+      const h = highlights.convenioComMaisGlosa;
+      return {
+        title: "Convênio com Mais Glosa",
+        value: `${h.percentualDaReceita.toFixed(1)}%`,
+        valueClass: "text-rose-400",
+        text: `${h.nome} respondeu por ${formatCurrency(h.valorGlosado)} em glosas este mês.`,
+      };
+    }
+    if (highlights.medicoMaisProdutivo) {
+      const h = highlights.medicoMaisProdutivo;
+      return {
+        title: "Médico Mais Produtivo",
+        value: formatCurrency(h.faturamento),
+        valueClass: "text-emerald-400",
+        text: `${h.nome} gerou ${formatCurrency(h.faturamento)} em ${h.atendimentos} atendimento(s) este mês.`,
+      };
+    }
+    if (highlights.centroDeCustoQueMaisCresceu) {
+      const h = highlights.centroDeCustoQueMaisCresceu;
+      return {
+        title: "Despesa em Alta",
+        value: `+${h.variacaoPercentual.toFixed(1)}%`,
+        valueClass: "text-amber-400",
+        text: `${h.nome} cresceu ${h.variacaoPercentual.toFixed(1)}% em relação ao mês anterior.`,
+      };
+    }
+    return {
+      title: "Inadimplência",
+      value: "0.0%",
+      valueClass: "text-emerald-400",
+      text: "Inadimplência sob controle. Continue acompanhando.",
+    };
+  })();
 
   const totalSpecialtyRevenue = specialties.reduce((s, sp) => s + sp.total, 0);
   const topSpecialty = specialties.length > 0 ? specialties.sort((a, b) => b.total - a.total)[0] : null;
@@ -295,13 +352,13 @@ export default function FinancialDashboard() {
             )}
           </div>
 
-          {/* AI Insights */}
+          {/* Destaques do Mês */}
           <div className="col-span-12 lg:col-span-8 flex flex-col gap-4">
             <div className="bg-slate-950 text-white p-6 rounded-xl relative overflow-hidden group shadow-lg border border-slate-800">
               <div className="absolute -right-12 -top-12 w-40 h-40 bg-primary/25 rounded-full blur-2xl group-hover:bg-primary/35 transition-all duration-500"></div>
               <div className="flex items-center gap-2 mb-4 relative z-10">
-                <BrainCircuit className="w-5 h-5 text-blue-400 animate-pulse" />
-                <h2 className="text-md font-bold text-white tracking-tight">HisporaIA Insights</h2>
+                <Sparkles className="w-5 h-5 text-blue-400" />
+                <h2 className="text-md font-bold text-white tracking-tight">Destaques do Mês</h2>
               </div>
               <div className="flex flex-col gap-3 relative z-10">
                 <div className="p-3 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl transition-all cursor-pointer group/card text-left">
@@ -313,24 +370,25 @@ export default function FinancialDashboard() {
                     Faturamento de {formatCurrency(kpis?.faturamento || 0)} com despesas de {formatCurrency(kpis?.totalDespesas || 0)}. Resultado: {formatCurrency(kpis?.lucro || 0)}.
                   </p>
                 </div>
-                <div className="p-3 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl transition-all cursor-pointer group/card text-left">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-xs font-bold text-slate-200 group-hover/card:text-blue-300 transition-colors">Inadimplência</span>
-                    <span className="text-[10px] font-bold text-rose-400 font-mono">{(kpis?.inadimplencia || 0).toFixed(1)}%</span>
+                {secondaryHighlight && (
+                  <div className="p-3 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl transition-all cursor-pointer group/card text-left">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs font-bold text-slate-200 group-hover/card:text-blue-300 transition-colors">{secondaryHighlight.title}</span>
+                      <span className={`text-[10px] font-bold font-mono ${secondaryHighlight.valueClass}`}>{secondaryHighlight.value}</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 leading-normal">{secondaryHighlight.text}</p>
                   </div>
-                  <p className="text-[10px] text-slate-400 leading-normal">
-                    {(kpis?.inadimplencia || 0) > 5
-                      ? 'Atenção: inadimplência acima de 5%. Considere revisar políticas de cobrança.'
-                      : 'Inadimplência sob controle. Continue acompanhando.'}
-                  </p>
-                </div>
-                <div className="p-3 bg-primary hover:bg-primary text-white rounded-xl transition-all cursor-pointer flex items-center justify-between mt-1 shadow-sm font-semibold text-xs active:scale-95">
+                )}
+                <button
+                  onClick={() => navigate("/financial/reports")}
+                  className="p-3 bg-primary hover:bg-primary text-white rounded-xl transition-all cursor-pointer flex items-center justify-between mt-1 shadow-sm font-semibold text-xs active:scale-95"
+                >
                   <div className="flex items-center gap-2">
                     <Lightbulb className="w-4 h-4 fill-white/10" />
-                    <span>Ver relatórios detalhados</span>
+                    <span>Ver relatório completo</span>
                   </div>
                   <ChevronRight className="w-4 h-4 shrink-0" />
-                </div>
+                </button>
               </div>
             </div>
           </div>

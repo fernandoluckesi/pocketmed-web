@@ -188,6 +188,45 @@ export interface DashboardKPIs {
   totalDespesas: number;
 }
 
+// "Destaques do mês" — deterministic monthly highlights, same shape every
+// clinic/month, built from the same reports below (no AI involved).
+export interface FinancialHighlights {
+  period: { year: number; month: number; monthLabel: string };
+  resumoFinanceiro: { faturamento: number; lucro: number; crescimentoPercentual: number };
+  riscoInadimplencia: { nivel: "baixo" | "medio" | "alto"; percentual: number; valorVencido: number };
+  convenioComMaisGlosa: { nome: string; valorGlosado: number; percentualDaReceita: number } | null;
+  medicoMaisProdutivo: { nome: string; faturamento: number; atendimentos: number } | null;
+  centroDeCustoQueMaisCresceu: { nome: string; valorAtual: number; variacaoPercentual: number } | null;
+}
+
+export interface RevenueReport {
+  totalGeral: number;
+  totalRegistros: number;
+  byConvenio: { name: string; total: number; count: number }[];
+}
+
+export interface InadimplenciaReport {
+  totalInadimplente: number;
+  totalRegistros: number;
+}
+
+export interface GlosaReport {
+  totalGlosa: number;
+  totalRegistros: number;
+  byConvenio: { name: string; totalGlosa: number; count: number }[];
+}
+
+export interface ExpensesByCostCenterReport {
+  totalGeral: number;
+  totalRegistros: number;
+  byCostCenter: { name: string; total: number; count: number }[];
+}
+
+export interface ProductivityReport {
+  ranking: { doctorId: string; total: number; count: number; ticketMedio: number }[];
+  totalMedicos: number;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;
@@ -324,6 +363,25 @@ export const financialApi = {
     if (status) params.set("status", status);
     return api(`/financial/dashboard/recent-transactions?${params.toString()}`);
   },
+  getDashboardHighlights: (year?: number, month?: number): Promise<FinancialHighlights> => {
+    const params = new URLSearchParams();
+    if (year) params.set("year", String(year));
+    if (month) params.set("month", String(month));
+    const qs = params.toString();
+    return api(`/financial/dashboard/highlights${qs ? `?${qs}` : ""}`);
+  },
+
+  // Reports (same period filter style: YYYY-MM-DD strings)
+  getRevenueReport: (startDate: string, endDate: string): Promise<RevenueReport> =>
+    api(`/financial/reports/revenue?startDate=${startDate}&endDate=${endDate}`),
+  getInadimplenciaReport: (startDate: string, endDate: string): Promise<InadimplenciaReport> =>
+    api(`/financial/reports/inadimplencia?startDate=${startDate}&endDate=${endDate}`),
+  getGlosaReport: (startDate: string, endDate: string): Promise<GlosaReport> =>
+    api(`/financial/reports/glosas?startDate=${startDate}&endDate=${endDate}`),
+  getExpensesByCostCenterReport: (startDate: string, endDate: string): Promise<ExpensesByCostCenterReport> =>
+    api(`/financial/reports/expenses-by-cost-center?startDate=${startDate}&endDate=${endDate}`),
+  getProductivityReport: (startDate: string, endDate: string): Promise<ProductivityReport> =>
+    api(`/financial/reports/productivity?startDate=${startDate}&endDate=${endDate}`),
 
   // Clinic doctors (for filter dropdowns — admin/secretary scoped to active clinic)
   listClinicDoctors: (): Promise<
