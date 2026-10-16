@@ -50,6 +50,13 @@ import {
 import { SearchableSelect } from "../../components/ui/SearchableSelect";
 import { SegmentedToggle } from "../../components/ui/SegmentedToggle";
 import { CustomSelect } from "../../components/ui/CustomSelect";
+import {
+  MEDICATION_FREQUENCY_OPTIONS,
+  getMedicationFrequencyLabel,
+  getMedicationTimeSlots,
+  generateDistributedTimes,
+  recalcTimesFromFirst,
+} from "../../utils/medicationFrequency";
 import { financialApi, type Convenio } from "../../services/financial";
 import { EXAM_CATALOG } from "../../data/exam-catalog";
 import { VACCINE_CATALOG } from "../../data/vaccine-catalog";
@@ -513,47 +520,6 @@ function MedicationsSection({
   );
 }
 
-const MEDICATION_FREQUENCY_OPTIONS = [
-  { value: "once_daily", label: "1x ao dia" },
-  { value: "twice_daily", label: "2x ao dia" },
-  { value: "three_times_daily", label: "3x ao dia" },
-  { value: "four_times_daily", label: "4x ao dia" },
-  { value: "every_6_hours", label: "A cada 6 horas" },
-  { value: "every_8_hours", label: "A cada 8 horas" },
-  { value: "every_12_hours", label: "A cada 12 horas" },
-  { value: "as_needed", label: "Se necessário" },
-];
-
-function getMedicationFrequencyLabel(value: string): string {
-  return (
-    MEDICATION_FREQUENCY_OPTIONS.find((opt) => opt.value === value)?.label ||
-    value
-  );
-}
-
-function getMedicationTimeSlots(frequency: string): number {
-  switch (frequency) {
-    case "once_daily":
-      return 1;
-    case "twice_daily":
-      return 2;
-    case "three_times_daily":
-      return 3;
-    case "four_times_daily":
-      return 4;
-    case "every_6_hours":
-      return 4;
-    case "every_8_hours":
-      return 3;
-    case "every_12_hours":
-      return 2;
-    case "as_needed":
-      return 0;
-    default:
-      return 1;
-  }
-}
-
 /** Debounced remote search against the ANVISA-backed medication catalog
  * (GET /medication-catalog), for the "Nome do Medicamento" searchable select. */
 function useMedicationCatalogSearch() {
@@ -638,9 +604,9 @@ function MedicationForm({
   }
 
   function updateTime(index: number, value: string) {
-    const updated = [...times];
-    updated[index] = value;
-    setTimes(updated);
+    // Editing the first time cascades the even interval to the following doses
+    // (mirrors the mobile behavior); editing another time only changes it.
+    setTimes((prev) => recalcTimesFromFirst(frequency, prev, index, value));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -1761,54 +1727,10 @@ interface MedFormItem {
   instructions: string;
 }
 
-const FREQUENCY_OPTIONS = [
-  { value: "once_daily", label: "1x ao dia" },
-  { value: "twice_daily", label: "2x ao dia" },
-  { value: "three_times_daily", label: "3x ao dia" },
-  { value: "four_times_daily", label: "4x ao dia" },
-  { value: "every_6_hours", label: "A cada 6 horas" },
-  { value: "every_8_hours", label: "A cada 8 horas" },
-  { value: "every_12_hours", label: "A cada 12 horas" },
-  { value: "as_needed", label: "Se necessário" },
-];
-
-function getTimeSlotsCount(frequency: string): number {
-  switch (frequency) {
-    case "once_daily":
-      return 1;
-    case "twice_daily":
-      return 2;
-    case "three_times_daily":
-      return 3;
-    case "four_times_daily":
-      return 4;
-    case "every_6_hours":
-      return 4;
-    case "every_8_hours":
-      return 3;
-    case "every_12_hours":
-      return 2;
-    case "as_needed":
-      return 0;
-    default:
-      return 1;
-  }
-}
-
-function generateDistributedTimes(count: number): string[] {
-  if (count <= 0) return [];
-  if (count === 1) return ["08:00"];
-  if (count === 2) return ["08:00", "20:00"];
-  if (count === 3) return ["08:00", "14:00", "20:00"];
-  if (count === 4) return ["08:00", "12:00", "16:00", "20:00"];
-  // fallback
-  const start = 8;
-  const interval = Math.floor(14 / (count - 1));
-  return Array.from({ length: count }, (_, i) => {
-    const hour = start + i * interval;
-    return `${hour.toString().padStart(2, "0")}:00`;
-  });
-}
+// Alias to the shared module so the forms below keep their local names while
+// using the single source of truth for options/slot counts.
+const FREQUENCY_OPTIONS = MEDICATION_FREQUENCY_OPTIONS;
+const getTimeSlotsCount = getMedicationTimeSlots;
 
 function PrescriptionForm({
   onClose,
@@ -1870,8 +1792,12 @@ function PrescriptionForm({
 
   function updateMedTime(medIndex: number, timeIndex: number, value: string) {
     const updated = [...medications];
-    const times = [...updated[medIndex].times];
-    times[timeIndex] = value;
+    const times = recalcTimesFromFirst(
+      updated[medIndex].frequency,
+      updated[medIndex].times,
+      timeIndex,
+      value,
+    );
     updated[medIndex] = { ...updated[medIndex], times };
     setMedications(updated);
   }
@@ -2502,8 +2428,12 @@ function ConsultaForm({
     value: string,
   ) {
     const updated = [...medications];
-    const times = [...updated[medIndex].times];
-    times[timeIndex] = value;
+    const times = recalcTimesFromFirst(
+      updated[medIndex].frequency,
+      updated[medIndex].times,
+      timeIndex,
+      value,
+    );
     updated[medIndex] = { ...updated[medIndex], times };
     setMedications(updated);
   }
@@ -3239,8 +3169,12 @@ function EditConsultaForm({
     value: string,
   ) {
     const updated = [...medications];
-    const times = [...updated[medIndex].times];
-    times[timeIndex] = value;
+    const times = recalcTimesFromFirst(
+      updated[medIndex].frequency,
+      updated[medIndex].times,
+      timeIndex,
+      value,
+    );
     updated[medIndex] = { ...updated[medIndex], times };
     setMedications(updated);
   }

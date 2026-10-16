@@ -40,7 +40,7 @@ test.describe('Medicamentos', () => {
       // Check frequency select has correct options
       const selectFreq = page.locator('select[name*="frequencia"]').first();
       await expect(selectFreq).toBeVisible();
-      await expect(selectFreq.locator('option[value="daily"]')).toHaveText('Diário');
+      await expect(selectFreq.locator('option[value="once_daily"]')).toHaveText('Diário');
       await expect(selectFreq.locator('option[value="twice_daily"]')).toHaveText('2x ao dia');
       await expect(selectFreq.locator('option[value="three_times_daily"]')).toHaveText('3x ao dia');
       await expect(selectFreq.locator('option[value="four_times_daily"]')).toHaveText('4x ao dia');
