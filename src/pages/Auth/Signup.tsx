@@ -299,6 +299,8 @@ function ClinicSignupForm({
             setFieldError("crm", "Este CRM já está cadastrado");
           if (conflicts.includes("phone"))
             setFieldError("phone", "Este celular já está cadastrado");
+          if (conflicts.includes("cpf"))
+            setFieldError("cpf", "Este CPF já está cadastrado");
           if (conflicts.length === 0)
             setSnackbar({
               visible: true,
@@ -1100,6 +1102,9 @@ export default function Signup() {
             if (conflicts.includes("phone")) {
               setFieldError("phone", "Este celular já está cadastrado");
             }
+            if (conflicts.includes("cpf")) {
+              setFieldError("cpf", "Este CPF já está cadastrado");
+            }
           } else {
             const msg = (axiosErr.response.data?.message || "").toLowerCase();
             if (msg.includes("email")) {
@@ -1108,6 +1113,8 @@ export default function Signup() {
               setFieldError("crm", "Este CRM já está cadastrado");
             } else if (msg.includes("phone")) {
               setFieldError("phone", "Este celular já está cadastrado");
+            } else if (msg.includes("cpf")) {
+              setFieldError("cpf", "Este CPF já está cadastrado");
             } else {
               setSnackbar({
                 visible: true,
