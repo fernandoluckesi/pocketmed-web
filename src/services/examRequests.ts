@@ -54,6 +54,12 @@ export const examRequestsApi = {
   generatePdf: (id: string): Promise<ExamRequest> =>
     api(`/exam-requests/${id}/generate-pdf`, { method: "POST" }),
 
+  /** The stored PDF's documentUrl is a permanent key, not a fetchable link —
+   * call this right before opening/downloading to get a short-lived signed
+   * URL instead (see backend upload.service.ts). */
+  getPdfUrl: (id: string): Promise<{ url: string }> =>
+    api(`/exam-requests/${id}/pdf`),
+
   cancel: (id: string): Promise<ExamRequest> =>
     api(`/exam-requests/${id}/cancel`, { method: "POST" }),
 

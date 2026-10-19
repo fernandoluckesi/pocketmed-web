@@ -74,6 +74,29 @@ export function LaudoDocument({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  async function openPdf() {
+    try {
+      const { url } = await reportsApi.getPdfUrl(report.id);
+      window.open(url, "_blank", "noreferrer");
+    } catch {
+      toast.error("Não foi possível abrir o PDF.");
+    }
+  }
+
+  async function downloadPdf() {
+    try {
+      const { url } = await reportsApi.getPdfUrl(report.id);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch {
+      toast.error("Não foi possível baixar o PDF.");
+    }
+  }
+
   async function handleGenerate() {
     setGenerating(true);
     try {
@@ -174,27 +197,27 @@ export function LaudoDocument({
                 : "Documento gerado — ainda não enviado ao paciente."}
           </p>
           <div className="flex gap-3">
-            <a
-              href={report.documentUrl!}
-              target="_blank"
-              rel="noreferrer"
+            <Button
+              type="button"
+              onClick={openPdf}
+              variant="outline"
+              size="md"
+              fullWidth
               className="flex-1"
             >
-              <Button type="button" variant="outline" size="md" fullWidth>
-                Visualizar PDF
-              </Button>
-            </a>
-            <a href={report.documentUrl!} download className="flex-1">
-              <Button
-                type="button"
-                variant="primary"
-                size="md"
-                fullWidth
-                icon={<Download className="w-4 h-4" />}
-              >
-                Baixar PDF
-              </Button>
-            </a>
+              Visualizar PDF
+            </Button>
+            <Button
+              type="button"
+              onClick={downloadPdf}
+              variant="primary"
+              size="md"
+              fullWidth
+              className="flex-1"
+              icon={<Download className="w-4 h-4" />}
+            >
+              Baixar PDF
+            </Button>
           </div>
           {report.status === "generated" && (
             <Button

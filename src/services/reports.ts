@@ -220,6 +220,12 @@ export const reportsApi = {
   generatePdf: (id: string): Promise<Report> =>
     api(`/reports/${id}/generate-pdf`, { method: "POST" }),
 
+  /** The stored PDF's documentUrl is a permanent key, not a fetchable link —
+   * call this right before opening/downloading to get a short-lived signed
+   * URL instead (see backend upload.service.ts). */
+  getPdfUrl: (id: string): Promise<{ url: string }> =>
+    api(`/reports/${id}/pdf`),
+
   /** "Enviar sem assinatura digital" — delivers the already-generated PDF
    * to the patient as-is. */
   send: (id: string): Promise<Report> =>

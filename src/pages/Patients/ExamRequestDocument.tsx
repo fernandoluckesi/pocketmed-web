@@ -38,6 +38,31 @@ export function ExamRequestDocument({
   const [sendModalOpen, setSendModalOpen] = useState(false);
   const startedRef = useRef(false);
 
+  async function openPdf() {
+    if (!examRequest) return;
+    try {
+      const { url } = await examRequestsApi.getPdfUrl(examRequest.id);
+      window.open(url, "_blank", "noreferrer");
+    } catch {
+      toast.error("Não foi possível abrir o PDF.");
+    }
+  }
+
+  async function downloadPdf() {
+    if (!examRequest) return;
+    try {
+      const { url } = await examRequestsApi.getPdfUrl(examRequest.id);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch {
+      toast.error("Não foi possível baixar o PDF.");
+    }
+  }
+
   async function generate() {
     setStatus("generating");
     setErrorMessage("");
@@ -124,27 +149,27 @@ export function ExamRequestDocument({
                 : "Documento gerado — ainda não enviado ao paciente."}
           </p>
           <div className="flex gap-3">
-            <a
-              href={examRequest!.documentUrl!}
-              target="_blank"
-              rel="noreferrer"
+            <Button
+              type="button"
+              onClick={openPdf}
+              variant="outline"
+              size="md"
+              fullWidth
               className="flex-1"
             >
-              <Button type="button" variant="outline" size="md" fullWidth>
-                Visualizar PDF
-              </Button>
-            </a>
-            <a href={examRequest!.documentUrl!} download className="flex-1">
-              <Button
-                type="button"
-                variant="primary"
-                size="md"
-                fullWidth
-                icon={<Download className="w-4 h-4" />}
-              >
-                Baixar PDF
-              </Button>
-            </a>
+              Visualizar PDF
+            </Button>
+            <Button
+              type="button"
+              onClick={downloadPdf}
+              variant="primary"
+              size="md"
+              fullWidth
+              className="flex-1"
+              icon={<Download className="w-4 h-4" />}
+            >
+              Baixar PDF
+            </Button>
           </div>
           {examRequest?.status === "generated" && (
             <Button
