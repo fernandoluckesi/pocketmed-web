@@ -1319,7 +1319,7 @@ export default function Signup() {
                     className="text-primary font-bold hover:underline border-none bg-transparent cursor-pointer"
                     onClick={() => navigate("/login")}
                   >
-                    Fazer Login
+                    Entrar
                   </button>
                 </p>
               </div>
@@ -1779,11 +1779,8 @@ export default function Signup() {
         </div>
 
         {/* Bottom footer */}
-        <div className="mt-auto pt-8 pb-6 text-center lg:text-left space-y-2 w-full max-w-md">
-          <LegalLinks
-            variant="dots"
-            className="justify-center lg:justify-start"
-          />
+        <div className="mt-auto pt-8 pb-6 text-center space-y-2 w-full max-w-md">
+          <LegalLinks variant="dots" className="justify-center" />
           <p className="text-[10px] text-slate-400">
             © {new Date().getFullYear()} Hispora Clinical Systems. Todos os
             direitos reservados.
