@@ -7,7 +7,10 @@ import {
   ShieldAlert,
   Building2,
   CheckCircle2,
+  ChevronLeft,
   ChevronRight,
+  Check,
+  Minus,
   Users,
   Receipt,
 } from "lucide-react";
@@ -28,7 +31,13 @@ import { isValidCpf, maskCpf, normalizeCpf } from "../../utils/cpf";
 import { resolveCrm } from "../../utils/crm";
 import { UF_LIST } from "../../utils/uf";
 import { fetchCep } from "../../services/cep";
-import { formatPriceBRL, type Plan } from "../../data/plans";
+import { useScrollToFirstFormError } from "../../hooks/useScrollToFirstFormError";
+import {
+  FEATURE_LABELS,
+  formatCapacity,
+  formatPriceBRL,
+  type Plan,
+} from "../../data/plans";
 
 // --- Subscription types ---
 
@@ -478,6 +487,65 @@ export default function Account() {
     },
   });
 
+  const becomeClinicFormRef = useRef<HTMLFormElement>(null);
+  useScrollToFirstFormError(
+    becomeClinicFormRef,
+    becomeClinicFormik.errors,
+    becomeClinicFormik.submitCount,
+  );
+
+  // Plan carousel in the "become a clinic" form — scrolls by one card's width
+  // (+ gap) at a time rather than jumping the full container width. Arrow
+  // visibility tracks actual scroll position so neither arrow is shown past
+  // the edge it would otherwise scroll toward.
+  const planCarouselRef = useRef<HTMLDivElement | null>(null);
+  const [planCarouselCanScrollLeft, setPlanCarouselCanScrollLeft] =
+    useState(false);
+  const [planCarouselCanScrollRight, setPlanCarouselCanScrollRight] =
+    useState(false);
+
+  function updatePlanCarouselScrollState() {
+    const container = planCarouselRef.current;
+    if (!container) return;
+
+    // Measured against the first/last card's actual position, not
+    // scrollWidth/clientWidth: with scroll-snap, the resting scrollLeft after
+    // snapping to the last card is `scrollWidth - lastCard.width`, not
+    // `scrollWidth - clientWidth` (several cards narrower) — so comparing
+    // against scrollWidth/clientWidth never detected "reached the end". The
+    // container's own left/right padding similarly keeps resting scrollLeft
+    // a few px above 0 at the true start, so a >1px threshold never cleared.
+    const firstCard = container.firstElementChild as HTMLElement | null;
+    const lastCard = container.lastElementChild as HTMLElement | null;
+    const tolerance = 4;
+
+    setPlanCarouselCanScrollLeft(
+      !!firstCard && firstCard.offsetLeft < container.scrollLeft - tolerance,
+    );
+    setPlanCarouselCanScrollRight(
+      !!lastCard &&
+        lastCard.offsetLeft + lastCard.offsetWidth >
+          container.scrollLeft + container.clientWidth + tolerance,
+    );
+  }
+
+  // Re-measured whenever the carousel could have just mounted (opening the
+  // "become a clinic" form) or its content could have just changed (plans
+  // loading) — depending on `plans` alone misses the common case where plans
+  // were already loaded before the form (and the carousel's DOM) ever
+  // appeared, leaving both arrows stuck hidden.
+  useEffect(() => {
+    updatePlanCarouselScrollState();
+  }, [plans, showBecomeClinicForm]);
+
+  function scrollPlanCarousel(direction: 1 | -1) {
+    const container = planCarouselRef.current;
+    const firstCard = container?.firstElementChild;
+    if (!container || !(firstCard instanceof HTMLElement)) return;
+    const step = firstCard.offsetWidth + 16; // card width + gap-4
+    container.scrollBy({ left: direction * step, behavior: "smooth" });
+  }
+
   // CEP auto-fill for the "become a clinic" form
   const cepRequestRef = useRef(0);
   useEffect(() => {
@@ -804,9 +872,7 @@ export default function Account() {
       // Changing a sensitive field (everything but name/photo) requires the
       // emailed verification code the backend enforces — send it and ask the
       // user for the code before actually submitting the update.
-      if (
-        hasSensitiveProfileChanges(values, profileFormik.initialValues)
-      ) {
+      if (hasSensitiveProfileChanges(values, profileFormik.initialValues)) {
         setPendingProfileValues(values);
         setSaving(true);
         setSuccessMsg("");
@@ -815,7 +881,9 @@ export default function Account() {
           setVerifyError("");
           setShowVerifyModal(true);
         } catch (_err) {
-          setSuccessMsg("Erro ao enviar código de verificação. Tente novamente.");
+          setSuccessMsg(
+            "Erro ao enviar código de verificação. Tente novamente.",
+          );
           setTimeout(() => setSuccessMsg(""), 3000);
         } finally {
           setSaving(false);
@@ -923,7 +991,7 @@ export default function Account() {
   return (
     <MainLayout>
       <motion.div
-        className="space-y-8 max-w-4xl"
+        className="space-y-8"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -966,7 +1034,7 @@ export default function Account() {
         {/* Profile Tab */}
         {activeTab === "profile" && (
           <>
-            <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 space-y-8">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 space-y-8 max-w-4xl">
               {/* Avatar */}
               <div className="flex items-center gap-6">
                 <div className="relative">
@@ -1020,11 +1088,12 @@ export default function Account() {
                       className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
                       placeholder="Dr. João Silva"
                     />
-                    {profileFormik.touched.name && profileFormik.errors.name && (
-                      <p className="text-xs text-red-500 ml-1">
-                        {profileFormik.errors.name}
-                      </p>
-                    )}
+                    {profileFormik.touched.name &&
+                      profileFormik.errors.name && (
+                        <p className="text-xs text-red-500 ml-1">
+                          {profileFormik.errors.name}
+                        </p>
+                      )}
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-on-surface-variant ml-1">
@@ -1050,11 +1119,12 @@ export default function Account() {
                       className="w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
                       placeholder="(11) 99999-9999"
                     />
-                    {profileFormik.touched.phone && profileFormik.errors.phone && (
-                      <p className="text-xs text-red-500 ml-1">
-                        {profileFormik.errors.phone}
-                      </p>
-                    )}
+                    {profileFormik.touched.phone &&
+                      profileFormik.errors.phone && (
+                        <p className="text-xs text-red-500 ml-1">
+                          {profileFormik.errors.phone}
+                        </p>
+                      )}
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-on-surface-variant ml-1">
@@ -1290,7 +1360,7 @@ export default function Account() {
             {/* Clínicas Vinculadas — every professional sees this, distinct
               from "Dados da Clínica" (admin-only editing of one clinic's
               own data) and from Assinatura's copy (billing context). */}
-            <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 max-w-4xl">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-bold font-display text-slate-900">
@@ -1301,12 +1371,6 @@ export default function Account() {
                     ou administrador(a).
                   </p>
                 </div>
-                <Link
-                  to="/plans/compare"
-                  className="text-sm font-bold text-primary hover:opacity-80 transition-opacity whitespace-nowrap"
-                >
-                  Comparar planos
-                </Link>
               </div>
               <div className="mt-6 space-y-3">
                 {loadingClinics ? (
@@ -1849,12 +1913,6 @@ export default function Account() {
                     administrador.
                   </p>
                 </div>
-                <Link
-                  to="/plans/compare"
-                  className="text-sm font-bold text-primary hover:opacity-80 transition-opacity whitespace-nowrap"
-                >
-                  Comparar planos
-                </Link>
               </div>
               <div className="mt-6 space-y-3">
                 {loadingClinics ? (
@@ -2205,6 +2263,7 @@ export default function Account() {
                   </Button>
                 ) : (
                   <form
+                    ref={becomeClinicFormRef}
                     onSubmit={becomeClinicFormik.handleSubmit}
                     className="mt-6 space-y-5"
                   >
@@ -2412,41 +2471,114 @@ export default function Account() {
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">
                         Plano
                       </label>
-                      <div className="grid sm:grid-cols-2 gap-3">
-                        {plans.map((plan) => (
+                      <div className="relative">
+                        {planCarouselCanScrollLeft && (
                           <button
-                            key={plan.id}
                             type="button"
-                            onClick={() =>
-                              becomeClinicFormik.setFieldValue(
-                                "planId",
-                                plan.id,
-                              )
-                            }
-                            className={`text-left rounded-xl border p-4 cursor-pointer transition-all ${
-                              becomeClinicFormik.values.planId === plan.id
-                                ? "border-primary bg-primary/5"
-                                : "border-slate-200 bg-white hover:border-slate-300"
-                            }`}
+                            onClick={() => scrollPlanCarousel(-1)}
+                            aria-label="Plano anterior"
+                            className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-9 h-9 bg-white rounded-full shadow-lg border border-slate-200 items-center justify-center text-slate-600 hover:text-primary hover:scale-110 transition-all cursor-pointer"
                           >
-                            <div className="flex items-center justify-between">
-                              <p className="font-bold text-sm text-slate-900">
-                                {plan.name}
-                              </p>
-                              {becomeClinicFormik.values.planId === plan.id && (
-                                <CheckCircle2 className="w-4 h-4 text-primary" />
-                              )}
-                            </div>
-                            <p className="text-lg font-display font-extrabold text-slate-900">
-                              {formatPriceBRL(plan.price)}
-                              {plan.price !== null && (
-                                <span className="text-xs font-normal text-slate-500">
-                                  /mês
-                                </span>
-                              )}
-                            </p>
+                            <ChevronLeft size={18} />
                           </button>
-                        ))}
+                        )}
+                        {planCarouselCanScrollRight && (
+                          <button
+                            type="button"
+                            onClick={() => scrollPlanCarousel(1)}
+                            aria-label="Próximo plano"
+                            className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 w-9 h-9 bg-white rounded-full shadow-lg border border-slate-200 items-center justify-center text-slate-600 hover:text-primary hover:scale-110 transition-all cursor-pointer"
+                          >
+                            <ChevronRight size={18} />
+                          </button>
+                        )}
+
+                        <div
+                          ref={planCarouselRef}
+                          onScroll={updatePlanCarouselScrollState}
+                          className="flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                        >
+                          {plans.map((plan) => {
+                            const isSelected =
+                              becomeClinicFormik.values.planId === plan.id;
+                            return (
+                              <button
+                                key={plan.id}
+                                type="button"
+                                onClick={() =>
+                                  becomeClinicFormik.setFieldValue(
+                                    "planId",
+                                    plan.id,
+                                  )
+                                }
+                                className={`text-left snap-start shrink-0 w-64 sm:w-72 rounded-2xl border p-5 cursor-pointer transition-all flex flex-col ${
+                                  isSelected
+                                    ? "border-primary bg-primary/5"
+                                    : "border-slate-200 bg-white hover:border-slate-300"
+                                }`}
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div>
+                                    {plan.highlighted && (
+                                      <span className="inline-block bg-orange-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full mb-1.5">
+                                        Principal
+                                      </span>
+                                    )}
+                                    <p className="font-bold text-sm text-slate-900">
+                                      {plan.name}
+                                    </p>
+                                  </div>
+                                  {isSelected && (
+                                    <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
+                                  )}
+                                </div>
+                                <p className="text-xl font-display font-extrabold text-slate-900 mt-1">
+                                  {formatPriceBRL(plan.price)}
+                                  {plan.price !== null && (
+                                    <span className="text-xs font-normal text-slate-500">
+                                      /mês
+                                    </span>
+                                  )}
+                                </p>
+                                <p className="text-xs text-slate-500 mt-1 mb-4">
+                                  {formatCapacity(plan)}
+                                </p>
+                                <div className="flex flex-col gap-2 border-t border-slate-100 pt-3">
+                                  {FEATURE_LABELS.map(({ key, label }) => {
+                                    const included = plan.features[key];
+                                    return (
+                                      <div
+                                        key={key}
+                                        className="flex items-center gap-2"
+                                      >
+                                        {included ? (
+                                          <Check
+                                            size={14}
+                                            className="text-green-600 shrink-0"
+                                          />
+                                        ) : (
+                                          <Minus
+                                            size={14}
+                                            className="text-slate-300 shrink-0"
+                                          />
+                                        )}
+                                        <span
+                                          className={`text-xs ${
+                                            included
+                                              ? "text-slate-700"
+                                              : "text-slate-400"
+                                          }`}
+                                        >
+                                          {label}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
 
@@ -2489,8 +2621,8 @@ export default function Account() {
       >
         <div className="px-8 pb-8 space-y-4">
           <p className="text-sm text-on-surface-variant">
-            Enviamos um código de verificação para o seu e-mail. Digite-o
-            abaixo para confirmar a alteração dos seus dados de perfil.
+            Enviamos um código de verificação para o seu e-mail. Digite-o abaixo
+            para confirmar a alteração dos seus dados de perfil.
           </p>
           <div className="space-y-2">
             <label className="text-xs font-bold text-on-surface-variant ml-1">

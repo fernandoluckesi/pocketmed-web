@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, Check } from "lucide-react";
+import { useClickOutside } from "../../hooks/useClickOutside";
 
 interface Option {
   value: string;
@@ -41,25 +42,15 @@ export function CustomSelect({
     ? options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
     : options;
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-        setSearch("");
-        onBlur?.();
-      }
-    }
-    // Capture phase, not bubble: some ancestor between the click target and
-    // `document` may call stopPropagation() during the bubble phase (e.g. a
-    // parent click-away handler of its own), which would stop a bubble-phase
-    // listener here from ever running. Capture-phase listeners run top-down,
-    // before any bubble-phase stopPropagation call gets a chance to fire, so
-    // this closes reliably regardless of what else is on the page.
-    document.addEventListener("mousedown", handleClickOutside, true);
-    return () => document.removeEventListener("mousedown", handleClickOutside, true);
-  }, [isOpen, onBlur]);
+  useClickOutside(
+    containerRef,
+    () => {
+      setIsOpen(false);
+      setSearch("");
+      onBlur?.();
+    },
+    isOpen,
+  );
 
   useEffect(() => {
     if (isOpen && showSearch && searchRef.current) {
@@ -73,6 +64,7 @@ export function CustomSelect({
       <button
         type="button"
         id={id}
+        data-field={name}
         onClick={() => setIsOpen(!isOpen)}
         className={`cursor-pointer w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-left text-sm outline-none transition-all focus:ring-2 focus:ring-primary/10 flex items-center justify-between ${
           error

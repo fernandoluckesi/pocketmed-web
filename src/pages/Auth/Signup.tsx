@@ -18,6 +18,7 @@ import {
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import { useScrollToFirstFormError } from "../../hooks/useScrollToFirstFormError";
 import { useAuth } from "../../contexts/AuthContext";
 import { isValidCpf } from "../../utils/cpf";
 import { ApiError } from "../../services/api";
@@ -318,6 +319,9 @@ function ClinicSignupForm({
     },
   });
 
+  const formRef = useRef<HTMLFormElement>(null);
+  useScrollToFirstFormError(formRef, formik.errors, formik.submitCount);
+
   // CEP auto-fill: trigger when CEP reaches 8 digits
   const cepRequestRef = useRef(0);
   useEffect(() => {
@@ -364,7 +368,12 @@ function ClinicSignupForm({
         ← Voltar para seleção
       </button>
 
-      <form className="space-y-6" onSubmit={formik.handleSubmit} noValidate>
+      <form
+        ref={formRef}
+        className="space-y-6"
+        onSubmit={formik.handleSubmit}
+        noValidate
+      >
         {/* === Seção: Dados da Clínica === */}
         <div className="space-y-4">
           <div className="border-b border-slate-200 pb-3">
@@ -1134,6 +1143,9 @@ export default function Signup() {
     },
   });
 
+  const formRef = useRef<HTMLFormElement>(null);
+  useScrollToFirstFormError(formRef, formik.errors, formik.submitCount);
+
   const fieldError = (field: keyof typeof formik.values) =>
     formik.touched[field] && formik.errors[field] ? formik.errors[field] : null;
 
@@ -1327,6 +1339,7 @@ export default function Signup() {
 
               {/* Form */}
               <form
+                ref={formRef}
                 className="space-y-4"
                 onSubmit={formik.handleSubmit}
                 noValidate
