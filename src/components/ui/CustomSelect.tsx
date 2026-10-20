@@ -42,6 +42,8 @@ export function CustomSelect({
     : options;
 
   useEffect(() => {
+    if (!isOpen) return;
+
     function handleClickOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
@@ -49,9 +51,15 @@ export function CustomSelect({
         onBlur?.();
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [onBlur]);
+    // Capture phase, not bubble: some ancestor between the click target and
+    // `document` may call stopPropagation() during the bubble phase (e.g. a
+    // parent click-away handler of its own), which would stop a bubble-phase
+    // listener here from ever running. Capture-phase listeners run top-down,
+    // before any bubble-phase stopPropagation call gets a chance to fire, so
+    // this closes reliably regardless of what else is on the page.
+    document.addEventListener("mousedown", handleClickOutside, true);
+    return () => document.removeEventListener("mousedown", handleClickOutside, true);
+  }, [isOpen, onBlur]);
 
   useEffect(() => {
     if (isOpen && showSearch && searchRef.current) {
