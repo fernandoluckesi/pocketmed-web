@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { FileText, TrendingUp, AlertTriangle, ShieldAlert, Award, TrendingDown } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import {
   financialApi,
   type FinancialHighlights,
@@ -105,31 +106,22 @@ export default function Reports() {
             </div>
           </div>
           <div className="flex gap-2">
-            <select
+            <CustomSelect
               value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium focus:ring-1 focus:ring-primary focus:outline-hidden"
-            >
-              {MONTH_OPTIONS.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-            <select
+              onChange={setSelectedMonth}
+              options={MONTH_OPTIONS}
+              size="sm"
+            />
+            <CustomSelect
               value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium focus:ring-1 focus:ring-primary focus:outline-hidden"
-            >
-              {[0, 1, 2].map((offset) => {
-                const y = new Date().getFullYear() - offset;
-                return (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                );
+              onChange={setSelectedYear}
+              options={[0, 1, 2].map((offset) => {
+                const y = String(new Date().getFullYear() - offset);
+                return { value: y, label: y };
               })}
-            </select>
+              size="sm"
+              className="w-24"
+            />
           </div>
         </div>
 
