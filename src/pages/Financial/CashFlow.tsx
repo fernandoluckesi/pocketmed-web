@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ArrowUpRight, ArrowDownRight, Wallet, Filter, X } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import { financialApi, type CashflowEntry } from "../../services/financial";
 import { formatDateOnly } from "../../utils/date";
 
@@ -119,17 +120,18 @@ export default function CashFlow() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold">
+              <div className="flex items-center gap-1.5">
                 <Filter className="w-3.5 h-3.5 text-blue-600" />
-                <select
+                <CustomSelect
                   value={typeFilter}
-                  onChange={(e) => setTypeFilter(e.target.value)}
-                  className="bg-transparent border-none text-slate-800 focus:outline-none cursor-pointer font-bold"
-                >
-                  <option value="Todos">Tipo: Todos</option>
-                  <option value="ENTRADA">Entrada</option>
-                  <option value="SAIDA">Saída</option>
-                </select>
+                  onChange={setTypeFilter}
+                  options={[
+                    { value: "Todos", label: "Tipo: Todos" },
+                    { value: "ENTRADA", label: "Entrada" },
+                    { value: "SAIDA", label: "Saída" },
+                  ]}
+                  size="sm"
+                />
               </div>
               <div className="flex items-center gap-1.5 text-xs">
                 <label className="text-[10px] font-bold text-slate-500 uppercase">
