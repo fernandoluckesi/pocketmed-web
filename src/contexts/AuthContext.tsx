@@ -49,6 +49,7 @@ interface RegisterDoctorPayload {
   state?: string;
   noNumber?: boolean;
   profileImage?: File;
+  captchaToken?: string;
 }
 
 interface AuthContextType {

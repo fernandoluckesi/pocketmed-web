@@ -18,6 +18,7 @@ import {
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { useScrollToFirstFormError } from "../../hooks/useScrollToFirstFormError";
 import { useAuth } from "../../contexts/AuthContext";
 import { isValidCpf } from "../../utils/cpf";
@@ -31,6 +32,11 @@ import logoHorizontal from "../../assets/logos/hispora-horizontal-primary.png";
 import api from "../../config/api";
 import { LegalLinks } from "../../components/LegalLinks";
 import { UF_LIST } from "../../utils/uf";
+
+// Empty by default: without a site key, the widget below never renders and
+// registration behaves exactly as before — see TURNSTILE_SECRET_KEY in the
+// backend for the matching opt-in gate.
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
 const SPECIALTIES = [
   "Nenhuma",
@@ -234,6 +240,7 @@ function ClinicSignupForm({
   const [showPassword, setShowPassword] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
   const [cepMessage, setCepMessage] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState("");
 
   const formik = useFormik({
     initialValues: {
@@ -287,6 +294,7 @@ function ClinicSignupForm({
           city: values.city,
           state: values.state,
           noNumber: values.noNumber,
+          captchaToken: captchaToken || undefined,
         });
         // If we're still here, email verification is needed
         onVerificationNeeded(values.email);
@@ -896,10 +904,20 @@ function ClinicSignupForm({
           )}
         </div>
 
+        {TURNSTILE_SITE_KEY && (
+          <Turnstile
+            siteKey={TURNSTILE_SITE_KEY}
+            onSuccess={setCaptchaToken}
+            onExpire={() => setCaptchaToken("")}
+          />
+        )}
+
         {/* Submit */}
         <Button
           type="submit"
-          disabled={formik.isSubmitting}
+          disabled={
+            formik.isSubmitting || (!!TURNSTILE_SITE_KEY && !captchaToken)
+          }
           loading={formik.isSubmitting}
           variant="primary"
           size="lg"
@@ -952,6 +970,7 @@ export default function Signup() {
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const codeInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [captchaToken, setCaptchaToken] = useState("");
 
   // Arriving from login with an unverified account (?verify=<email>): jump
   // straight to the inline code-entry step. The backend already resent a code
@@ -1082,6 +1101,7 @@ export default function Signup() {
           crmUf: values.crmState,
           rqe: values.rqe || undefined,
           profileImage: profileImage || undefined,
+          captchaToken: captchaToken || undefined,
         });
         // If we're still here, email verification is needed
         setPendingVerification(values.email);
@@ -1729,10 +1749,21 @@ export default function Signup() {
                   )}
                 </div>
 
+                {TURNSTILE_SITE_KEY && (
+                  <Turnstile
+                    siteKey={TURNSTILE_SITE_KEY}
+                    onSuccess={setCaptchaToken}
+                    onExpire={() => setCaptchaToken("")}
+                  />
+                )}
+
                 {/* Submit */}
                 <Button
                   type="submit"
-                  disabled={formik.isSubmitting}
+                  disabled={
+                    formik.isSubmitting ||
+                    (!!TURNSTILE_SITE_KEY && !captchaToken)
+                  }
                   loading={formik.isSubmitting}
                   variant="primary"
                   size="lg"
