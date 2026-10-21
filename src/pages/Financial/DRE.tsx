@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { BarChart3, Download, Calendar } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import { financialApi, type DREResult } from "../../services/financial";
 
 export default function DRE() {
@@ -97,34 +98,37 @@ export default function DRE() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5">
+            <div className="flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5 text-slate-400" />
-              <select
+              <CustomSelect
                 value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="bg-transparent border-none text-xs font-bold text-slate-700 focus:outline-none cursor-pointer"
-              >
-                <option value="01">Janeiro</option>
-                <option value="02">Fevereiro</option>
-                <option value="03">Março</option>
-                <option value="04">Abril</option>
-                <option value="05">Maio</option>
-                <option value="06">Junho</option>
-                <option value="07">Julho</option>
-                <option value="08">Agosto</option>
-                <option value="09">Setembro</option>
-                <option value="10">Outubro</option>
-                <option value="11">Novembro</option>
-                <option value="12">Dezembro</option>
-              </select>
-              <select
+                onChange={setSelectedMonth}
+                options={[
+                  { value: "01", label: "Janeiro" },
+                  { value: "02", label: "Fevereiro" },
+                  { value: "03", label: "Março" },
+                  { value: "04", label: "Abril" },
+                  { value: "05", label: "Maio" },
+                  { value: "06", label: "Junho" },
+                  { value: "07", label: "Julho" },
+                  { value: "08", label: "Agosto" },
+                  { value: "09", label: "Setembro" },
+                  { value: "10", label: "Outubro" },
+                  { value: "11", label: "Novembro" },
+                  { value: "12", label: "Dezembro" },
+                ]}
+                size="sm"
+              />
+              <CustomSelect
                 value={selectedYear}
-                onChange={(e) => setSelectedYear(e.target.value)}
-                className="bg-transparent border-none text-xs font-bold text-slate-700 focus:outline-none cursor-pointer"
-              >
-                <option value="2026">2026</option>
-                <option value="2025">2025</option>
-              </select>
+                onChange={setSelectedYear}
+                options={[
+                  { value: "2026", label: "2026" },
+                  { value: "2025", label: "2025" },
+                ]}
+                size="sm"
+                className="w-24"
+              />
             </div>
             <button
               onClick={handleExportCSV}
