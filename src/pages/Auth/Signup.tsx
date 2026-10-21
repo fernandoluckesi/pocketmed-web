@@ -593,20 +593,15 @@ function ClinicSignupForm({
             <label className="text-xs font-semibold text-slate-500 block">
               Estado
             </label>
-            <select
-              className={`w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-slate-900 text-sm outline-none transition-all focus:ring-2 focus:ring-primary/10 appearance-none cursor-pointer ${fieldError("state") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
+            <CustomSelect
               name="state"
               value={formik.values.state}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-            >
-              <option value="">Selecione o estado</option>
-              {UF_LIST.map((uf) => (
-                <option key={uf} value={uf}>
-                  {uf}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => formik.setFieldValue("state", v)}
+              onBlur={() => formik.setFieldTouched("state")}
+              options={UF_LIST.map((uf) => ({ value: uf, label: uf }))}
+              placeholder="Selecione o estado"
+              error={!!fieldError("state")}
+            />
             {fieldError("state") && (
               <p className="text-xs text-red-500 mt-1">{fieldError("state")}</p>
             )}
@@ -649,15 +644,19 @@ function ClinicSignupForm({
               <label className="text-xs font-semibold text-slate-500 block">
                 Gênero do responsável pela clínica
               </label>
-              <select
-                className={`w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-slate-900 text-sm outline-none transition-all focus:ring-2 focus:ring-primary/10 appearance-none cursor-pointer ${fieldError("gender") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
-                {...formik.getFieldProps("gender")}
-              >
-                <option value="">Selecione</option>
-                <option value="male">Masculino</option>
-                <option value="female">Feminino</option>
-                <option value="other">Outro</option>
-              </select>
+              <CustomSelect
+                name="gender"
+                value={formik.values.gender}
+                onChange={(v) => formik.setFieldValue("gender", v)}
+                onBlur={() => formik.setFieldTouched("gender")}
+                options={[
+                  { value: "male", label: "Masculino" },
+                  { value: "female", label: "Feminino" },
+                  { value: "other", label: "Outro" },
+                ]}
+                placeholder="Selecione"
+                error={!!fieldError("gender")}
+              />
               {fieldError("gender") && (
                 <p className="text-xs text-red-500 mt-1">
                   {fieldError("gender")}
@@ -687,16 +686,13 @@ function ClinicSignupForm({
               CRM do responsável pela clínica
             </label>
             <div className="grid grid-cols-[120px_1fr] gap-3">
-              <select
-                className="bg-slate-50 border border-slate-200 focus:border-primary rounded-xl py-3.5 px-3 text-slate-900 text-sm outline-none transition-all focus:ring-2 focus:ring-primary/10 appearance-none cursor-pointer"
-                {...formik.getFieldProps("crmState")}
-              >
-                {UF_LIST.map((uf) => (
-                  <option key={uf} value={uf}>
-                    {uf}
-                  </option>
-                ))}
-              </select>
+              <CustomSelect
+                name="crmState"
+                value={formik.values.crmState}
+                onChange={(v) => formik.setFieldValue("crmState", v)}
+                onBlur={() => formik.setFieldTouched("crmState")}
+                options={UF_LIST.map((uf) => ({ value: uf, label: uf }))}
+              />
               <div className="relative group">
                 <Badge className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-primary transition-colors" />
                 <input
@@ -761,16 +757,14 @@ function ClinicSignupForm({
               <label className="text-xs font-semibold text-slate-500 block">
                 Especialidade do responsável
               </label>
-              <select
-                className={`w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-slate-900 text-sm outline-none transition-all focus:ring-2 focus:ring-primary/10 appearance-none cursor-pointer ${fieldError("specialty") ? "border-red-400" : "border-slate-200 focus:border-primary"}`}
-                {...formik.getFieldProps("specialty")}
-              >
-                {SPECIALTIES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
+              <CustomSelect
+                name="specialty"
+                value={formik.values.specialty}
+                onChange={(v) => formik.setFieldValue("specialty", v)}
+                onBlur={() => formik.setFieldTouched("specialty")}
+                options={SPECIALTIES.map((s) => ({ value: s, label: s }))}
+                error={!!fieldError("specialty")}
+              />
               {fieldError("specialty") && (
                 <p className="text-xs text-red-500 mt-1">
                   {fieldError("specialty")}
