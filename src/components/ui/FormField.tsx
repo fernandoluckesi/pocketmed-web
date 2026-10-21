@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Button } from "./Button";
+import { CustomSelect } from "./CustomSelect";
 
 // --- Base Label ---
 function Label({
@@ -253,21 +254,16 @@ export function SelectInput({
   return (
     <div className="space-y-1.5">
       <Label htmlFor={name}>{label}</Label>
-      <select
+      <CustomSelect
         id={name}
         name={name}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={onChange}
         onBlur={onBlur}
-        className={`${inputClasses(!!error)} appearance-none cursor-pointer`}
-      >
-        {placeholder && <option value="">{placeholder}</option>}
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+        options={options}
+        placeholder={placeholder}
+        error={!!error}
+      />
       <ErrorMessage message={error} />
     </div>
   );
