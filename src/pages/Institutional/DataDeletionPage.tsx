@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { InstitutionalHeader } from "./InstitutionalHeader";
 import { InstitutionalFooter } from "./InstitutionalFooter";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import { api, ApiError } from "../../services/api";
 
 /**
@@ -395,19 +396,14 @@ export default function DataDeletionPage() {
               </fieldset>
 
               <Field label="Motivo (opcional)" htmlFor="reason">
-                <select
+                <CustomSelect
                   id="reason"
+                  name="reason"
                   value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  className={`${inputClass} appearance-none cursor-pointer`}
-                >
-                  <option value="">Prefiro não informar</option>
-                  {REASONS.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setReason}
+                  options={REASONS.map((r) => ({ value: r, label: r }))}
+                  placeholder="Prefiro não informar"
+                />
               </Field>
 
               <Field
