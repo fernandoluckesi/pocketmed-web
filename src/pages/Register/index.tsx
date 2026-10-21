@@ -5,6 +5,7 @@ import * as Yup from "yup";
 import { isValidCpf, maskCpf, normalizeCpf } from "../../utils/cpf";
 import { UF_LIST } from "../../utils/uf";
 import { Eye, EyeOff, Loader2, ArrowLeft, Camera } from "lucide-react";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import api from "../../config/api";
 import logoHorizontalWhite from "../../assets/logos/hispora-horizontal-branco.png";
 
@@ -300,18 +301,19 @@ export default function Register() {
                 <label className="text-xs font-bold text-on-surface-variant ml-1">
                   Gênero
                 </label>
-                <select
+                <CustomSelect
                   name="gender"
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
                   value={formik.values.gender}
-                  className={`w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none appearance-none ${formik.touched.gender && formik.errors.gender ? "ring-2 ring-red-300" : ""}`}
-                >
-                  <option value="">Selecione</option>
-                  <option value="male">Masculino</option>
-                  <option value="female">Feminino</option>
-                  <option value="other">Outro</option>
-                </select>
+                  onChange={(v) => formik.setFieldValue("gender", v)}
+                  onBlur={() => formik.setFieldTouched("gender")}
+                  options={[
+                    { value: "male", label: "Masculino" },
+                    { value: "female", label: "Feminino" },
+                    { value: "other", label: "Outro" },
+                  ]}
+                  placeholder="Selecione"
+                  error={!!(formik.touched.gender && formik.errors.gender)}
+                />
                 {formik.touched.gender && formik.errors.gender && (
                   <p className="text-red-500 text-xs ml-1">
                     {formik.errors.gender}
@@ -423,20 +425,16 @@ export default function Register() {
                     className={`w-full bg-slate-50 border-none rounded-xl px-4 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none ${formik.touched.crmNumber && formik.errors.crmNumber ? "ring-2 ring-red-300" : ""}`}
                     placeholder="123456"
                   />
-                  <select
+                  <CustomSelect
                     name="crmUf"
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
+                    id="crmUf"
                     value={formik.values.crmUf}
-                    aria-label="UF do CRM"
-                    className={`w-full bg-slate-50 border-none rounded-xl px-3 py-3.5 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none cursor-pointer ${formik.touched.crmUf && formik.errors.crmUf ? "ring-2 ring-red-300" : ""}`}
-                  >
-                    {UF_LIST.map((uf) => (
-                      <option key={uf} value={uf}>
-                        {uf}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => formik.setFieldValue("crmUf", v)}
+                    onBlur={() => formik.setFieldTouched("crmUf")}
+                    options={UF_LIST.map((uf) => ({ value: uf, label: uf }))}
+                    placeholder="UF"
+                    error={!!(formik.touched.crmUf && formik.errors.crmUf)}
+                  />
                 </div>
                 {formik.touched.crmNumber && formik.errors.crmNumber && (
                   <p className="text-red-500 text-xs ml-1">
