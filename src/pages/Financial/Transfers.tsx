@@ -10,6 +10,7 @@ import {
   Calculator,
 } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import {
   financialApi,
   type DoctorTransfer,
@@ -424,32 +425,26 @@ export default function Transfers() {
               className="bg-transparent border-none text-slate-800 focus:outline-none cursor-pointer font-bold"
             />
           </div>
-          <div className="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-transparent border-none text-slate-800 focus:outline-none cursor-pointer font-bold"
-            >
-              <option value="Todos">Status: Todos</option>
-              <option value="CALCULADO">Calculado</option>
-              <option value="APROVADO">Aprovado</option>
-              <option value="PAGO">Pago</option>
-            </select>
-          </div>
-          <div className="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold">
-            <select
-              value={doctorFilter}
-              onChange={(e) => setDoctorFilter(e.target.value)}
-              className="bg-transparent border-none text-slate-800 focus:outline-none cursor-pointer font-bold"
-            >
-              <option value="Todos">Médico: Todos</option>
-              {doctors.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <CustomSelect
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { value: "Todos", label: "Status: Todos" },
+              { value: "CALCULADO", label: "Calculado" },
+              { value: "APROVADO", label: "Aprovado" },
+              { value: "PAGO", label: "Pago" },
+            ]}
+            size="sm"
+          />
+          <CustomSelect
+            value={doctorFilter}
+            onChange={setDoctorFilter}
+            options={[
+              { value: "Todos", label: "Médico: Todos" },
+              ...doctors.map((d) => ({ value: d.id, label: d.name })),
+            ]}
+            size="sm"
+          />
           {hasActiveFilters && (
             <button
               type="button"
