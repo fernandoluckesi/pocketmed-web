@@ -14,6 +14,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { MainLayout } from "../../components/MainLayout";
 import { useDialog } from "../../components/ui/Dialog";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import { useToast } from "../../contexts/ToastContext";
 import { useActiveConsultation } from "../../contexts/ActiveConsultationContext";
 import { NewAppointmentModal } from "../../components/NewAppointmentModal";
@@ -97,6 +98,8 @@ export default function Consultations() {
   >("Todas");
   const [currentPage, setCurrentPage] = useState(1);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [specialtyFilter, setSpecialtyFilter] = useState("Todas");
+  const [professionalFilter, setProfessionalFilter] = useState("Todos");
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [_loading, setLoading] = useState(true);
   const [selectedConsultation, setSelectedConsultation] =
@@ -334,26 +337,36 @@ export default function Consultations() {
               <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
                 Especialidade
               </label>
-              <select className="w-full bg-white border border-slate-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-slate-700">
-                <option>Todas</option>
-                <option>Cardiologia</option>
-                <option>Dermatologia</option>
-                <option>Neurologia</option>
-                <option>Pediatria</option>
-                <option>Clínica Geral</option>
-              </select>
+              <CustomSelect
+                value={specialtyFilter}
+                onChange={setSpecialtyFilter}
+                options={[
+                  { value: "Todas", label: "Todas" },
+                  { value: "Cardiologia", label: "Cardiologia" },
+                  { value: "Dermatologia", label: "Dermatologia" },
+                  { value: "Neurologia", label: "Neurologia" },
+                  { value: "Pediatria", label: "Pediatria" },
+                  { value: "Clínica Geral", label: "Clínica Geral" },
+                ]}
+                size="sm"
+              />
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">
                 Profissional
               </label>
-              <select className="w-full bg-white border border-slate-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:ring-1 focus:ring-primary text-slate-700">
-                <option>Todos</option>
-                <option>Dr. Ricardo Fontes</option>
-                <option>Dra. Alice Moraes</option>
-                <option>Dra. Juliana Lima</option>
-                <option>Dr. Marcos Vale</option>
-              </select>
+              <CustomSelect
+                value={professionalFilter}
+                onChange={setProfessionalFilter}
+                options={[
+                  { value: "Todos", label: "Todos" },
+                  { value: "Dr. Ricardo Fontes", label: "Dr. Ricardo Fontes" },
+                  { value: "Dra. Alice Moraes", label: "Dra. Alice Moraes" },
+                  { value: "Dra. Juliana Lima", label: "Dra. Juliana Lima" },
+                  { value: "Dr. Marcos Vale", label: "Dr. Marcos Vale" },
+                ]}
+                size="sm"
+              />
             </div>
           </div>
         )}
