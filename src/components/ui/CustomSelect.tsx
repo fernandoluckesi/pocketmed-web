@@ -17,6 +17,11 @@ interface CustomSelectProps {
   id?: string;
   error?: boolean;
   className?: string;
+  /** "md" (default) matches the ~52px-tall inputs used in forms like
+   * registration; "sm" matches the more compact py-2/text-xs inputs used in
+   * tighter forms (e.g. Financeiro) so every field in the same row lines up
+   * at the same height. */
+  size?: "md" | "sm";
 }
 
 export function CustomSelect({
@@ -29,6 +34,7 @@ export function CustomSelect({
   id,
   error,
   className = "",
+  size = "md",
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -66,7 +72,9 @@ export function CustomSelect({
         id={id}
         data-field={name}
         onClick={() => setIsOpen(!isOpen)}
-        className={`cursor-pointer w-full bg-slate-50 border rounded-xl py-3.5 px-4 text-left text-sm outline-none transition-all focus:ring-2 focus:ring-primary/10 flex items-center justify-between ${
+        className={`cursor-pointer w-full bg-slate-50 border text-left outline-none transition-all focus:ring-2 focus:ring-primary/10 flex items-center justify-between ${
+          size === "sm" ? "rounded-lg py-2 px-3 text-xs" : "rounded-xl py-3.5 px-4 text-sm"
+        } ${
           error
             ? "border-red-400 focus:border-red-400"
             : isOpen

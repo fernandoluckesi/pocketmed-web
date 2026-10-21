@@ -640,6 +640,7 @@ export default function Revenue() {
                   }}
                   options={doctors.map((d) => ({ value: d.id, label: d.name }))}
                   placeholder="Selecione..."
+                  size="sm"
                 />
                 {doctorId && (
                   <div className="mt-1.5 flex items-center gap-1.5">
@@ -692,6 +693,7 @@ export default function Revenue() {
                   value={specialty}
                   onChange={setSpecialty}
                   options={specialtyOptions.map((s) => ({ value: s, label: s }))}
+                  size="sm"
                 />
               </div>
               <div>
@@ -735,6 +737,7 @@ export default function Revenue() {
                     { value: "Cartão Débito", label: "Cartão Débito" },
                     { value: "PIX", label: "PIX" },
                   ]}
+                  size="sm"
                 />
               </div>
               <div>
@@ -760,6 +763,7 @@ export default function Revenue() {
                     { value: "PAGO", label: "Pago" },
                     { value: "FATURADO", label: "Faturado" },
                   ]}
+                  size="sm"
                 />
               </div>
             </div>
@@ -774,18 +778,13 @@ export default function Revenue() {
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
                       Convênio
                     </label>
-                    <select
+                    <CustomSelect
                       value={formConvenioId}
-                      onChange={(e) => setFormConvenioId(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
-                    >
-                      <option value="">Selecione...</option>
-                      {convenios.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={setFormConvenioId}
+                      options={convenios.map((c) => ({ value: c.id, label: c.name }))}
+                      placeholder="Selecione..."
+                      size="sm"
+                    />
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
@@ -840,22 +839,17 @@ export default function Revenue() {
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
                       Plano
                     </label>
-                    <select
+                    <CustomSelect
                       value={insurancePlanName}
-                      onChange={(e) => setInsurancePlanName(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
-                    >
-                      <option value="">
-                        {convenioPlans.length === 0
+                      onChange={setInsurancePlanName}
+                      options={convenioPlans.map((p) => ({ value: p.name, label: p.name }))}
+                      placeholder={
+                        convenioPlans.length === 0
                           ? "Nenhum plano cadastrado para este convênio"
-                          : "Selecione..."}
-                      </option>
-                      {convenioPlans.map((p) => (
-                        <option key={p.id} value={p.name}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
+                          : "Selecione..."
+                      }
+                      size="sm"
+                    />
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
@@ -905,46 +899,41 @@ export default function Revenue() {
               />
             </div>
             <div>
-              <select
+              <CustomSelect
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
-              >
-                <option value="Todos">Status: Todos</option>
-                <option value="PAGO">Pago</option>
-                <option value="PENDENTE">Pendente</option>
-                <option value="GLOSADO">Glosado</option>
-                <option value="VENCIDO">Vencido</option>
-                <option value="FATURADO">Faturado</option>
-              </select>
+                onChange={setFilterStatus}
+                options={[
+                  { value: "Todos", label: "Status: Todos" },
+                  { value: "PAGO", label: "Pago" },
+                  { value: "PENDENTE", label: "Pendente" },
+                  { value: "GLOSADO", label: "Glosado" },
+                  { value: "VENCIDO", label: "Vencido" },
+                  { value: "FATURADO", label: "Faturado" },
+                ]}
+                size="sm"
+              />
             </div>
             <div>
-              <select
+              <CustomSelect
                 value={filterConvenio}
-                onChange={(e) => setFilterConvenio(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
-              >
-                <option value="Todos">Convênio: Todos</option>
-                {convenios.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setFilterConvenio}
+                options={[
+                  { value: "Todos", label: "Convênio: Todos" },
+                  ...convenios.map((c) => ({ value: c.id, label: c.name })),
+                ]}
+                size="sm"
+              />
             </div>
             <div>
-              <select
+              <CustomSelect
                 value={filterDoctor}
-                onChange={(e) => setFilterDoctor(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
-              >
-                <option value="Todos">Médico: Todos</option>
-                {doctors.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setFilterDoctor}
+                options={[
+                  { value: "Todos", label: "Médico: Todos" },
+                  ...doctors.map((d) => ({ value: d.id, label: d.name })),
+                ]}
+                size="sm"
+              />
             </div>
             <div className="flex items-center justify-end px-2">
               <span className="text-[11px] font-bold text-slate-500">
