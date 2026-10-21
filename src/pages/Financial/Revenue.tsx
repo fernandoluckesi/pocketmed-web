@@ -12,6 +12,7 @@ import {
 import { MainLayout } from "../../components/MainLayout";
 import { ActionsMenu } from "../../components/ui/ActionsMenu";
 import { ConfirmModal } from "../../components/ConfirmModal";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import { useToast } from "../../contexts/ToastContext";
 import {
   financialApi,
@@ -630,24 +631,16 @@ export default function Revenue() {
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
                   Médico
                 </label>
-                <select
+                <CustomSelect
                   value={doctorId}
-                  onChange={(e) => {
-                    const id = e.target.value;
+                  onChange={(id) => {
                     setDoctorId(id);
                     const chosen = doctors.find((d) => d.id === id);
                     if (chosen?.specialty) setSpecialty(chosen.specialty);
                   }}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
-                  required
-                >
-                  <option value="">Selecione...</option>
-                  {doctors.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
+                  options={doctors.map((d) => ({ value: d.id, label: d.name }))}
+                  placeholder="Selecione..."
+                />
                 {doctorId && (
                   <div className="mt-1.5 flex items-center gap-1.5">
                     {editingPercentage ? (
@@ -695,17 +688,11 @@ export default function Revenue() {
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
                   Especialidade
                 </label>
-                <select
+                <CustomSelect
                   value={specialty}
-                  onChange={(e) => setSpecialty(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
-                >
-                  {specialtyOptions.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSpecialty}
+                  options={specialtyOptions.map((s) => ({ value: s, label: s }))}
+                />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
@@ -738,17 +725,17 @@ export default function Revenue() {
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
                   Forma de Pagamento
                 </label>
-                <select
+                <CustomSelect
                   value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
-                >
-                  <option value="Particular">Particular</option>
-                  <option value="Convênio">Convênio</option>
-                  <option value="Cartão Crédito">Cartão Crédito</option>
-                  <option value="Cartão Débito">Cartão Débito</option>
-                  <option value="PIX">PIX</option>
-                </select>
+                  onChange={setPaymentMethod}
+                  options={[
+                    { value: "Particular", label: "Particular" },
+                    { value: "Convênio", label: "Convênio" },
+                    { value: "Cartão Crédito", label: "Cartão Crédito" },
+                    { value: "Cartão Débito", label: "Cartão Débito" },
+                    { value: "PIX", label: "PIX" },
+                  ]}
+                />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
@@ -765,15 +752,15 @@ export default function Revenue() {
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
                   Status
                 </label>
-                <select
+                <CustomSelect
                   value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
-                >
-                  <option value="PENDENTE">Pendente</option>
-                  <option value="PAGO">Pago</option>
-                  <option value="FATURADO">Faturado</option>
-                </select>
+                  onChange={setStatus}
+                  options={[
+                    { value: "PENDENTE", label: "Pendente" },
+                    { value: "PAGO", label: "Pago" },
+                    { value: "FATURADO", label: "Faturado" },
+                  ]}
+                />
               </div>
             </div>
 
