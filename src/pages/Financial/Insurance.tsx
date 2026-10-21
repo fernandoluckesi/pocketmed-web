@@ -15,6 +15,7 @@ import {
   Check,
 } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import { useToast } from "../../contexts/ToastContext";
 import {
   financialApi,
@@ -363,15 +364,16 @@ export default function Insurance() {
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
                   Tabela
                 </label>
-                <select
+                <CustomSelect
                   value={contractTable}
-                  onChange={(e) => setContractTable(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary focus:outline-hidden"
-                >
-                  <option value="tuss">TUSS</option>
-                  <option value="cbhpm">CBHPM</option>
-                  <option value="propria">Própria</option>
-                </select>
+                  onChange={setContractTable}
+                  options={[
+                    { value: "tuss", label: "TUSS" },
+                    { value: "cbhpm", label: "CBHPM" },
+                    { value: "propria", label: "Própria" },
+                  ]}
+                  size="sm"
+                />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
