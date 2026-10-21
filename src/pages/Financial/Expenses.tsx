@@ -11,6 +11,7 @@ import {
 import { MainLayout } from "../../components/MainLayout";
 import { ActionsMenu } from "../../components/ui/ActionsMenu";
 import { ConfirmModal } from "../../components/ConfirmModal";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import { useToast } from "../../contexts/ToastContext";
 import {
   financialApi,
@@ -425,47 +426,38 @@ export default function Expenses() {
                 placeholder="Buscar por fornecedor ou categoria..."
               />
             </div>
-            <div className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold">
+            <div className="flex items-center gap-1.5">
               <Filter className="w-3.5 h-3.5 text-blue-600" />
-              <select
+              <CustomSelect
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-transparent border-none text-slate-800 focus:outline-none cursor-pointer font-bold"
-              >
-                <option value="Todos">Status (Todos)</option>
-                <option value="PAGO">Pago</option>
-                <option value="PENDENTE">Pendente</option>
-                <option value="VENCIDO">Vencido</option>
-              </select>
+                onChange={setStatusFilter}
+                options={[
+                  { value: "Todos", label: "Status (Todos)" },
+                  { value: "PAGO", label: "Pago" },
+                  { value: "PENDENTE", label: "Pendente" },
+                  { value: "VENCIDO", label: "Vencido" },
+                ]}
+                size="sm"
+              />
             </div>
-            <div className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold">
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="bg-transparent border-none text-slate-800 focus:outline-none cursor-pointer font-bold"
-              >
-                <option value="Todos">Categoria (Todas)</option>
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold">
-              <select
-                value={costCenterFilter}
-                onChange={(e) => setCostCenterFilter(e.target.value)}
-                className="bg-transparent border-none text-slate-800 focus:outline-none cursor-pointer font-bold"
-              >
-                <option value="Todos">Centro de Custo (Todos)</option>
-                {costCenters.map((cc) => (
-                  <option key={cc.id} value={cc.id}>
-                    {cc.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <CustomSelect
+              value={categoryFilter}
+              onChange={setCategoryFilter}
+              options={[
+                { value: "Todos", label: "Categoria (Todas)" },
+                ...CATEGORIES.map((cat) => ({ value: cat, label: cat })),
+              ]}
+              size="sm"
+            />
+            <CustomSelect
+              value={costCenterFilter}
+              onChange={setCostCenterFilter}
+              options={[
+                { value: "Todos", label: "Centro de Custo (Todos)" },
+                ...costCenters.map((cc) => ({ value: cc.id, label: cc.name })),
+              ]}
+              size="sm"
+            />
             <div className="flex items-center gap-1.5 text-xs">
               <label className="text-[10px] font-bold text-slate-500 uppercase">
                 Venc. de
