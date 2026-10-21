@@ -16,6 +16,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { MainLayout } from "../../components/MainLayout";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import { financialApi, type FinancialHighlights } from "../../services/financial";
 import { formatDateOnly } from "../../utils/date";
 
@@ -204,27 +205,24 @@ export default function FinancialDashboard() {
               Indicadores, receita por especialidade e transações do período
             </p>
           </div>
-          <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5">
+          <div className="flex items-center gap-1">
             <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            <select
+            <CustomSelect
               value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="bg-transparent border-none text-xs font-bold text-slate-700 focus:outline-none cursor-pointer"
-            >
-              {MONTH_OPTIONS.map((m) => (
-                <option key={m.value} value={m.value}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-            <select
+              onChange={setSelectedMonth}
+              options={MONTH_OPTIONS}
+              size="sm"
+            />
+            <CustomSelect
               value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="bg-transparent border-none text-xs font-bold text-slate-700 focus:outline-none cursor-pointer"
-            >
-              <option value="2026">2026</option>
-              <option value="2025">2025</option>
-            </select>
+              onChange={setSelectedYear}
+              options={[
+                { value: "2026", label: "2026" },
+                { value: "2025", label: "2025" },
+              ]}
+              size="sm"
+              className="w-24"
+            />
           </div>
         </div>
 
@@ -402,19 +400,20 @@ export default function FinancialDashboard() {
               <p className="text-[11px] text-slate-400 mt-0.5">Últimos lançamentos financeiros</p>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold">
+              <div className="flex items-center gap-1.5">
                 <Filter className="w-3.5 h-3.5 text-blue-600" />
-                <select
+                <CustomSelect
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="bg-transparent border-none text-slate-800 focus:outline-none cursor-pointer font-bold"
-                >
-                  <option value="Todos">Status: Todos</option>
-                  <option value="PAGO">Pago</option>
-                  <option value="PENDENTE">Pendente</option>
-                  <option value="FATURADO">Faturado</option>
-                  <option value="GLOSADO">Glosado</option>
-                </select>
+                  onChange={setStatusFilter}
+                  options={[
+                    { value: "Todos", label: "Status: Todos" },
+                    { value: "PAGO", label: "Pago" },
+                    { value: "PENDENTE", label: "Pendente" },
+                    { value: "FATURADO", label: "Faturado" },
+                    { value: "GLOSADO", label: "Glosado" },
+                  ]}
+                  size="sm"
+                />
               </div>
               <button
                 onClick={handleExport}
