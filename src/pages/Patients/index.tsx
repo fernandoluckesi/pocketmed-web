@@ -24,6 +24,7 @@ import { Link } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { MainLayout } from "../../components/MainLayout";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import { SearchWithViewToggle } from "../../components/ui/SearchWithViewToggle";
 import { Pagination } from "../../components/ui/Pagination";
 import { Button } from "../../components/ui/Button";
@@ -762,19 +763,19 @@ function AddPatientModal({
                 <label className="text-xs font-bold text-on-surface-variant ml-1">
                   Gênero
                 </label>
-                <select
-                  className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none appearance-none ${
-                    formik.touched.gender && formik.errors.gender
-                      ? "border-red-300 bg-red-50/30"
-                      : "border-transparent"
-                  }`}
-                  {...formik.getFieldProps("gender")}
-                >
-                  <option value="">Selecione</option>
-                  <option value="female">Feminino</option>
-                  <option value="male">Masculino</option>
-                  <option value="other">Outro</option>
-                </select>
+                <CustomSelect
+                  name="gender"
+                  value={formik.values.gender}
+                  onChange={(v) => formik.setFieldValue("gender", v)}
+                  onBlur={() => formik.setFieldTouched("gender")}
+                  options={[
+                    { value: "female", label: "Feminino" },
+                    { value: "male", label: "Masculino" },
+                    { value: "other", label: "Outro" },
+                  ]}
+                  placeholder="Selecione"
+                  error={!!(formik.touched.gender && formik.errors.gender)}
+                />
                 {formik.touched.gender && formik.errors.gender && (
                   <p className="text-xs text-red-500 ml-1">
                     {formik.errors.gender}
