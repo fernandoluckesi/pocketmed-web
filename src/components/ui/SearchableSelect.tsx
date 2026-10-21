@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useClickOutside } from "../../hooks/useClickOutside";
 
 interface SearchableSelectOption {
   value: string;
@@ -44,18 +45,16 @@ export function SearchableSelect({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-        if (allowFreeText && query.trim()) {
-          onChange(query.trim());
-        }
+  useClickOutside(
+    containerRef,
+    () => {
+      setOpen(false);
+      if (allowFreeText && query.trim()) {
+        onChange(query.trim());
       }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [query, allowFreeText, onChange]);
+    },
+    open,
+  );
 
   const filtered = query.trim()
     ? options.filter((opt) =>

@@ -22,6 +22,7 @@ interface CustomSelectProps {
    * tighter forms (e.g. Financeiro) so every field in the same row lines up
    * at the same height. */
   size?: "md" | "sm";
+  disabled?: boolean;
 }
 
 export function CustomSelect({
@@ -35,6 +36,7 @@ export function CustomSelect({
   error,
   className = "",
   size = "md",
+  disabled = false,
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -71,8 +73,11 @@ export function CustomSelect({
         type="button"
         id={id}
         data-field={name}
-        onClick={() => setIsOpen(!isOpen)}
-        className={`cursor-pointer w-full bg-slate-50 border text-left outline-none transition-all focus:ring-2 focus:ring-primary/10 flex items-center justify-between ${
+        disabled={disabled}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        className={`w-full bg-slate-50 border text-left outline-none transition-all focus:ring-2 focus:ring-primary/10 flex items-center justify-between ${
+          disabled ? "cursor-default opacity-70" : "cursor-pointer"
+        } ${
           size === "sm" ? "rounded-lg py-2 px-3 text-xs" : "rounded-xl py-3.5 px-4 text-sm"
         } ${
           error

@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/Button";
 import { SegmentedToggle } from "./ui/SegmentedToggle";
 import { SearchableSelect } from "./ui/SearchableSelect";
+import { CustomSelect } from "./ui/CustomSelect";
 import { api, ApiError } from "../services/api";
 import { financialApi, type Convenio } from "../services/financial";
 import { useToast } from "../contexts/ToastContext";
@@ -703,17 +704,11 @@ export function NewAppointmentModal({
                       onChange={(e) => setShadowEmail(e.target.value)}
                     />
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <select
-                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all appearance-none cursor-pointer outline-none"
+                      <CustomSelect
                         value={shadowGender}
-                        onChange={(e) => setShadowGender(e.target.value)}
-                      >
-                        {GENDER_OPTIONS.map((g) => (
-                          <option key={g.value} value={g.value}>
-                            {g.label}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={setShadowGender}
+                        options={GENDER_OPTIONS}
+                      />
                       <input
                         className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all placeholder:text-slate-400 outline-none"
                         placeholder="Telefone"
@@ -818,28 +813,24 @@ export function NewAppointmentModal({
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
                     Médico Responsável
                   </label>
-                  <select
-                    className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all appearance-none cursor-pointer outline-none disabled:cursor-default disabled:text-slate-600"
+                  <CustomSelect
                     value={selectedDoctor}
-                    onChange={(e) => setSelectedDoctor(e.target.value)}
+                    onChange={setSelectedDoctor}
                     disabled={readOnly}
-                  >
-                    <option value="">Selecione o médico</option>
-                    {/* Keeps the label visible even if the doctor list is unavailable. */}
-                    {readOnly &&
+                    placeholder="Selecione o médico"
+                    options={[
+                      // Keeps the label visible even if the doctor list is unavailable.
+                      ...(readOnly &&
                       appointment?.doctorName &&
-                      !doctors.some((d) => d.id === selectedDoctor) && (
-                        <option value={selectedDoctor}>
-                          {appointment.doctorName}
-                        </option>
-                      )}
-                    {doctors.map((doc) => (
-                      <option key={doc.id} value={doc.id}>
-                        {doc.name}
-                        {doc.specialty ? ` (${doc.specialty})` : ""}
-                      </option>
-                    ))}
-                  </select>
+                      !doctors.some((d) => d.id === selectedDoctor)
+                        ? [{ value: selectedDoctor, label: appointment.doctorName }]
+                        : []),
+                      ...doctors.map((doc) => ({
+                        value: doc.id,
+                        label: `${doc.name}${doc.specialty ? ` (${doc.specialty})` : ""}`,
+                      })),
+                    ]}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">

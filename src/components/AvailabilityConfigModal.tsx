@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "./ui/Button";
+import { CustomSelect } from "./ui/CustomSelect";
 import { api, ApiError } from "../services/api";
 import { useToast } from "../contexts/ToastContext";
 import {
@@ -447,33 +448,27 @@ export function AvailabilityConfigModal({
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
                       Duração da consulta
                     </label>
-                    <select
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all appearance-none cursor-pointer outline-none"
-                      value={duration}
-                      onChange={(e) => setDuration(Number(e.target.value))}
-                    >
-                      {DURATION_OPTIONS.map((d) => (
-                        <option key={d} value={d}>
-                          {d} minutos
-                        </option>
-                      ))}
-                    </select>
+                    <CustomSelect
+                      value={String(duration)}
+                      onChange={(v) => setDuration(Number(v))}
+                      options={DURATION_OPTIONS.map((d) => ({
+                        value: String(d),
+                        label: `${d} minutos`,
+                      }))}
+                    />
                   </div>
                   <div className="space-y-2">
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
                       Intervalo entre consultas
                     </label>
-                    <select
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all appearance-none cursor-pointer outline-none"
-                      value={buffer}
-                      onChange={(e) => setBuffer(Number(e.target.value))}
-                    >
-                      {BUFFER_OPTIONS.map((b) => (
-                        <option key={b} value={b}>
-                          {b === 0 ? "Sem intervalo" : `${b} minutos`}
-                        </option>
-                      ))}
-                    </select>
+                    <CustomSelect
+                      value={String(buffer)}
+                      onChange={(v) => setBuffer(Number(v))}
+                      options={BUFFER_OPTIONS.map((b) => ({
+                        value: String(b),
+                        label: b === 0 ? "Sem intervalo" : `${b} minutos`,
+                      }))}
+                    />
                   </div>
                 </div>
 
@@ -582,17 +577,13 @@ export function AvailabilityConfigModal({
                       <Clock className="w-4 h-4 text-primary" />
                       Prévia da grade de horários
                     </div>
-                    <select
-                      className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 cursor-pointer outline-none"
+                    <CustomSelect
                       value={previewDay}
-                      onChange={(e) => setPreviewDay(e.target.value)}
-                    >
-                      {WEEK_DAYS.map((d) => (
-                        <option key={d.key} value={d.key}>
-                          {d.label}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={setPreviewDay}
+                      options={WEEK_DAYS.map((d) => ({ value: d.key, label: d.label }))}
+                      size="sm"
+                      className="w-36"
+                    />
                   </div>
                   {previewSlots.length === 0 ? (
                     <p className="text-xs text-slate-400">
