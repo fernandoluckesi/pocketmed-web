@@ -21,6 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { MainLayout } from "../../components/MainLayout";
 import { Tooltip } from "../../components/ui/Tooltip";
 import { useDialog } from "../../components/ui/Dialog";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import { api } from "../../services/api";
 
 // Max rows per page for members and linked patients tables.
@@ -215,16 +216,18 @@ function MembersSection({
               placeholder="Pesquisar membros..."
             />
           </div>
-          <select
+          <CustomSelect
             value={roleFilter}
-            onChange={(e) => onRoleFilterChange(e.target.value)}
-            className="bg-slate-50 border-none rounded-xl text-sm font-semibold text-slate-600 py-2.5 px-4 focus:ring-2 focus:ring-primary/20 cursor-pointer outline-none"
-          >
-            <option value="">Perfil: Todos</option>
-            <option value="admin">Administrador</option>
-            <option value="doctor">Médico</option>
-            <option value="secretary">Secretário(a)</option>
-          </select>
+            onChange={onRoleFilterChange}
+            options={[
+              { value: "", label: "Perfil: Todos" },
+              { value: "admin", label: "Administrador" },
+              { value: "doctor", label: "Médico" },
+              { value: "secretary", label: "Secretário(a)" },
+            ]}
+            size="sm"
+            className="min-w-[180px]"
+          />
         </div>
       </div>
 
