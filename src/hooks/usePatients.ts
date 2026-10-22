@@ -464,6 +464,7 @@ export interface CreateShadowPatientData {
   gender: string;
   birthDate: string;
   doctorCreatorId: string;
+  cpf?: string;
 }
 
 // --- useCreateShadowPatient ---
@@ -510,6 +511,83 @@ export function useCreateShadowPatient() {
   }, []);
 
   return { createPatient, loading, error, success, inviteEmailStatus, reset };
+}
+
+// --- Cross-clinic access (patient Shadow authorization flow) ---
+
+export interface PatientLookupResult {
+  found: boolean;
+  /** Only meaningful when `found` is true — the doctor is already the
+   * creator or already holds an active permission for this patient. */
+  alreadyAccessible?: boolean;
+  patientId?: string;
+  name?: string;
+}
+
+export function useLookupPatientByEmail() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const lookup = useCallback(
+    async (email: string): Promise<PatientLookupResult> => {
+      setLoading(true);
+      setError(null);
+      try {
+        return await api("/doctors/patients/lookup-by-email", {
+          method: "POST",
+          body: { email },
+        });
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Erro ao buscar paciente.",
+        );
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  return { lookup, loading, error };
+}
+
+export interface RequestCrossClinicAccessResult {
+  id: string;
+  status: string;
+  channel: "in_app" | "email_link";
+  emailStatus?: "sent" | "failed";
+}
+
+export function useRequestCrossClinicAccess() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const requestCrossClinicAccess = useCallback(
+    async (
+      patientId: string,
+      purpose: string,
+    ): Promise<RequestCrossClinicAccessResult> => {
+      setLoading(true);
+      setError(null);
+      try {
+        return await api(
+          `/doctors/patients/${patientId}/request-cross-clinic-access`,
+          { method: "POST", body: { purpose } },
+        );
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Erro ao solicitar autorização.",
+        );
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  return { requestCrossClinicAccess, loading, error };
 }
 
 // --- useResendInvite ---

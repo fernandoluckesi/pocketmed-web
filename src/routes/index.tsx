@@ -11,6 +11,7 @@ import LegalPage from "../pages/Institutional/LegalPage";
 import SecurityPage from "../pages/Institutional/SecurityPage";
 import SupportPage from "../pages/Institutional/SupportPage";
 import DataDeletionPage from "../pages/Institutional/DataDeletionPage";
+import AccessConsent from "../pages/AccessConsent";
 import Verification from "../pages/Verification";
 import SignatureSimulator from "../pages/SignatureSimulator";
 import Dashboard from "../pages/Dashboard";
@@ -68,6 +69,14 @@ export default function AppRoutes() {
       <Route path="/exclusao-de-conta" element={<DataDeletionPage />} />
       <Route path="/delete-account" element={<DataDeletionPage />} />
       <Route path="/data-deletion" element={<DataDeletionPage />} />
+      {/* Public consent page opened from the single-use link emailed for a
+          cross-clinic record-sharing authorization request (patient Shadow
+          flow) — path matches the one built in
+          CrossClinicAccessService.requestCrossClinicAccess on the backend. */}
+      <Route
+        path="/acesso-prontuario/:requestId"
+        element={<AccessConsent />}
+      />
 
       {/* Protected routes */}
       <Route

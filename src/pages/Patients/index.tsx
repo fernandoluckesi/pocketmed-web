@@ -18,9 +18,12 @@ import {
   Clock,
   UserPlus,
   AlertTriangle,
+  Mail,
+  Send,
+  ArrowLeft,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { MainLayout } from "../../components/MainLayout";
@@ -28,6 +31,7 @@ import { CustomSelect } from "../../components/ui/CustomSelect";
 import { SearchWithViewToggle } from "../../components/ui/SearchWithViewToggle";
 import { Pagination } from "../../components/ui/Pagination";
 import { Button } from "../../components/ui/Button";
+import { maskCpf, isValidCpf, normalizeCpf } from "../../utils/cpf";
 import {
   useMyPatients,
   useSearchPatients,
@@ -36,6 +40,8 @@ import {
   useRequestAccess,
   useCreateShadowPatient,
   useResendInvite,
+  useLookupPatientByEmail,
+  useRequestCrossClinicAccess,
 } from "../../hooks/usePatients";
 import type { AccessRequest } from "../../hooks/usePatients";
 import { RequestAccessModal } from "../../components/RequestAccessModal";
@@ -550,7 +556,16 @@ const addPatientSchema = Yup.object().shape({
   phone: Yup.string().required("Telefone é obrigatório"),
   gender: Yup.string().required("Gênero é obrigatório"),
   birthDate: Yup.string().required("Data de nascimento é obrigatória"),
+  cpf: Yup.string().test(
+    "cpf-valid",
+    "CPF inválido",
+    (value) => !value || isValidCpf(value),
+  ),
 });
+
+/** Default purpose sent with a cross-clinic authorization request — this
+ * MVP doesn't collect a free-text purpose from the doctor in this modal. */
+const CROSS_CLINIC_DEFAULT_PURPOSE = "Acompanhamento médico";
 
 function AddPatientModal({
   isOpen,
@@ -565,6 +580,36 @@ function AddPatientModal({
     useCreateShadowPatient();
   const { user } = useAuth();
   const toast = useToast();
+  const navigate = useNavigate();
+
+  // Email-first step: check whether the patient already has a record (in
+  // this clinic or another) before rendering the full registration form —
+  // avoids creating a duplicate shadow record when the patient is simply new
+  // to this doctor, and routes that case into the cross-clinic authorization
+  // flow instead.
+  const [step, setStep] = useState<
+    "email" | "found" | "already-accessible" | "form"
+  >("email");
+  const [lookupEmail, setLookupEmail] = useState("");
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [foundPatient, setFoundPatient] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [requestSent, setRequestSent] = useState(false);
+  const [requestError, setRequestError] = useState<string | null>(null);
+  const { lookup, loading: lookupLoading } = useLookupPatientByEmail();
+  const { requestCrossClinicAccess, loading: requestLoading } =
+    useRequestCrossClinicAccess();
+
+  const resetFlowState = () => {
+    setStep("email");
+    setLookupEmail("");
+    setLookupError(null);
+    setFoundPatient(null);
+    setRequestSent(false);
+    setRequestError(null);
+  };
 
   const formik = useFormik({
     initialValues: {
@@ -573,6 +618,7 @@ function AddPatientModal({
       phone: "",
       gender: "",
       birthDate: "",
+      cpf: "",
     },
     validationSchema: addPatientSchema,
     onSubmit: async (values) => {
@@ -580,6 +626,7 @@ function AddPatientModal({
         await createPatient({
           ...values,
           phone: values.phone.replace(/\D/g, ""),
+          cpf: values.cpf ? normalizeCpf(values.cpf) : undefined,
           doctorCreatorId: user?.userId || "",
         });
       } catch {
@@ -604,6 +651,7 @@ function AddPatientModal({
           onSuccess?.();
           formik.resetForm();
           reset();
+          resetFlowState();
         },
         inviteEmailStatus === "failed" ? 3000 : 1500,
       );
@@ -617,6 +665,55 @@ function AddPatientModal({
     onClose();
     formik.resetForm();
     reset();
+    resetFlowState();
+  };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLookupError(null);
+    const trimmed = lookupEmail.trim();
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setLookupError("Informe um email válido.");
+      return;
+    }
+    try {
+      const result = await lookup(trimmed);
+      if (result.found && result.patientId && result.name) {
+        setFoundPatient({ id: result.patientId, name: result.name });
+        // Already-accessible (creator or active permission) must never fall
+        // through to the registration form below — for a shadow patient the
+        // backend has no duplicate-email guard against the same doctor
+        // re-registering them, so it would silently create a duplicate.
+        setStep(result.alreadyAccessible ? "already-accessible" : "found");
+      } else {
+        formik.setFieldValue("email", trimmed);
+        setStep("form");
+      }
+    } catch (err) {
+      setLookupError(
+        err instanceof Error
+          ? err.message
+          : "Erro ao buscar paciente. Tente novamente.",
+      );
+    }
+  };
+
+  const handleRequestAuthorization = async () => {
+    if (!foundPatient) return;
+    setRequestError(null);
+    try {
+      await requestCrossClinicAccess(
+        foundPatient.id,
+        CROSS_CLINIC_DEFAULT_PURPOSE,
+      );
+      setRequestSent(true);
+    } catch (err) {
+      setRequestError(
+        err instanceof Error
+          ? err.message
+          : "Erro ao enviar solicitação. Tente novamente.",
+      );
+    }
   };
 
   if (!isOpen) return null;
@@ -629,162 +726,343 @@ function AddPatientModal({
       className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
     >
       <div className="p-8 pb-4 flex justify-between items-start">
-          <div>
-            <div className="text-primary font-black text-[10px] uppercase tracking-widest mb-2">
-              Novo Cadastro
-            </div>
-            <h4 className="text-2xl font-display font-extrabold text-on-surface">
-              Adicionar Paciente
-            </h4>
+        <div>
+          <div className="text-primary font-black text-[10px] uppercase tracking-widest mb-2">
+            Novo Cadastro
           </div>
-          <button
-            onClick={handleClose}
-            className="text-on-surface-variant hover:text-on-surface p-2 bg-surface-container-low rounded-full transition-colors cursor-pointer"
-          >
-            <X size={20} />
-          </button>
+          <h4 className="text-2xl font-display font-extrabold text-on-surface">
+            Adicionar Paciente
+          </h4>
         </div>
+        <button
+          onClick={handleClose}
+          className="text-on-surface-variant hover:text-on-surface p-2 bg-surface-container-low rounded-full transition-colors cursor-pointer"
+        >
+          <X size={20} />
+        </button>
+      </div>
 
-        {/* Success State */}
-        {success ? (
-          <div className="p-8 pt-4 flex flex-col items-center justify-center gap-4 min-h-[200px]">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 15 }}
-            >
-              {inviteEmailStatus === "failed" ? (
-                <AlertTriangle className="w-16 h-16 text-amber-500" />
-              ) : (
-                <CheckCircle className="w-16 h-16 text-green-500" />
-              )}
-            </motion.div>
-            <div className="text-center">
-              <h5 className="text-xl font-bold text-on-surface font-display">
-                Paciente cadastrado!
-              </h5>
-              <p className="text-on-surface-variant mt-1">
-                <span className="font-semibold">{formik.values.name}</span> foi
-                adicionado(a) com sucesso.
-              </p>
-              {inviteEmailStatus === "failed" && (
-                <p className="text-amber-600 text-sm font-medium mt-3 max-w-xs">
-                  O e-mail de convite não pôde ser enviado agora. Você pode
-                  reenviar depois na lista de pacientes.
-                </p>
-              )}
-            </div>
-          </div>
-        ) : (
-          <form onSubmit={formik.handleSubmit} className="p-8 pt-0 space-y-5">
-            {/* Error message */}
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium"
-              >
-                {error}
-              </motion.div>
+      {/* Success State */}
+      {success ? (
+        <div className="p-8 pt-4 flex flex-col items-center justify-center gap-4 min-h-[200px]">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+          >
+            {inviteEmailStatus === "failed" ? (
+              <AlertTriangle className="w-16 h-16 text-amber-500" />
+            ) : (
+              <CheckCircle className="w-16 h-16 text-green-500" />
             )}
+          </motion.div>
+          <div className="text-center">
+            <h5 className="text-xl font-bold text-on-surface font-display">
+              Paciente cadastrado!
+            </h5>
+            <p className="text-on-surface-variant mt-1">
+              <span className="font-semibold">{formik.values.name}</span> foi
+              adicionado(a) com sucesso.
+            </p>
+            {inviteEmailStatus === "failed" && (
+              <p className="text-amber-600 text-sm font-medium mt-3 max-w-xs">
+                O e-mail de convite não pôde ser enviado agora. Você pode
+                reenviar depois na lista de pacientes.
+              </p>
+            )}
+          </div>
+        </div>
+      ) : step === "email" ? (
+        <form onSubmit={handleEmailSubmit} className="p-8 pt-0 space-y-5">
+          <p className="text-sm text-on-surface-variant -mt-2">
+            Informe o email do paciente para verificar se ele já possui cadastro
+            antes de iniciar um novo registro.
+          </p>
 
-            {/* Nome Completo */}
-            <div className="col-span-2 space-y-2">
-              <label className="text-xs font-bold text-on-surface-variant ml-1">
-                Nome Completo
-              </label>
-              <input
-                className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none ${
-                  formik.touched.name && formik.errors.name
-                    ? "border-red-300 bg-red-50/30"
-                    : "border-transparent"
-                }`}
-                type="text"
-                placeholder="Ana Maria Silveira"
-                {...formik.getFieldProps("name")}
-              />
-              {formik.touched.name && formik.errors.name && (
-                <p className="text-xs text-red-500 ml-1">
-                  {formik.errors.name}
-                </p>
-              )}
-            </div>
+          {lookupError && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium"
+            >
+              {lookupError}
+            </motion.div>
+          )}
 
-            {/* Email */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-on-surface-variant ml-1">
-                Email
-              </label>
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-on-surface-variant ml-1">
+              Email do Paciente
+            </label>
+            <div className="relative flex items-center">
+              <Mail className="absolute left-4 w-4 h-4 text-gray-400" />
               <input
-                className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none ${
-                  formik.touched.email && formik.errors.email
-                    ? "border-red-300 bg-red-50/30"
-                    : "border-transparent"
-                }`}
+                className="w-full bg-slate-50 border border-transparent rounded-xl pl-11 pr-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none"
                 type="email"
                 placeholder="anamaria@email.com"
-                {...formik.getFieldProps("email")}
+                value={lookupEmail}
+                onChange={(e) => setLookupEmail(e.target.value)}
+                autoFocus
               />
-              {formik.touched.email && formik.errors.email && (
+            </div>
+          </div>
+
+          <div className="pt-4 flex justify-end gap-3">
+            <Button
+              type="button"
+              onClick={handleClose}
+              variant="secondary"
+              size="md"
+              className="min-w-[200px]"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={lookupLoading}
+              loading={lookupLoading}
+              variant="primary"
+              size="md"
+              icon={!lookupLoading ? <Search className="w-5 h-5" /> : undefined}
+              className="min-w-[200px]"
+            >
+              {lookupLoading ? "Verificando..." : "Continuar"}
+            </Button>
+          </div>
+        </form>
+      ) : step === "found" ? (
+        <div className="p-8 pt-0 space-y-5">
+          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-full bg-primary/10 text-primary font-bold text-lg flex items-center justify-center shrink-0">
+                {foundPatient?.name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-primary uppercase tracking-widest">
+                  Paciente já cadastrado
+                </p>
+                <p className="font-bold text-on-surface">
+                  {foundPatient?.name}
+                </p>
+              </div>
+            </div>
+            <p className="text-sm text-blue-900/80 leading-relaxed">
+              Este paciente já possui prontuário no Hispora. Para visualizá-lo,
+              envie uma solicitação de autorização — o paciente confirma por um
+              link de uso único enviado ao e-mail cadastrado (ou diretamente
+              pelo aplicativo, se já tiver conta), e o acesso concedido é
+              temporário.
+            </p>
+          </div>
+
+          {requestError && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium"
+            >
+              {requestError}
+            </motion.div>
+          )}
+
+          {requestSent ? (
+            <div className="flex items-center gap-2 text-green-700 font-bold bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+              <CheckCircle className="w-5 h-5 shrink-0" />
+              Solicitação enviada! O paciente receberá um link para autorizar o
+              acesso.
+            </div>
+          ) : (
+            <div className="pt-2 flex justify-end gap-3">
+              <Button
+                type="button"
+                onClick={() => setStep("email")}
+                variant="secondary"
+                size="md"
+                className="min-w-[160px]"
+              >
+                Voltar
+              </Button>
+              <Button
+                type="button"
+                onClick={handleRequestAuthorization}
+                disabled={requestLoading}
+                loading={requestLoading}
+                variant="primary"
+                size="md"
+                icon={
+                  !requestLoading ? <Send className="w-5 h-5" /> : undefined
+                }
+                className="min-w-[200px]"
+              >
+                {requestLoading ? "Enviando..." : "Solicitar Autorização"}
+              </Button>
+            </div>
+          )}
+        </div>
+      ) : step === "already-accessible" ? (
+        <div className="p-8 pt-0 space-y-5">
+          <div className="bg-green-50 border border-green-100 rounded-2xl p-5 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-full bg-green-100 text-green-700 font-bold text-lg flex items-center justify-center shrink-0">
+                {foundPatient?.name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-green-700 uppercase tracking-widest">
+                  Você já tem acesso
+                </p>
+                <p className="font-bold text-on-surface">
+                  {foundPatient?.name}
+                </p>
+              </div>
+            </div>
+            <p className="text-sm text-green-900/80 leading-relaxed">
+              Você já tem acesso ao prontuário deste paciente — não é necessário
+              cadastrá-lo novamente.
+            </p>
+          </div>
+
+          <div className="pt-2 flex justify-end gap-3">
+            <Button
+              type="button"
+              onClick={() => setStep("email")}
+              variant="secondary"
+              size="md"
+              className="min-w-[160px]"
+            >
+              Voltar
+            </Button>
+            {foundPatient && (
+              <Button
+                type="button"
+                onClick={() => {
+                  const patientId = foundPatient.id;
+                  handleClose();
+                  navigate(`/patients/${patientId}`);
+                }}
+                variant="primary"
+                size="md"
+                className="min-w-[200px]"
+              >
+                Ver Prontuário
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <form onSubmit={formik.handleSubmit} className="p-8 pt-0 space-y-5">
+          <button
+            type="button"
+            onClick={() => setStep("email")}
+            className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors font-medium cursor-pointer border-none bg-transparent p-0 -mt-2"
+          >
+            <ArrowLeft size={20} />
+            <span>Voltar</span>
+          </button>
+
+          {/* Error message */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium"
+            >
+              {error}
+            </motion.div>
+          )}
+
+          {/* Nome Completo */}
+          <div className="col-span-2 space-y-2">
+            <label className="text-xs font-bold text-on-surface-variant ml-1">
+              Nome Completo
+            </label>
+            <input
+              className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none ${
+                formik.touched.name && formik.errors.name
+                  ? "border-red-300 bg-red-50/30"
+                  : "border-transparent"
+              }`}
+              type="text"
+              placeholder="Ana Maria Silveira"
+              {...formik.getFieldProps("name")}
+            />
+            {formik.touched.name && formik.errors.name && (
+              <p className="text-xs text-red-500 ml-1">{formik.errors.name}</p>
+            )}
+          </div>
+
+          {/* Email */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-on-surface-variant ml-1">
+              Email
+            </label>
+            <input
+              className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none ${
+                formik.touched.email && formik.errors.email
+                  ? "border-red-300 bg-red-50/30"
+                  : "border-transparent"
+              }`}
+              type="email"
+              placeholder="anamaria@email.com"
+              {...formik.getFieldProps("email")}
+            />
+            {formik.touched.email && formik.errors.email && (
+              <p className="text-xs text-red-500 ml-1">{formik.errors.email}</p>
+            )}
+          </div>
+
+          {/* Telefone + Gênero */}
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-on-surface-variant ml-1">
+                Telefone
+              </label>
+              <input
+                className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none ${
+                  formik.touched.phone && formik.errors.phone
+                    ? "border-red-300 bg-red-50/30"
+                    : "border-transparent"
+                }`}
+                type="tel"
+                placeholder="(11) 98877-6655"
+                value={formik.values.phone}
+                onChange={(e) =>
+                  formik.setFieldValue("phone", formatPhone(e.target.value))
+                }
+                onBlur={formik.handleBlur("phone")}
+              />
+              {formik.touched.phone && formik.errors.phone && (
                 <p className="text-xs text-red-500 ml-1">
-                  {formik.errors.email}
+                  {formik.errors.phone}
                 </p>
               )}
             </div>
 
-            {/* Telefone + Gênero */}
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-on-surface-variant ml-1">
-                  Telefone
-                </label>
-                <input
-                  className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none ${
-                    formik.touched.phone && formik.errors.phone
-                      ? "border-red-300 bg-red-50/30"
-                      : "border-transparent"
-                  }`}
-                  type="tel"
-                  placeholder="(11) 98877-6655"
-                  value={formik.values.phone}
-                  onChange={(e) =>
-                    formik.setFieldValue("phone", formatPhone(e.target.value))
-                  }
-                  onBlur={formik.handleBlur("phone")}
-                />
-                {formik.touched.phone && formik.errors.phone && (
-                  <p className="text-xs text-red-500 ml-1">
-                    {formik.errors.phone}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-on-surface-variant ml-1">
-                  Gênero
-                </label>
-                <CustomSelect
-                  name="gender"
-                  value={formik.values.gender}
-                  onChange={(v) => formik.setFieldValue("gender", v)}
-                  onBlur={() => formik.setFieldTouched("gender")}
-                  options={[
-                    { value: "female", label: "Feminino" },
-                    { value: "male", label: "Masculino" },
-                    { value: "other", label: "Outro" },
-                  ]}
-                  placeholder="Selecione"
-                  error={!!(formik.touched.gender && formik.errors.gender)}
-                />
-                {formik.touched.gender && formik.errors.gender && (
-                  <p className="text-xs text-red-500 ml-1">
-                    {formik.errors.gender}
-                  </p>
-                )}
-              </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-on-surface-variant ml-1">
+                Gênero
+              </label>
+              <CustomSelect
+                name="gender"
+                value={formik.values.gender}
+                onChange={(v) => formik.setFieldValue("gender", v)}
+                onBlur={() => formik.setFieldTouched("gender")}
+                options={[
+                  { value: "female", label: "Feminino" },
+                  { value: "male", label: "Masculino" },
+                  { value: "other", label: "Outro" },
+                ]}
+                placeholder="Selecione"
+                error={!!(formik.touched.gender && formik.errors.gender)}
+              />
+              {formik.touched.gender && formik.errors.gender && (
+                <p className="text-xs text-red-500 ml-1">
+                  {formik.errors.gender}
+                </p>
+              )}
             </div>
+          </div>
 
-            {/* Data de Nascimento */}
+          {/* Data de Nascimento + CPF */}
+          <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-xs font-bold text-on-surface-variant ml-1">
                 Data de Nascimento
@@ -805,39 +1083,63 @@ function AddPatientModal({
               )}
             </div>
 
-            {/* Buttons */}
-            <div className="pt-4 flex gap-4">
-              <Button
-                type="button"
-                onClick={handleClose}
-                disabled={loading}
-                variant="secondary"
-                size="lg"
-                fullWidth
-                className="rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 shadow-none cursor-pointer"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={loading}
-                loading={loading}
-                variant="primary"
-                size="lg"
-                fullWidth
-                icon={!loading ? <UserPlus className="w-5 h-5" /> : undefined}
-                className="rounded-full"
-              >
-                {loading ? "Cadastrando..." : "Confirmar Cadastro"}
-              </Button>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-on-surface-variant ml-1">
+                CPF <span className="font-normal normal-case">(opcional)</span>
+              </label>
+              <input
+                className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/40 focus:outline-none ${
+                  formik.touched.cpf && formik.errors.cpf
+                    ? "border-red-300 bg-red-50/30"
+                    : "border-transparent"
+                }`}
+                type="text"
+                inputMode="numeric"
+                placeholder="000.000.000-00"
+                value={formik.values.cpf}
+                onChange={(e) =>
+                  formik.setFieldValue("cpf", maskCpf(e.target.value))
+                }
+                onBlur={formik.handleBlur("cpf")}
+                maxLength={14}
+              />
+              {formik.touched.cpf && formik.errors.cpf && (
+                <p className="text-xs text-red-500 ml-1">{formik.errors.cpf}</p>
+              )}
             </div>
-          </form>
-        )}
+          </div>
+
+          {/* Buttons */}
+          <div className="pt-4 flex justify-end gap-3">
+            <Button
+              type="button"
+              onClick={handleClose}
+              disabled={loading}
+              variant="secondary"
+              size="md"
+              className="min-w-[200px]"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading}
+              loading={loading}
+              variant="primary"
+              size="md"
+              icon={!loading ? <UserPlus className="w-5 h-5" /> : undefined}
+              className="min-w-[200px]"
+            >
+              {loading ? "Cadastrando..." : "Confirmar Cadastro"}
+            </Button>
+          </div>
+        </form>
+      )}
 
       <div className="bg-blue-50/50 p-4 flex items-center justify-center gap-2 border-t border-outline-variant/5">
         <ShieldCheck size={16} className="text-primary fill-primary/10" />
         <p className="text-[10px] font-bold text-blue-700 tracking-wide uppercase">
-          Dados protegidos por criptografia Hispora
+          Dados protegidos por criptografia
         </p>
       </div>
     </motion.div>
@@ -1117,10 +1419,7 @@ function MyPatientsContent({
   const { resendInvite, resendingId } = useResendInvite();
   const toast = useToast();
 
-  const handleResendInvite = async (
-    e: React.MouseEvent,
-    patientId: string,
-  ) => {
+  const handleResendInvite = async (e: React.MouseEvent, patientId: string) => {
     e.preventDefault();
     e.stopPropagation();
     try {
@@ -1248,7 +1547,7 @@ function MyPatientsContent({
                   to={`/patients/${patient.id}`}
                   className="block bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all no-underline text-inherit"
                 >
-                  <div className="flex items-start gap-4 mb-5">
+                  <div className="flex items-start gap-4 mb-1">
                     <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
                       {patient.profileImage ? (
                         <img
@@ -1266,9 +1565,6 @@ function MyPatientsContent({
                       <h5 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors font-display truncate">
                         {patient.name}
                       </h5>
-                      <p className="text-gray-500 text-sm font-medium">
-                        {patient.email || patient.phone || ""}
-                      </p>
                     </div>
                     <div className="shrink-0">
                       <span
@@ -1290,6 +1586,9 @@ function MyPatientsContent({
                       </span>
                     </div>
                   </div>
+                  <p className="text-gray-500 text-sm font-medium truncate -mt-6 mb-5 pl-[4.5rem]">
+                    {patient.email || patient.phone || ""}
+                  </p>
 
                   <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
                     <span className="text-xs font-semibold text-gray-400">
