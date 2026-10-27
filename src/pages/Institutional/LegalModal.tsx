@@ -61,7 +61,7 @@ export function PrivacyPolicyContent() {
   return (
     <>
       <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">
-        Última atualização: Agosto de 2026
+        Última atualização: Outubro de 2026
       </p>
 
       <h3 className="text-lg font-bold text-slate-900 mt-4">1. Introdução</h3>
@@ -155,6 +155,54 @@ export function PrivacyPolicyContent() {
         obrigação legal (Art. 7, II), conforme aplicável.
       </p>
 
+      {/* Audit finding R1: the platform has a dependents feature (children
+          registered under a responsible adult), and LGPD art. 14 requires
+          specific parental consent for a minor's data — which the policy did
+          not address at all. */}
+      <h3 className="text-lg font-bold text-slate-900">
+        4.1. Dados de Crianças e Adolescentes
+      </h3>
+      <p>
+        O Hispora permite que um adulto responsável cadastre dependentes menores
+        de 18 anos, para acompanhar a saúde da família em um só lugar. O
+        tratamento desses dados observa o Art. 14 da LGPD e é sempre realizado
+        no melhor interesse da criança ou do adolescente.
+      </p>
+      <ul className="list-disc pl-6 space-y-1">
+        <li>
+          <strong>Quem pode cadastrar:</strong> somente o pai, a mãe ou o
+          responsável legal, que declara essa condição ao criar o dependente e
+          responde pela veracidade da informação;
+        </li>
+        <li>
+          <strong>Consentimento parental:</strong> o cadastro do dependente e a
+          autorização de acesso de profissionais de saúde ao prontuário dele são
+          atos praticados exclusivamente pelo responsável, que exerce os
+          direitos do titular menor;
+        </li>
+        <li>
+          <strong>Menor não cria conta própria:</strong> o dependente não possui
+          credenciais de acesso enquanto vinculado nessa condição;
+        </li>
+        <li>
+          <strong>Sem publicidade e sem perfilamento:</strong> dados de menores
+          não são usados para marketing, segmentação ou qualquer finalidade
+          alheia ao cuidado em saúde, e não são condicionados ao fornecimento de
+          informações além do necessário;
+        </li>
+        <li>
+          <strong>Exercício de direitos:</strong> o responsável pode solicitar
+          acesso, correção, portabilidade ou eliminação dos dados do dependente
+          pelos mesmos canais desta política, respeitadas as obrigações legais
+          de guarda de prontuário (ver seção 7).
+        </li>
+      </ul>
+      <p>
+        Ao atingir a maioridade, o titular pode solicitar a transferência do
+        próprio prontuário para uma conta individual, passando a exercer
+        diretamente os seus direitos.
+      </p>
+
       <h3 className="text-lg font-bold text-slate-900">
         5. Compartilhamento de Dados
       </h3>
@@ -167,11 +215,74 @@ export function PrivacyPolicyContent() {
       <ul className="list-disc pl-6 space-y-1">
         <li>Profissionais de saúde autorizados pelo paciente;</li>
         <li>
-          Provedores de infraestrutura (hospedagem, email) sob contrato de
-          confidencialidade;
+          Operadores (subprocessadores) que executam o serviço em nosso nome,
+          listados na seção 5.1;
         </li>
         <li>Autoridades competentes quando exigido por lei.</li>
       </ul>
+
+      {/* Audit finding 16.2: the policy referred to "provedores de
+          infraestrutura" generically, without naming them and without
+          disclosing international transfer (LGPD art. 33), which does occur
+          — the whole stack is hosted outside Brazil. Naming subprocessors is
+          what lets a data subject actually assess where their health data
+          goes. Keep this table in sync with the deployed stack. */}
+      <h3 className="text-lg font-bold text-slate-900">
+        5.1. Operadores e Subprocessadores
+      </h3>
+      <p>
+        Contamos com prestadores de serviço que tratam dados pessoais em nosso
+        nome, sob instruções e obrigações contratuais de confidencialidade e
+        segurança. São eles:
+      </p>
+      <ul className="list-disc pl-6 space-y-1">
+        <li>
+          <strong>Railway</strong> (Estados Unidos) — hospedagem da aplicação e
+          do banco de dados;
+        </li>
+        <li>
+          <strong>Cloudflare R2</strong> (Estados Unidos) — armazenamento de
+          documentos, exames e imagens de perfil;
+        </li>
+        <li>
+          <strong>Resend</strong> (Estados Unidos) — envio de e-mails
+          transacionais (verificação de conta, redefinição de senha, resumo de
+          consulta);
+        </li>
+        <li>
+          <strong>Mercado Pago</strong> (Brasil) — processamento de pagamentos
+          das assinaturas de clínicas. Dados de cartão são tratados diretamente
+          pelo provedor; o Hispora não armazena dados de cartão;
+        </li>
+        <li>
+          <strong>Expo / Google Firebase Cloud Messaging</strong> (Estados
+          Unidos) — entrega de notificações push no aplicativo.
+        </li>
+      </ul>
+      <p>
+        Esses operadores recebem apenas os dados necessários à sua função. Em
+        especial, o provedor de pagamentos não tem acesso a dados de saúde, e o
+        provedor de e-mail recebe somente o endereço do destinatário e o
+        conteúdo da mensagem enviada.
+      </p>
+
+      <h3 className="text-lg font-bold text-slate-900">
+        5.2. Transferência Internacional de Dados
+      </h3>
+      <p>
+        Conforme indicado acima, parte da nossa infraestrutura está localizada
+        fora do Brasil, principalmente nos Estados Unidos. Isso significa que
+        seus dados pessoais e de saúde podem ser transferidos e armazenados em
+        outro país.
+      </p>
+      <p>
+        Essas transferências são realizadas nos termos do Art. 33 da LGPD, com
+        fundamento na execução do contrato firmado com você e no cumprimento das
+        finalidades descritas nesta política, e estão amparadas por cláusulas
+        contratuais de proteção de dados firmadas com cada operador, que os
+        obrigam a adotar medidas de segurança equivalentes às exigidas pela
+        legislação brasileira.
+      </p>
 
       {/* "e em repouso" removed: field-level encryption was rolled back (see
           archives/docs/security/features-secutiry.md, item 5). The remaining
@@ -189,12 +300,67 @@ export function PrivacyPolicyContent() {
         anomalias e políticas de retenção conforme a legislação vigente.
       </p>
 
+      {/* Audit finding R3: CFM Res. 1.821/2007 requires keeping the medical
+          record for 20 years, which collides with the LGPD right to erasure.
+          The policy mentioned both but never reconciled them — so a user
+          asking "will my data be deleted or not?" had no clear answer. This
+          section states the rule explicitly, including WHAT survives a
+          deletion request and why. */}
       <h3 className="text-lg font-bold text-slate-900">7. Retenção de Dados</h3>
       <p>
-        Dados de prontuário médico são mantidos pelo prazo mínimo de 20 anos
-        após o último registro, conforme Resolução CFM 1.821/2007. Dados de
-        conta podem ser excluídos mediante solicitação do titular, respeitando
-        obrigações legais de retenção.
+        Dados de prontuário médico são mantidos pelo prazo mínimo de 20 anos a
+        contar do último registro, conforme a Resolução CFM 1.821/2007. Esse
+        prazo é uma obrigação legal do profissional e da instituição de saúde, e
+        não depende do nosso ou do seu consentimento.
+      </p>
+      <p>
+        <strong>
+          Como isso conversa com o seu direito de eliminação (LGPD Art. 18, VI)
+        </strong>
+      </p>
+      <p>
+        O direito de eliminação não é absoluto: o próprio Art. 16 da LGPD
+        autoriza a conservação de dados para cumprimento de obrigação legal ou
+        regulatória. Na prática, ao solicitar a exclusão da sua conta:
+      </p>
+      <ul className="list-disc pl-6 space-y-1">
+        <li>
+          <strong>É eliminado:</strong> seu acesso à plataforma, credenciais,
+          dados de contato usados para comunicação, preferências de notificação
+          e foto de perfil;
+        </li>
+        <li>
+          <strong>É retido pelo prazo legal:</strong> os documentos clínicos
+          emitidos por profissionais de saúde (receitas, laudos, atestados e
+          pedidos de exame), por constituírem prontuário sujeito à guarda
+          obrigatória, junto com os dados que identificam você como titular
+          desse prontuário (nome, CPF, data de nascimento) — sem eles o
+          documento não identificaria o paciente e perderia a validade que
+          justifica a própria guarda;
+        </li>
+        <li>
+          <strong>Também é eliminado:</strong> dados de agendamento e
+          acompanhamento que não compõem o documento emitido (consultas
+          marcadas, medicamentos em uso, exames registrados, alergias, doenças,
+          vacinas e cirurgias informados no perfil);
+        </li>
+        <li>
+          <strong>O que muda no dado retido:</strong> ele deixa de ser acessível
+          pela plataforma como um perfil ativo e passa a ser mantido
+          exclusivamente para cumprimento da obrigação de guarda, não sendo
+          utilizado para nenhuma outra finalidade;
+        </li>
+        <li>
+          <strong>Ao fim do prazo:</strong> cessada a obrigação legal, os dados
+          são eliminados.
+        </li>
+      </ul>
+      <p>
+        Essa distinção existe para proteger você: o prontuário é prova do
+        cuidado recebido e pode ser necessário no futuro, inclusive para
+        continuidade de tratamento ou em questões judiciais. Se você precisar de
+        uma cópia dos seus dados antes da exclusão, pode solicitar a
+        portabilidade pelos canais da seção 10.
       </p>
 
       <h3 className="text-lg font-bold text-slate-900">
@@ -248,7 +414,9 @@ export function PrivacyPolicyContent() {
       )}
 
       {/* Encarregado/DPO — LGPD art. 41 requires publicly disclosing the
-          identity and contact. Separate from the support channel above. */}
+          identity and contact. Separate from the general support channel
+          above on purpose: this is the formal route for data-subject
+          requests and for contact by the ANPD. */}
       {hasDpoInfo && (
         <>
           <h3 className="text-lg font-bold text-slate-900">
@@ -256,9 +424,20 @@ export function PrivacyPolicyContent() {
             Dados (DPO)
           </h3>
           <p>
-            Em atendimento ao art. 41 da LGPD, o encarregado pelo tratamento de
+            Em atendimento ao Art. 41 da LGPD, o encarregado pelo tratamento de
             dados pessoais é <strong>{COMPANY.dpoName}</strong>, que pode ser
-            contactado pelo email <strong>{COMPANY.dpoEmail}</strong>.
+            contactado pelo e-mail <strong>{COMPANY.dpoEmail}</strong>.
+          </p>
+          <p>
+            O encarregado é o canal formal para: exercer os direitos previstos
+            nesta política, apresentar reclamações sobre o tratamento dos seus
+            dados, esclarecer dúvidas e receber comunicações da Autoridade
+            Nacional de Proteção de Dados (ANPD).
+          </p>
+          <p>
+            Responderemos às solicitações no prazo legal. Caso você não fique
+            satisfeito com a resposta, pode apresentar reclamação diretamente à
+            ANPD.
           </p>
         </>
       )}
@@ -270,7 +449,7 @@ export function TermsOfServiceContent() {
   return (
     <>
       <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">
-        Última atualização: Agosto de 2026
+        Última atualização: Outubro de 2026
       </p>
 
       <h3 className="text-lg font-bold text-slate-900 mt-4">
@@ -359,13 +538,137 @@ export function TermsOfServiceContent() {
         clínicas são de responsabilidade exclusiva dos profissionais de saúde.
       </p>
 
+      {/* Audit finding R2: the previous clauses limited liability generically
+          but never stated that the clinical CONTENT belongs to the
+          professional and that Hispora is a technical intermediary. For an
+          electronic health record that is a standard clause, and its absence
+          left room for the platform to be named in a malpractice claim. */}
       <h3 className="text-lg font-bold text-slate-900">
-        10. Cancelamento e Exclusão
+        9.1. Responsabilidade pelo Conteúdo Clínico
       </h3>
       <p>
-        Você pode cancelar sua conta a qualquer momento. Ao cancelar, seus dados
-        serão tratados conforme nossa Política de Privacidade e obrigações
-        legais de retenção.
+        O Hispora é um meio técnico para registro, organização e transmissão de
+        informações de saúde. Não praticamos atos médicos, não revisamos nem
+        validamos o conteúdo clínico inserido na plataforma.
+      </p>
+      <ul className="list-disc pl-6 space-y-1">
+        <li>
+          <strong>Autoria e responsabilidade:</strong> todo conteúdo clínico —
+          diagnósticos, prescrições, posologias, laudos, atestados, pedidos de
+          exame e orientações — é de autoria e responsabilidade exclusiva do
+          profissional de saúde que o registrou, no exercício da sua autonomia
+          profissional e sujeito ao respectivo conselho de classe;
+        </li>
+        <li>
+          <strong>Conferência pelo profissional:</strong> cabe ao profissional
+          verificar a exatidão do que registra antes de emitir ou compartilhar o
+          documento, inclusive quando o sistema oferecer sugestões,
+          preenchimento automático, catálogos de medicamentos ou exames, ou
+          extração de dados de arquivos anexados — tais recursos são auxílios à
+          digitação e não constituem recomendação clínica;
+        </li>
+        <li>
+          <strong>Dados informados pelo paciente:</strong> informações
+          preenchidas pelo próprio paciente (alergias, medicamentos em uso,
+          histórico) são declaratórias e não substituem avaliação profissional;
+        </li>
+        <li>
+          <strong>Ferramenta, não parecer:</strong> indicadores, relatórios e
+          painéis disponibilizados pela plataforma têm finalidade organizacional
+          e administrativa, não configurando parecer clínico, diagnóstico ou
+          recomendação de tratamento.
+        </li>
+      </ul>
+      <p>
+        O Hispora não responde por erro, omissão, inadequação ou desatualização
+        do conteúdo clínico registrado por profissionais de saúde, nem por
+        decisões tomadas com base nele. Em caso de emergência, procure
+        atendimento médico presencial ou acione o serviço de urgência.
+      </p>
+
+      {/* Audit finding 4: recurring billing is live (Mercado Pago, monthly
+          clinic subscriptions) and there was no refund policy anywhere, nor
+          any mention of the CDC art. 49 right of withdrawal — which applies
+          by law regardless of being written down, so omitting it was itself a
+          breach of the duty to inform. Standard market terms for a monthly
+          SaaS: 7-day withdrawal with full refund, cancel-anytime with access
+          until the end of the paid period, no pro-rata refund after the
+          withdrawal window. */}
+      <h3 className="text-lg font-bold text-slate-900">
+        10. Assinaturas, Pagamento e Reembolso
+      </h3>
+      <p>
+        O uso do Hispora é <strong>gratuito para pacientes</strong>. As
+        assinaturas pagas aplicam-se a clínicas e profissionais, em planos de
+        cobrança <strong>mensal recorrente</strong>, conforme os valores
+        vigentes na página de planos.
+      </p>
+
+      <p>
+        <strong>10.1. Direito de arrependimento (7 dias)</strong>
+      </p>
+      <p>
+        Nos termos do Art. 49 do Código de Defesa do Consumidor, você pode
+        desistir da contratação no prazo de{" "}
+        <strong>7 (sete) dias corridos</strong> contados da data da contratação,
+        sem necessidade de justificativa e{" "}
+        <strong>com devolução integral</strong> do valor pago. Basta solicitar
+        pelo canal de contato indicado ao final destes termos.
+      </p>
+
+      <p>
+        <strong>10.2. Cancelamento</strong>
+      </p>
+      <ul className="list-disc pl-6 space-y-1">
+        <li>
+          Você pode cancelar a assinatura a qualquer momento, sem multa e sem
+          período mínimo de permanência;
+        </li>
+        <li>
+          O cancelamento interrompe as cobranças futuras e o acesso aos recursos
+          pagos permanece ativo até o fim do período já pago;
+        </li>
+        <li>
+          Após o prazo de arrependimento, não há reembolso proporcional de dias
+          não utilizados do mês em curso, uma vez que o serviço foi
+          disponibilizado durante todo o período contratado.
+        </li>
+      </ul>
+
+      <p>
+        <strong>10.3. Reembolso em outras hipóteses</strong>
+      </p>
+      <p>
+        Devolveremos integralmente os valores pagos quando houver{" "}
+        <strong>cobrança duplicada</strong>, <strong>cobrança indevida</strong>{" "}
+        (por exemplo, após o cancelamento) ou{" "}
+        <strong>indisponibilidade prolongada</strong> do serviço atribuível ao
+        Hispora. Solicitações são analisadas em até 10 dias úteis e, quando
+        procedentes, o estorno é processado pelo mesmo meio de pagamento
+        utilizado, observados os prazos da instituição financeira ou do provedor
+        de pagamento.
+      </p>
+
+      <p>
+        <strong>10.4. Inadimplência e reajuste</strong>
+      </p>
+      <p>
+        O não pagamento pode levar à suspensão dos recursos pagos, mediante
+        aviso prévio. Dados de prontuário não são excluídos em razão de
+        inadimplência, observadas as obrigações legais de guarda. Eventuais
+        reajustes de preço serão comunicados com pelo menos 30 dias de
+        antecedência, e você poderá cancelar sem ônus antes da vigência do novo
+        valor.
+      </p>
+
+      <p>
+        <strong>10.5. Encerramento da conta</strong>
+      </p>
+      <p>
+        Você pode encerrar sua conta a qualquer momento. Ao encerrar, seus dados
+        serão tratados conforme nossa Política de Privacidade e as obrigações
+        legais de retenção aplicáveis ao prontuário (ver seção 7 da Política de
+        Privacidade).
       </p>
 
       <h3 className="text-lg font-bold text-slate-900">
@@ -391,7 +694,7 @@ export function SecurityStandardsContent() {
   return (
     <>
       <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">
-        Última atualização: Agosto de 2026
+        Última atualização: Outubro de 2026
       </p>
 
       <h3 className="text-lg font-bold text-slate-900 mt-4">1. Visão Geral</h3>

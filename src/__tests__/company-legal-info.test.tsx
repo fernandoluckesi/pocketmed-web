@@ -115,18 +115,29 @@ describe("Company legal information (audit item 15)", () => {
     });
   });
 
-  describe("DPO section — still pending (LGPD art. 41)", () => {
-    it("has no DPO appointed yet", () => {
-      // When an "encarregado" is appointed, this test fails on purpose and
-      // points at the assertions to flip — exactly how the company-data
-      // tests behaved before the CNPJ arrived.
-      expect(hasDpoInfo).toBe(false);
+  describe("DPO / encarregado (LGPD art. 41)", () => {
+    it("has an encarregado appointed with a contact", () => {
+      expect(hasDpoInfo).toBe(true);
+      expect(COMPANY.dpoName).toBeTruthy();
+      expect(COMPANY.dpoEmail).toBeTruthy();
     });
 
-    it("omits the section entirely rather than showing empty fields", () => {
-      // The property that makes the empty state safe: no orphan label.
-      render(<PrivacyPolicyContent />);
-      expect(screen.queryByText(/Encarregado pelo Tratamento/i)).toBeNull();
+    it("uses an address on the company's own domain", () => {
+      // A public-domain mailbox (e.g. @yahoo.com) as the formal legal
+      // channel for a health platform reads as institutionally fragile, and
+      // the ANPD may contact this address directly.
+      expect(COMPANY.dpoEmail).toMatch(/@hispora\.com\.br$/);
+    });
+
+    it("publishes the section with name, contact and the ANPD route", () => {
+      const { container } = render(<PrivacyPolicyContent />);
+      const text = container.textContent ?? "";
+
+      expect(text).toContain("Encarregado pelo Tratamento");
+      expect(text).toContain(COMPANY.dpoName);
+      expect(text).toContain(COMPANY.dpoEmail);
+      // The data subject must know they can escalate to the authority.
+      expect(text).toContain("ANPD");
     });
   });
 

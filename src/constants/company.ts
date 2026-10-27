@@ -67,11 +67,23 @@ export const COMPANY: CompanyLegalInfo = {
   cnpj: "69.831.823/0001-65",
   address: "Rua Pais Leme, 215 - Pinheiros, São Paulo/SP - CEP 05424-150",
   contactEmail: "hispora.suporte@yahoo.com",
-  // Still pending: LGPD art. 41 requires publicly naming an "encarregado"
-  // (DPO). Left empty on purpose — the Privacy Policy omits the section
-  // entirely until both fields are filled (see audit item 16.1).
-  dpoName: "",
-  dpoEmail: "",
+
+  // LGPD art. 41: the "encarregado" (DPO) must be publicly identified.
+  //
+  // `dpoName` is intentionally the company itself rather than a person's
+  // name. The ANPD accepts a legal entity or a sector as the appointed
+  // encarregado (Guia Orientativo on the role, 2021), and for a company this
+  // size that is the sounder choice: naming an individual publishes a
+  // personal identity that then has to be kept in sync with staff changes —
+  // a stale DPO name is itself a compliance defect.
+  //
+  // ⚠️ ACTION REQUIRED: `dpoEmail` must be created as a real, monitored
+  // mailbox on the hispora.com.br domain (already verified in Resend) before
+  // this goes to production. The address is published in the Privacy Policy
+  // as the official channel for data-subject requests, so it cannot bounce.
+  // If you prefer to appoint a named individual instead, replace `dpoName`.
+  dpoName: "Hispora Clinical Systems — Encarregado de Proteção de Dados",
+  dpoEmail: "dpo@hispora.com.br",
 };
 
 /** True once the company can be legally identified by a user. Lets consumers
