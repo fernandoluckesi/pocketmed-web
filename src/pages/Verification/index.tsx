@@ -155,7 +155,9 @@ export default function Verification() {
     if (failed.length === 0) {
       toast.success("Documentos enviados para análise.");
     } else {
-      toast.error("Alguns documentos não puderam ser enviados. Tente novamente.");
+      toast.error(
+        "Alguns documentos não puderam ser enviados. Tente novamente.",
+      );
     }
 
     // Re-sync with the server so the UI reflects what was actually saved.
@@ -185,7 +187,7 @@ export default function Verification() {
             <ShieldAlert className="w-7 h-7 text-primary" />
           </div>
           <div>
-            <h2 className="text-3xl font-display font-extrabold text-slate-900 tracking-tight">
+            <h2 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight">
               Verificação Profissional
             </h2>
             <p className="text-slate-500 text-sm">
@@ -416,7 +418,8 @@ export default function Verification() {
                   </button>
                   {pendingCount === 0 && (
                     <p className="text-xs text-slate-400 text-center">
-                      Selecione ao menos um documento acima para habilitar o envio.
+                      Selecione ao menos um documento acima para habilitar o
+                      envio.
                     </p>
                   )}
                 </div>

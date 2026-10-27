@@ -165,7 +165,7 @@ export const DashboardContent = () => {
           <p className="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">
             Atestados Emitidos
           </p>
-          <h3 className="text-3xl font-bold text-on-surface font-manrope">
+          <h3 className="text-2xl font-bold text-on-surface font-manrope">
             {certificatesCount ?? "—"}
           </h3>
         </div>
@@ -191,7 +191,7 @@ export const DashboardContent = () => {
             </div>
 
             <div className="bg-white rounded-xl p-4 mb-6">
-              <h3 className="text-3xl font-bold text-on-surface font-manrope">
+              <h3 className="text-2xl font-bold text-on-surface font-manrope">
                 {totalToday}
               </h3>
               <div className="h-1 bg-slate-100 rounded-full overflow-hidden mt-4">

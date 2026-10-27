@@ -132,7 +132,7 @@ function StatsGrid({ overview }: { overview: Overview | null }) {
             </span>
           </div>
           <p className="text-slate-900 font-display flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold">{card.value}</span>
+            <span className="text-2xl font-extrabold">{card.value}</span>
             <span className="text-sm font-medium text-slate-500">
               {card.value === 1 ? card.singular : card.plural}
             </span>
@@ -806,7 +806,7 @@ export default function ClinicalManagement() {
       >
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-display font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight">
               Gestão da Clínica
             </h1>
             <p className="text-slate-500 font-medium mt-1">

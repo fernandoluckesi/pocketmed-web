@@ -102,7 +102,7 @@ function ProfileHero({ doctor }: { doctor: DoctorProfileData }) {
           />
         ) : (
           <div className="w-32 h-32 rounded-[1.75rem] border-4 border-white bg-primary/10 flex items-center justify-center">
-            <span className="text-4xl font-bold text-primary">
+            <span className="text-2xl font-bold text-primary">
               {doctor.name.charAt(0).toUpperCase()}
             </span>
           </div>
@@ -123,7 +123,7 @@ function ProfileHero({ doctor }: { doctor: DoctorProfileData }) {
             </span>
           )}
         </div>
-        <h1 className="text-4xl font-display font-extrabold tracking-tight text-on-surface">
+        <h1 className="text-2xl font-display font-extrabold tracking-tight text-on-surface">
           {doctor.name}
         </h1>
         <div className="flex flex-wrap gap-6 mt-2">

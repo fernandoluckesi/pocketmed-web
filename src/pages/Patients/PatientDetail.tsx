@@ -238,7 +238,7 @@ function PatientHeroFromAPI({
 
       <div className="flex-grow pt-2">
         <div className="flex items-center gap-4 mb-2">
-          <h1 className="font-display text-4xl font-extrabold tracking-tight text-slate-900">
+          <h1 className="font-display text-2xl font-extrabold tracking-tight text-slate-900">
             {patient.name}
           </h1>
           {patient.isShadow && (
@@ -861,9 +861,7 @@ function MedicationDetailView({
               Fim
             </p>
             <p className="text-sm font-medium text-slate-800">
-              {medication.endDate
-                ? formatDateOnly(medication.endDate)
-                : "—"}
+              {medication.endDate ? formatDateOnly(medication.endDate) : "—"}
             </p>
           </div>
         </div>
@@ -1006,8 +1004,7 @@ function ExamsSection({
                     {group.description}
                   </p>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    {formatDateOnly(group.date)} •{" "}
-                    {group.exams.length} exame
+                    {formatDateOnly(group.date)} • {group.exams.length} exame
                     {group.exams.length > 1 ? "s" : ""}
                   </p>
                 </div>
@@ -1323,9 +1320,7 @@ function ExamDetailView({
               Data
             </p>
             <p className="text-sm font-medium text-slate-800">
-              {exam.date
-                ? formatDateOnly(exam.date)
-                : "—"}
+              {exam.date ? formatDateOnly(exam.date) : "—"}
             </p>
           </div>
         </div>
@@ -1667,8 +1662,8 @@ function ExamRequestForm({
         )}
         <p className="text-xs text-slate-400 mt-2">
           Se anexar um arquivo, confira se os campos abaixo conferem com ele
-          antes de enviar. Prefira gerar o pedido pela Hispora (sem anexo) —
-          o PDF já sai pronto para assinatura digital.
+          antes de enviar. Prefira gerar o pedido pela Hispora (sem anexo) — o
+          PDF já sai pronto para assinatura digital.
         </p>
       </div>
 
@@ -1993,8 +1988,8 @@ function PrescriptionForm({
         )}
         <p className="text-xs text-slate-400 mt-2">
           Se anexar um arquivo, confira se os campos abaixo conferem com ele
-          antes de enviar. Prefira gerar a receita pela Hispora (sem anexo) —
-          o PDF já sai pronto para assinatura digital.
+          antes de enviar. Prefira gerar a receita pela Hispora (sem anexo) — o
+          PDF já sai pronto para assinatura digital.
         </p>
       </div>
 
@@ -2710,7 +2705,9 @@ function ConsultaForm({
         );
         toast.success("Consulta e medicamento(s) salvos com sucesso!");
       } else if (mode === "request-exam") {
-        setExamRequestItems(validExamNames.map((name) => ({ name: name.trim() })));
+        setExamRequestItems(
+          validExamNames.map((name) => ({ name: name.trim() })),
+        );
         toast.success("Consulta e exame(s) salvos com sucesso!");
       } else {
         onSaved();
@@ -2901,10 +2898,9 @@ function ConsultaForm({
                   </p>
                 )}
                 <p className="text-xs text-slate-400 mt-2">
-                  Se anexar um arquivo, confira se os campos abaixo conferem
-                  com ele antes de enviar. Prefira gerar a receita pela
-                  Hispora (sem anexo) — o PDF já sai pronto para assinatura
-                  digital.
+                  Se anexar um arquivo, confira se os campos abaixo conferem com
+                  ele antes de enviar. Prefira gerar a receita pela Hispora (sem
+                  anexo) — o PDF já sai pronto para assinatura digital.
                 </p>
               </div>
 
@@ -2912,7 +2908,9 @@ function ConsultaForm({
                 medications={medications}
                 onChange={handleMedicationChange}
                 onTimeChange={handleMedTimeChange}
-                onAdd={() => setMedications([...medications, emptyMedication()])}
+                onAdd={() =>
+                  setMedications([...medications, emptyMedication()])
+                }
                 medicationSearch={medicationSearch}
                 idPrefix="consulta"
                 errors={medErrors}
@@ -2964,10 +2962,9 @@ function ConsultaForm({
                   </p>
                 )}
                 <p className="text-xs text-slate-400 mt-2">
-                  Se anexar um arquivo, confira se os campos abaixo conferem
-                  com ele antes de enviar. Prefira gerar o pedido pela
-                  Hispora (sem anexo) — o PDF já sai pronto para assinatura
-                  digital.
+                  Se anexar um arquivo, confira se os campos abaixo conferem com
+                  ele antes de enviar. Prefira gerar o pedido pela Hispora (sem
+                  anexo) — o PDF já sai pronto para assinatura digital.
                 </p>
               </div>
 
@@ -3430,7 +3427,9 @@ function EditConsultaForm({
       }
 
       if (mode === "request-exam") {
-        setExamRequestItems(validExamNames.map((name) => ({ name: name.trim() })));
+        setExamRequestItems(
+          validExamNames.map((name) => ({ name: name.trim() })),
+        );
         toast.success("Consulta e exame(s) salvos com sucesso!");
         return;
       }
@@ -3586,10 +3585,9 @@ function EditConsultaForm({
                   </p>
                 )}
                 <p className="text-xs text-slate-400 mt-2">
-                  Se anexar um arquivo, confira se os campos abaixo conferem
-                  com ele antes de enviar. Prefira gerar a receita pela
-                  Hispora (sem anexo) — o PDF já sai pronto para assinatura
-                  digital.
+                  Se anexar um arquivo, confira se os campos abaixo conferem com
+                  ele antes de enviar. Prefira gerar a receita pela Hispora (sem
+                  anexo) — o PDF já sai pronto para assinatura digital.
                 </p>
               </div>
 
@@ -3597,7 +3595,9 @@ function EditConsultaForm({
                 medications={medications}
                 onChange={handleMedicationChange}
                 onTimeChange={handleMedTimeChange}
-                onAdd={() => setMedications([...medications, emptyMedication()])}
+                onAdd={() =>
+                  setMedications([...medications, emptyMedication()])
+                }
                 medicationSearch={medicationSearch}
                 idPrefix="edit-consulta"
                 errors={medErrors}
@@ -3649,10 +3649,9 @@ function EditConsultaForm({
                   </p>
                 )}
                 <p className="text-xs text-slate-400 mt-2">
-                  Se anexar um arquivo, confira se os campos abaixo conferem
-                  com ele antes de enviar. Prefira gerar o pedido pela
-                  Hispora (sem anexo) — o PDF já sai pronto para assinatura
-                  digital.
+                  Se anexar um arquivo, confira se os campos abaixo conferem com
+                  ele antes de enviar. Prefira gerar o pedido pela Hispora (sem
+                  anexo) — o PDF já sai pronto para assinatura digital.
                 </p>
               </div>
 
@@ -4874,9 +4873,7 @@ function SurgeriesSection({ patientId }: { patientId: string }) {
                 </h4>
                 <p className="text-xs text-slate-500 mt-1 truncate">
                   {[
-                    surgery.date
-                      ? formatDateOnly(surgery.date)
-                      : null,
+                    surgery.date ? formatDateOnly(surgery.date) : null,
                     surgery.hospitalOrClinic,
                   ]
                     .filter(Boolean)
@@ -5429,11 +5426,7 @@ function SurgeryDetailView({
 
         <SurgeryDetailField
           label="Data da Cirurgia"
-          value={
-            surgery.date
-              ? formatDateOnly(surgery.date)
-              : null
-          }
+          value={surgery.date ? formatDateOnly(surgery.date) : null}
         />
         <SurgeryDetailField label="Indicação" value={surgery.indication} />
         <SurgeryDetailField
@@ -6609,8 +6602,7 @@ function VaccinesSection({
               </div>
               {vaccine.nextDoseDate && (
                 <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-primary shrink-0">
-                  Próx:{" "}
-                  {formatDateOnly(vaccine.nextDoseDate)}
+                  Próx: {formatDateOnly(vaccine.nextDoseDate)}
                 </span>
               )}
             </div>
@@ -6924,9 +6916,7 @@ function VaccineDetailView({
         <VaccineDetailField
           label="Próxima Dose"
           value={
-            vaccine.nextDoseDate
-              ? formatDateOnly(vaccine.nextDoseDate)
-              : null
+            vaccine.nextDoseDate ? formatDateOnly(vaccine.nextDoseDate) : null
           }
         />
         <VaccineDetailField label="Laboratório" value={vaccine.laboratory} />

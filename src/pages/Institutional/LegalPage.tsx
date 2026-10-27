@@ -2,10 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { InstitutionalHeader } from "./InstitutionalHeader";
 import { InstitutionalFooter } from "./InstitutionalFooter";
-import {
-  TermsOfServiceContent,
-  PrivacyPolicyContent,
-} from "./LegalModal";
+import { TermsOfServiceContent, PrivacyPolicyContent } from "./LegalModal";
 
 /**
  * Single, responsive page showing both the Terms of Use and the Privacy Policy.
@@ -26,7 +23,7 @@ export default function LegalPage() {
           Voltar ao início
         </Link>
 
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">
+        <h1 className="text-2xl sm:text-2xl font-extrabold text-slate-900 mb-2">
           Termos de Uso e Política de Privacidade
         </h1>
         <p className="text-sm text-slate-500 mb-8 sm:mb-10">

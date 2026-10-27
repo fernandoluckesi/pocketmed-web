@@ -59,7 +59,7 @@ export default function Login() {
           referrerPolicy="no-referrer"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent flex flex-col justify-end p-16 z-10">
-          <h2 className="text-4xl font-display font-extrabold text-white tracking-tight leading-tight mb-4">
+          <h2 className="text-2xl font-display font-extrabold text-white tracking-tight leading-tight mb-4">
             Precisão Clínica Digital.
           </h2>
           <p className="text-lg text-slate-300 max-w-md leading-relaxed">
@@ -79,7 +79,7 @@ export default function Login() {
               <img src={logoHorizontal} alt="Hispora" className="h-28 w-auto" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-3xl font-display font-bold text-slate-900 tracking-tight">
+              <h2 className="text-2xl font-display font-bold text-slate-900 tracking-tight">
                 Bem-vindo de volta
               </h2>
               <p className="text-slate-500 text-base">

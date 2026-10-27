@@ -98,7 +98,7 @@ export default function PlansCompare() {
         </div>
 
         <div className="max-w-2xl">
-          <h1 className="text-3xl font-display font-extrabold text-slate-900 tracking-tight">
+          <h1 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight">
             Comparar planos
           </h1>
           <p className="text-slate-500 font-medium mt-2">

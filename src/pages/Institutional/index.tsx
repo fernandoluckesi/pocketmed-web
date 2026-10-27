@@ -22,7 +22,7 @@ export default function InstitutionalHome() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-indigo-50/30" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24  text-center">
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-tight mb-4 sm:mb-6">
+          <h1 className="text-2xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-tight mb-4 sm:mb-6">
             Seu prontuário médico,
             <br />
             <span className="text-primary">sempre com você</span>
@@ -56,7 +56,7 @@ export default function InstitutionalHome() {
       {/* O que é o Hispora */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-14 sm:py-20">
         <div className="text-center mb-12 sm:mb-16">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-4">
+          <h2 className="text-2xl sm:text-2xl font-extrabold text-slate-900 mb-4">
             O que é o Hispora?
           </h2>
           <p className="text-base sm:text-lg text-slate-600 max-w-3xl mx-auto">
@@ -76,9 +76,9 @@ export default function InstitutionalHome() {
             </h3>
             <p className="text-slate-600 leading-relaxed">
               Acesse seu histórico médico completo, consultas, exames,
-              medicamentos, vacinas, doenças, cirurgias e atestados,
-              diretamente do seu celular. Cadastre dependentes e acompanhe a
-              saúde de toda a família. Disponível para Android e iOS.
+              medicamentos, vacinas, doenças, cirurgias e atestados, diretamente
+              do seu celular. Cadastre dependentes e acompanhe a saúde de toda a
+              família. Disponível para Android e iOS.
             </p>
           </div>
 
@@ -114,7 +114,7 @@ export default function InstitutionalHome() {
       {/* Pilares */}
       <section className="bg-slate-50 py-14 sm:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 text-center mb-12 sm:mb-16">
+          <h2 className="text-2xl sm:text-2xl font-extrabold text-slate-900 text-center mb-12 sm:mb-16">
             Pilares da Plataforma
           </h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -157,7 +157,7 @@ export default function InstitutionalHome() {
 
       {/* CTA */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-14 sm:py-20 text-center">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-4">
+        <h2 className="text-2xl sm:text-2xl font-extrabold text-slate-900 mb-4">
           Pronto para começar?
         </h2>
         <p className="text-base sm:text-lg text-slate-600 mb-8 sm:mb-10 max-w-xl mx-auto">

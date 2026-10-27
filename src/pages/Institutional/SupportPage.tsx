@@ -57,7 +57,7 @@ export default function SupportPage() {
 
         <div className="flex items-center gap-3 mb-2">
           <LifeBuoy className="text-primary" size={28} />
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+          <h1 className="text-2xl sm:text-2xl font-extrabold text-slate-900">
             Suporte
           </h1>
         </div>

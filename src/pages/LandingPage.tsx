@@ -1,4 +1,3 @@
-import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   Smartphone,
@@ -12,128 +11,10 @@ import {
   Pill,
   BarChart3,
   Bell,
-  Star,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import logoHorizontal from "../assets/logos/hispora-horizontal-primary.png";
 import mobileImg from "../assets/images/mobile.png";
 import { LegalLinks } from "../components/LegalLinks";
-
-// --- Testimonials Carousel ---
-
-const testimonials = [
-  {
-    quote:
-      "O Hispora transformou a forma como gerencio minha clínica. Tudo integrado, seguro e acessível.",
-    name: "Dr. Fernando Luckesi",
-    specialty: "Clínica Geral",
-  },
-  {
-    quote:
-      "Consegui reduzir em 40% o tempo de atendimento com o prontuário digital. Meus pacientes adoram o app.",
-    name: "Dra. Camila Ferreira",
-    specialty: "Cardiologia",
-  },
-  {
-    quote:
-      "A gestão financeira integrada me deu uma visão completa da clínica que eu nunca tive antes.",
-    name: "Dr. Rafael Souza",
-    specialty: "Dermatologia",
-  },
-  {
-    quote:
-      "Meus pacientes se sentem mais seguros sabendo que controlam quem acessa seus dados. Confiança é tudo.",
-    name: "Dra. Juliana Martins",
-    specialty: "Pediatria",
-  },
-  {
-    quote:
-      "O agendamento online e as notificações push reduziram as faltas em 60%. Resultado incrível.",
-    name: "Dr. Marcos Almeida",
-    specialty: "Neurologia",
-  },
-];
-
-function TestimonialsCarousel() {
-  const [current, setCurrent] = useState(0);
-
-  const next = useCallback(() => {
-    setCurrent((prev) => (prev + 1) % testimonials.length);
-  }, []);
-
-  const prev = useCallback(() => {
-    setCurrent(
-      (prev) => (prev - 1 + testimonials.length) % testimonials.length,
-    );
-  }, []);
-
-  // Auto-advance every 6 seconds
-  useEffect(() => {
-    const timer = setInterval(next, 6000);
-    return () => clearInterval(timer);
-  }, [next]);
-
-  const t = testimonials[current];
-
-  return (
-    <div className="bg-gradient-to-r from-primary to-primary rounded-3xl p-12  text-white text-center relative overflow-hidden">
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=60 height=60 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.05%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]" />
-
-      <div className="relative z-10">
-        {/* Stars */}
-        <div className="flex justify-center gap-1 mb-6">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <Star key={i} size={24} className="text-amber-300 fill-amber-300" />
-          ))}
-        </div>
-
-        {/* Quote — fixed height container */}
-        <blockquote className="text-2xl md:text-1xl font-bold leading-snug mb-8 max-w-4xl mx-auto h-[6rem] md:h-[4.5rem] flex items-center justify-center">
-          <span>"{t.quote}"</span>
-        </blockquote>
-
-        {/* Author */}
-        <div className="mb-8">
-          <p className="text-white font-bold text-base">{t.name}</p>
-          <p className="text-blue-200 text-sm">{t.specialty}</p>
-        </div>
-
-        {/* Navigation */}
-        <div className="flex items-center justify-center gap-4">
-          <button
-            onClick={prev}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer border-none text-white"
-          >
-            <ChevronLeft size={20} />
-          </button>
-
-          {/* Dots */}
-          <div className="flex gap-2">
-            {testimonials.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrent(idx)}
-                className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer border-none ${
-                  idx === current
-                    ? "bg-white scale-125"
-                    : "bg-white/30 hover:bg-white/50"
-                }`}
-              />
-            ))}
-          </div>
-
-          <button
-            onClick={next}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors cursor-pointer border-none text-white"
-          >
-            <ChevronRight size={20} />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function LandingPage() {
   return (
@@ -232,17 +113,27 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Numeros */}
+      {/* Numeros
+          Every figure here has to be literally true and checkable, since this
+          is advertising (CDC art. 37). Two were not and were replaced:
+          - "LGPD / Conformidade total": an absolute nobody can assert. Now
+            states what we actually do — the platform is built to LGPD rules.
+          - "256-bit / Criptografia": there is no AES-256 field encryption in
+            the codebase (it was implemented and rolled back — see
+            archives/docs/security/features-secutiry.md, item 5). Replaced
+            with HTTPS/TLS, which is real.
+          "100% gratuito para pacientes" and "24/7" were kept: billing applies
+          only to clinics, and the record is self-service around the clock. */}
       <section className="border-y border-slate-100 bg-slate-50/50">
         <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
           {[
             { value: "100%", label: "Gratuito para pacientes" },
-            { value: "LGPD", label: "Conformidade total" },
+            { value: "LGPD", label: "Construído sob as regras da lei" },
             { value: "24/7", label: "Acesso ao prontuário" },
-            { value: "256-bit", label: "Criptografia" },
+            { value: "HTTPS", label: "Conexão criptografada (TLS)" },
           ].map((stat) => (
             <div key={stat.label} className="text-center">
-              <p className="text-3xl font-extrabold text-primary mb-1">
+              <p className="text-2xl font-extrabold text-primary mb-1">
                 {stat.value}
               </p>
               <p className="text-sm text-slate-500 font-medium">{stat.label}</p>
@@ -254,7 +145,7 @@ export default function LandingPage() {
       {/* Para Quem */}
       <section className="max-w-6xl mx-auto px-6 py-16">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">
+          <h2 className="text-2xl md:text-2xl font-extrabold text-slate-900 mb-4">
             Uma plataforma, dois mundos
           </h2>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto">
@@ -346,7 +237,7 @@ export default function LandingPage() {
       <section className="bg-slate-900 text-white py-24">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-extrabold mb-4">
+            <h2 className="text-2xl md:text-2xl font-extrabold mb-4">
               Recursos que fazem a diferença
             </h2>
             <p className="text-slate-400 text-lg max-w-2xl mx-auto">
@@ -402,14 +293,20 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Depoimentos — Carrossel */}
-      <section className="max-w-6xl mx-auto px-6 py-24">
-        <TestimonialsCarousel />
-      </section>
+      {/* Depoimentos removidos em 22/10/2026.
+          Os 5 depoimentos exibidos aqui eram fictícios — usavam os mesmos
+          nomes dos dados de seed do banco (seed-local.sql / seed-full-data.sql)
+          atribuídos a médicos com especialidade, e dois deles citavam métricas
+          sem qualquer base ("redução de 40% no tempo de atendimento", "60%
+          menos faltas"). Isso é publicidade enganosa (CDC art. 37), agravada
+          por atribuir declaração a profissional de saúde identificado.
+          Para reativar: só com depoimento real + autorização de uso de nome e
+          imagem por escrito. O componente foi removido junto, não comentado,
+          para não virar um atalho de volta. */}
 
       {/* CTA Final */}
       <section className="max-w-6xl mx-auto px-6 py-16 text-center">
-        <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">
+        <h2 className="text-2xl md:text-2xl font-extrabold text-slate-900 mb-4">
           Comece agora, é gratuito
         </h2>
         <p className="text-lg text-slate-600 max-w-xl mx-auto mb-10">

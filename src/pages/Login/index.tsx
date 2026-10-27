@@ -76,7 +76,7 @@ export default function Login() {
           </div>
 
           <div>
-            <h3 className="text-3xl font-black text-on-surface tracking-tight font-display">
+            <h3 className="text-2xl font-black text-on-surface tracking-tight font-display">
               Bem-vindo de volta
             </h3>
             <p className="text-on-surface-variant mt-2">

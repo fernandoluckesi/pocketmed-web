@@ -100,7 +100,7 @@ export default function Register() {
       <div className="min-h-screen bg-surface flex items-center justify-center p-8">
         <div className="text-center space-y-4 max-w-md">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-            <span className="text-3xl">✓</span>
+            <span className="text-2xl">✓</span>
           </div>
           <h3 className="text-2xl font-black text-on-surface font-display">
             Cadastro realizado!
@@ -126,7 +126,7 @@ export default function Register() {
               className="h-20 w-auto"
             />
           </div>
-          <h2 className="text-4xl font-black text-white tracking-tight font-display leading-tight">
+          <h2 className="text-2xl font-black text-white tracking-tight font-display leading-tight">
             Junte-se à<br />
             plataforma médica
             <br />
@@ -153,7 +153,7 @@ export default function Register() {
           </Link>
 
           <div>
-            <h3 className="text-3xl font-black text-on-surface tracking-tight font-display">
+            <h3 className="text-2xl font-black text-on-surface tracking-tight font-display">
               Criar conta
             </h3>
             <p className="text-on-surface-variant mt-2">

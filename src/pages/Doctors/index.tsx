@@ -400,7 +400,7 @@ export default function Doctors() {
         {/* Header */}
         <div className="flex items-end justify-between">
           <div className="space-y-1">
-            <h2 className="text-4xl font-extrabold font-display tracking-tight text-gray-900">
+            <h2 className="text-2xl font-extrabold font-display tracking-tight text-gray-900">
               Gestão de Médicos
             </h2>
             <p className="text-gray-500 font-medium">

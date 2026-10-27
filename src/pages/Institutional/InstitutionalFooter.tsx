@@ -1,5 +1,6 @@
 import logoHorizontal from "../../assets/logos/hispora-horizontal-primary.png";
 import { LegalLinks } from "../../components/LegalLinks";
+import { COMPANY, hasCompanyLegalInfo } from "../../constants/company";
 
 export function InstitutionalFooter() {
   return (
@@ -12,9 +13,29 @@ export function InstitutionalFooter() {
             <img src={logoHorizontal} alt="Hispora" className="h-14 w-auto" />
           </div>
 
-          <p className="text-xs sm:text-sm text-slate-400">
-            &copy; {new Date().getFullYear()} Hispora Clinical Systems.
-          </p>
+          <div className="text-xs sm:text-sm text-slate-400">
+            {/* Company identification (Marco Civil / CDC art. 31). Renders
+                only once the legal entity's data exists — see
+                constants/company.ts for why a placeholder is not acceptable
+                here. Until then the footer keeps the copyright line alone,
+                exactly as before. */}
+            {hasCompanyLegalInfo && (
+              <>
+                <p className="font-semibold text-slate-500">
+                  {COMPANY.legalName}
+                </p>
+                <p>CNPJ {COMPANY.cnpj}</p>
+                {COMPANY.address && <p>{COMPANY.address}</p>}
+              </>
+            )}
+            {/* Trade name here rather than the hardcoded string: with the
+                legal name now rendered just above, repeating the identical
+                text twice in the same block reads as a duplication bug. If
+                the two names ever diverge, this line follows the brand. */}
+            <p className={hasCompanyLegalInfo ? "mt-1" : undefined}>
+              &copy; {new Date().getFullYear()} {COMPANY.tradeName}.
+            </p>
+          </div>
         </div>
       </div>
     </footer>

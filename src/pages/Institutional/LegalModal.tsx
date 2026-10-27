@@ -1,4 +1,9 @@
 import { X } from "lucide-react";
+import {
+  COMPANY,
+  hasCompanyLegalInfo,
+  hasDpoInfo,
+} from "../../constants/company";
 
 interface LegalModalProps {
   open: boolean;
@@ -168,14 +173,20 @@ export function PrivacyPolicyContent() {
         <li>Autoridades competentes quando exigido por lei.</li>
       </ul>
 
+      {/* "e em repouso" removed: field-level encryption was rolled back (see
+          archives/docs/security/features-secutiry.md, item 5). The remaining
+          claims are each backed by real code — access control (guards +
+          RBAC), audit trail (src/audit), anomaly detection
+          (audit-anomaly.service.ts) and retention (audit-retention.service). */}
       <h3 className="text-lg font-bold text-slate-900">
         6. Armazenamento e Segurança
       </h3>
       <p>
-        Os dados são armazenados em servidores seguros com criptografia em
-        trânsito (TLS) e em repouso. Implementamos controle de acesso, auditoria
-        de operações, detecção de anomalias e políticas de retenção conforme a
-        legislação vigente.
+        Os dados são armazenados em servidores seguros, com criptografia em
+        trânsito (TLS). Documentos e exames ficam em armazenamento privado,
+        acessível apenas por links assinados e temporários. Implementamos
+        controle de acesso por perfil, auditoria de operações, detecção de
+        anomalias e políticas de retenção conforme a legislação vigente.
       </p>
 
       <h3 className="text-lg font-bold text-slate-900">7. Retenção de Dados</h3>
@@ -210,8 +221,47 @@ export function PrivacyPolicyContent() {
       <h3 className="text-lg font-bold text-slate-900">10. Contato</h3>
       <p>
         Para exercer seus direitos ou esclarecer dúvidas sobre esta política,
-        entre em contato pelo email: <strong>hispora.suporte@yahoo.com</strong>
+        entre em contato pelo email: <strong>{COMPANY.contactEmail}</strong>
       </p>
+
+      {/* Controller identification. A data subject can only exercise their
+          LGPD rights if they know WHO controls the data, so this block is
+          part of the policy itself, not just the footer. Rendered only when
+          the legal entity's data exists — see constants/company.ts. */}
+      {hasCompanyLegalInfo && (
+        <>
+          <h3 className="text-lg font-bold text-slate-900">
+            11. Controlador dos Dados
+          </h3>
+          <p>
+            O controlador dos dados pessoais tratados nesta plataforma é{" "}
+            <strong>{COMPANY.legalName}</strong>, inscrita no CNPJ sob o nº{" "}
+            <strong>{COMPANY.cnpj}</strong>
+            {COMPANY.address ? (
+              <>
+                , com sede em <strong>{COMPANY.address}</strong>
+              </>
+            ) : null}
+            .
+          </p>
+        </>
+      )}
+
+      {/* Encarregado/DPO — LGPD art. 41 requires publicly disclosing the
+          identity and contact. Separate from the support channel above. */}
+      {hasDpoInfo && (
+        <>
+          <h3 className="text-lg font-bold text-slate-900">
+            {hasCompanyLegalInfo ? "12." : "11."} Encarregado pelo Tratamento de
+            Dados (DPO)
+          </h3>
+          <p>
+            Em atendimento ao art. 41 da LGPD, o encarregado pelo tratamento de
+            dados pessoais é <strong>{COMPANY.dpoName}</strong>, que pode ser
+            contactado pelo email <strong>{COMPANY.dpoEmail}</strong>.
+          </p>
+        </>
+      )}
     </>
   );
 }
@@ -351,19 +401,33 @@ export function SecurityStandardsContent() {
         descreve os padrões e práticas adotados.
       </p>
 
+      {/* Describes only controls that actually exist in the backend today.
+          The previous version claimed "dados sensíveis armazenados com
+          criptografia no banco de dados" — field-level encryption was
+          implemented and then deliberately rolled back (see
+          archives/docs/security/features-secutiry.md, item 5), so that
+          sentence was publicly stating a control the platform does not have.
+          Keeping it would be a transparency breach under LGPD art. 6, VI and
+          would weigh against us in any ANPD assessment after an incident. */}
       <h3 className="text-lg font-bold text-slate-900">2. Criptografia</h3>
       <ul className="list-disc pl-6 space-y-1">
         <li>
-          <strong>Em trânsito:</strong> todas as comunicações utilizam TLS 1.2+
-          (HTTPS);
+          <strong>Em trânsito:</strong> todas as comunicações entre aplicativos,
+          navegador e servidores utilizam HTTPS com TLS 1.2 ou superior;
         </li>
         <li>
-          <strong>Em repouso:</strong> dados sensíveis armazenados com
-          criptografia no banco de dados;
+          <strong>Senhas:</strong> nunca armazenadas em texto puro — somente o
+          hash criptográfico (bcrypt), que é irreversível;
         </li>
         <li>
-          <strong>Senhas:</strong> armazenadas com hash bcrypt (salt rounds 10),
-          nunca em texto puro.
+          <strong>Documentos e exames:</strong> armazenados em bucket privado,
+          sem acesso público. Cada visualização gera um link assinado e
+          temporário, válido por poucos minutos;
+        </li>
+        <li>
+          <strong>Links enviados por e-mail:</strong> receitas e pedidos de
+          exame usam token de acesso único, restrito àquele documento e com
+          prazo de validade.
         </li>
       </ul>
 

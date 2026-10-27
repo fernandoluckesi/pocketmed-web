@@ -180,7 +180,7 @@ export default function DataDeletionPage() {
 
         <div className="flex items-center gap-3 mb-2">
           <Trash2 className="text-primary" size={28} />
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+          <h1 className="text-2xl sm:text-2xl font-extrabold text-slate-900">
             Exclusão de conta e dados
           </h1>
         </div>

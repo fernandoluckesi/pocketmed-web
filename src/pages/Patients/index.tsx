@@ -42,6 +42,7 @@ import {
   useResendInvite,
   useLookupPatientByEmail,
   useRequestCrossClinicAccess,
+  useResendCrossClinicLink,
 } from "../../hooks/usePatients";
 import type { AccessRequest } from "../../hooks/usePatients";
 import { RequestAccessModal } from "../../components/RequestAccessModal";
@@ -80,12 +81,12 @@ function SearchHero({
           Pesquise na base global do Hispora por nome ou CPF do paciente.
         </p>
       </div>
-      <div className="flex flex-col md:flex-row gap-2 max-w-lg">
+      <div className="flex flex-col md:flex-row gap-2 max-w-xl">
         <div className="flex-1 relative flex items-center">
           <Users className="absolute left-3 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Nome ou CPF do paciente..."
+            placeholder="Nome de usuário, e-mail ou CPF do paciente..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-gray-900 text-sm placeholder:text-gray-400 outline-none focus:border-primary focus:ring-1 focus:ring-primary/10 transition-all"
@@ -115,6 +116,7 @@ function APIPatientCard({
   patient: {
     id: string;
     name: string;
+    username?: string | null;
     email?: string;
     phone?: string;
     profileImage?: string | null;
@@ -127,6 +129,8 @@ function APIPatientCard({
     profileImage?: string | null;
   }) => void;
 }) {
+  const navigate = useNavigate();
+
   return (
     <motion.div
       whileHover={{ y: -8 }}
@@ -150,9 +154,12 @@ function APIPatientCard({
           <h5 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors font-display truncate">
             {patient.name}
           </h5>
-          {accessStatus === "approved" && (patient.email || patient.phone) && (
+          {/* Shown regardless of access status — unlike email/phone, a
+              username isn't sensitive, and it's what lets the doctor tell
+              homonyms apart while searching, before access is granted. */}
+          {patient.username && (
             <p className="text-gray-500 text-sm font-medium truncate">
-              {patient.email || patient.phone}
+              @{patient.username}
             </p>
           )}
         </div>
@@ -160,9 +167,13 @@ function APIPatientCard({
 
       <div className="pt-2.5 border-t border-gray-100">
         {accessStatus === "approved" ? (
-          <div className="w-full py-1.5 bg-green-50 rounded-2xl font-bold flex items-center justify-center gap-2 text-green-700 cursor-default">
+          <div
+            onClick={() => navigate(`/patients/${patient.id}`)}
+            className="w-full py-1.5 bg-green-50 hover:bg-green-100 rounded-2xl font-bold flex items-center justify-center gap-2 text-green-700 cursor-pointer transition-colors"
+          >
             <CheckCircle className="w-5 h-5" />
             Acesso Concedido
+            <ArrowRight className="w-5 h-5" />
           </div>
         ) : accessStatus === "pending" ? (
           <div className="w-full py-1.5 bg-amber-50 rounded-2xl font-bold flex items-center justify-center gap-2 text-amber-700 cursor-default">
@@ -195,6 +206,7 @@ function APIPatientListRow({
   patient: {
     id: string;
     name: string;
+    username?: string | null;
     email?: string;
     phone?: string;
     profileImage?: string | null;
@@ -208,6 +220,8 @@ function APIPatientListRow({
     profileImage?: string | null;
   }) => void;
 }) {
+  const navigate = useNavigate();
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -10 }}
@@ -234,9 +248,9 @@ function APIPatientListRow({
           <h5 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors truncate font-display">
             {patient.name}
           </h5>
-          {accessStatus === "approved" && (patient.email || patient.phone) && (
+          {patient.username && (
             <p className="text-slate-400 text-sm font-semibold">
-              {patient.email || patient.phone}
+              @{patient.username}
             </p>
           )}
         </div>
@@ -244,9 +258,13 @@ function APIPatientListRow({
 
       <div className="shrink-0 w-full md:w-auto">
         {accessStatus === "approved" ? (
-          <div className="w-full md:w-auto px-6 py-3 bg-green-50 text-green-700 rounded-xl font-bold flex items-center justify-center gap-2 cursor-default">
+          <div
+            onClick={() => navigate(`/patients/${patient.id}`)}
+            className="w-full md:w-auto px-6 py-3 bg-green-50 hover:bg-green-100 text-green-700 rounded-xl font-bold flex items-center justify-center gap-2 cursor-pointer transition-colors"
+          >
             <CheckCircle className="w-4 h-4" />
             Acesso Concedido
+            <ArrowRight className="w-4 h-4" />
           </div>
         ) : accessStatus === "pending" ? (
           <div className="w-full md:w-auto px-6 py-3 bg-amber-50 text-amber-700 rounded-xl font-bold flex items-center justify-center gap-2 cursor-default">
@@ -596,20 +614,37 @@ function AddPatientModal({
     id: string;
     name: string;
   } | null>(null);
-  const [requestSent, setRequestSent] = useState(false);
-  const [requestError, setRequestError] = useState<string | null>(null);
+  const [sentRequest, setSentRequest] = useState<{
+    id: string;
+    channel: "in_app" | "email_link";
+  } | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const { lookup, loading: lookupLoading } = useLookupPatientByEmail();
   const { requestCrossClinicAccess, loading: requestLoading } =
     useRequestCrossClinicAccess();
+  const { resendCrossClinicLink, loading: resendLoading } =
+    useResendCrossClinicLink();
 
   const resetFlowState = () => {
     setStep("email");
     setLookupEmail("");
     setLookupError(null);
     setFoundPatient(null);
-    setRequestSent(false);
-    setRequestError(null);
+    setSentRequest(null);
+    setResendCooldown(0);
   };
+
+  // Resend cooldown countdown — same pattern as the email-verification
+  // resend screen (Signup.tsx).
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(
+        () => setResendCooldown(resendCooldown - 1),
+        1000,
+      );
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
   const formik = useFormik({
     initialValues: {
@@ -700,18 +735,36 @@ function AddPatientModal({
 
   const handleRequestAuthorization = async () => {
     if (!foundPatient) return;
-    setRequestError(null);
     try {
-      await requestCrossClinicAccess(
+      const result = await requestCrossClinicAccess(
         foundPatient.id,
         CROSS_CLINIC_DEFAULT_PURPOSE,
       );
-      setRequestSent(true);
+      setSentRequest({ id: result.id, channel: result.channel });
+      setResendCooldown(60);
+      toast.success(
+        "Solicitação enviada! O paciente receberá um link para autorizar o acesso.",
+      );
     } catch (err) {
-      setRequestError(
+      toast.error(
         err instanceof Error
           ? err.message
           : "Erro ao enviar solicitação. Tente novamente.",
+      );
+    }
+  };
+
+  const handleResendRequest = async () => {
+    if (!sentRequest || resendCooldown > 0) return;
+    try {
+      await resendCrossClinicLink(sentRequest.id);
+      setResendCooldown(60);
+      toast.success("Link reenviado ao paciente!");
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Erro ao reenviar a solicitação. Tente novamente.",
       );
     }
   };
@@ -779,16 +832,6 @@ function AddPatientModal({
             antes de iniciar um novo registro.
           </p>
 
-          {lookupError && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium"
-            >
-              {lookupError}
-            </motion.div>
-          )}
-
           <div className="space-y-2">
             <label className="text-xs font-bold text-on-surface-variant ml-1">
               Email do Paciente
@@ -804,6 +847,12 @@ function AddPatientModal({
                 autoFocus
               />
             </div>
+            {/* Standard field-level error: same style as every other form
+                error in this file, sitting under its own input instead of as
+                a banner above the field. */}
+            {lookupError && (
+              <p className="text-xs text-red-500 ml-1">{lookupError}</p>
+            )}
           </div>
 
           <div className="pt-4 flex justify-end gap-3">
@@ -854,21 +903,29 @@ function AddPatientModal({
             </p>
           </div>
 
-          {requestError && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium"
-            >
-              {requestError}
-            </motion.div>
-          )}
-
-          {requestSent ? (
-            <div className="flex items-center gap-2 text-green-700 font-bold bg-green-50 border border-green-100 rounded-xl px-4 py-3">
-              <CheckCircle className="w-5 h-5 shrink-0" />
-              Solicitação enviada! O paciente receberá um link para autorizar o
-              acesso.
+          {sentRequest ? (
+            <div className="pt-2 flex items-center justify-between gap-3">
+              <Button
+                type="button"
+                onClick={() => setStep("email")}
+                variant="secondary"
+                size="md"
+                className="min-w-[160px]"
+              >
+                Voltar
+              </Button>
+              {sentRequest.channel === "email_link" && (
+                <button
+                  type="button"
+                  onClick={handleResendRequest}
+                  disabled={resendCooldown > 0 || resendLoading}
+                  className="text-sm font-semibold text-primary hover:underline disabled:text-slate-400 disabled:no-underline border-none bg-transparent cursor-pointer disabled:cursor-not-allowed"
+                >
+                  {resendCooldown > 0
+                    ? `Reenviar em ${resendCooldown}s`
+                    : "Reenviar solicitação"}
+                </button>
+              )}
             </div>
           ) : (
             <div className="pt-2 flex justify-end gap-3">
@@ -1222,7 +1279,7 @@ function SearchTabContent({
               <p className="text-primary font-bold text-xs uppercase tracking-[0.2em] mb-1">
                 Resultados da Busca
               </p>
-              <h4 className="text-3xl font-black font-display tracking-tight">
+              <h4 className="text-2xl font-black font-display tracking-tight">
                 {searchLoading
                   ? "Buscando..."
                   : `${displayResults.length} Pacientes Encontrados`}
@@ -1454,7 +1511,7 @@ function MyPatientsContent({
             <p className="text-primary font-bold text-xs uppercase tracking-[0.2em] mb-1">
               Acesso Liberado
             </p>
-            <h4 className="text-3xl font-black font-display tracking-tight">
+            <h4 className="text-2xl font-black font-display tracking-tight">
               Carregando...
             </h4>
           </div>
@@ -1472,7 +1529,7 @@ function MyPatientsContent({
             <p className="text-primary font-bold text-xs uppercase tracking-[0.2em] mb-1">
               Acesso Liberado
             </p>
-            <h4 className="text-3xl font-black font-display tracking-tight">
+            <h4 className="text-2xl font-black font-display tracking-tight">
               Meus Pacientes
             </h4>
           </div>
@@ -1512,7 +1569,7 @@ function MyPatientsContent({
             <p className="text-primary font-bold text-xs uppercase tracking-[0.2em] mb-1">
               Acesso Liberado
             </p>
-            <h4 className="text-3xl font-black font-display tracking-tight">
+            <h4 className="text-2xl font-black font-display tracking-tight">
               {patients.length} Pacientes Ativos
             </h4>
           </div>
@@ -1704,7 +1761,7 @@ function MyPatientsContent({
           <p className="text-primary font-bold text-xs uppercase tracking-[0.2em] mb-1">
             Acesso Liberado
           </p>
-          <h4 className="text-3xl font-black font-display tracking-tight">
+          <h4 className="text-2xl font-black font-display tracking-tight">
             Meus Pacientes
           </h4>
         </div>
@@ -1755,7 +1812,7 @@ export default function Patients() {
         <div className="min-h-screen bg-surface selection:bg-primary/10">
           <div className="space-y-12">
             <div className="space-y-1">
-              <h2 className="text-4xl font-extrabold font-display tracking-tight text-gray-900 leading-none">
+              <h2 className="text-2xl font-extrabold font-display tracking-tight text-gray-900 leading-none">
                 Gestão de Pacientes
               </h2>
               <p className="text-gray-500 font-medium">
@@ -1777,7 +1834,7 @@ export default function Patients() {
           <div className="space-y-6">
             <div className="flex items-end justify-between">
               <div className="space-y-1">
-                <h2 className="text-4xl font-extrabold font-display tracking-tight text-gray-900 leading-none">
+                <h2 className="text-2xl font-extrabold font-display tracking-tight text-gray-900 leading-none">
                   Gestão de Pacientes
                 </h2>
                 <p className="text-gray-500 font-medium">

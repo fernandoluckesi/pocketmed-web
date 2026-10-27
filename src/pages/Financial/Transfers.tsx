@@ -125,9 +125,9 @@ export default function Transfers() {
     }
   };
 
-  const [savingPercentageFor, setSavingPercentageFor] = useState<
-    string | null
-  >(null);
+  const [savingPercentageFor, setSavingPercentageFor] = useState<string | null>(
+    null,
+  );
 
   // Lets the admin adjust a doctor's repasse % directly in the preview,
   // before confirming generation. Persists the override on the clinic
@@ -290,9 +290,9 @@ export default function Transfers() {
                 Gerar Repasses do Mês
               </h3>
               <p className="text-xs text-slate-500 mt-1">
-                Calcula o repasse de cada médico com base nas receitas pagas
-                no mês escolhido, usando o percentual padrão configurado para
-                a clínica. Só considera receitas que têm um médico associado.
+                Calcula o repasse de cada médico com base nas receitas pagas no
+                mês escolhido, usando o percentual padrão configurado para a
+                clínica. Só considera receitas que têm um médico associado.
               </p>
             </div>
 
@@ -364,7 +364,8 @@ export default function Transfers() {
                               defaultValue={p.transferPercentage}
                               key={p.transferPercentage}
                               onBlur={(e) =>
-                                e.target.value !== String(p.transferPercentage) &&
+                                e.target.value !==
+                                  String(p.transferPercentage) &&
                                 handleRowPercentageChange(
                                   p.doctorId,
                                   e.target.value,
@@ -426,6 +427,7 @@ export default function Transfers() {
             />
           </div>
           <CustomSelect
+            className="w-60"
             value={statusFilter}
             onChange={setStatusFilter}
             options={[
@@ -437,6 +439,7 @@ export default function Transfers() {
             size="sm"
           />
           <CustomSelect
+            className="w-60"
             value={doctorFilter}
             onChange={setDoctorFilter}
             options={[

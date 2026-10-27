@@ -133,7 +133,7 @@ export default function AccessConsent() {
       <main className="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
         <div className="flex items-center gap-3 mb-2">
           <ShieldCheck className="text-primary" size={28} />
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+          <h1 className="text-2xl sm:text-2xl font-extrabold text-slate-900">
             Autorização de acesso ao prontuário
           </h1>
         </div>
@@ -161,14 +161,18 @@ export default function AccessConsent() {
         {view.kind === "ready" && (
           <div className="space-y-6">
             <p className="text-sm text-slate-500">
-              Olá{view.details.patientName ? `, ${view.details.patientName}` : ""}
-              . Um profissional de outra clínica está solicitando acesso
+              Olá
+              {view.details.patientName ? `, ${view.details.patientName}` : ""}.
+              Um profissional de outra clínica está solicitando acesso
               temporário ao seu prontuário no Hispora.
             </p>
 
             <div className="rounded-2xl border border-slate-100 shadow-sm p-5 sm:p-6 space-y-4">
               <div className="flex items-start gap-3">
-                <Stethoscope className="text-primary shrink-0 mt-0.5" size={20} />
+                <Stethoscope
+                  className="text-primary shrink-0 mt-0.5"
+                  size={20}
+                />
                 <div>
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                     Médico solicitante
@@ -190,7 +194,10 @@ export default function AccessConsent() {
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <ShieldCheck className="text-primary shrink-0 mt-0.5" size={20} />
+                <ShieldCheck
+                  className="text-primary shrink-0 mt-0.5"
+                  size={20}
+                />
                 <div>
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                     Finalidade
@@ -234,9 +241,7 @@ export default function AccessConsent() {
                   placeholder="0000"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 px-4 text-slate-900 text-sm placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-primary/10 focus:border-primary"
                 />
-                {cpfError && (
-                  <p className="text-xs text-red-500">{cpfError}</p>
-                )}
+                {cpfError && <p className="text-xs text-red-500">{cpfError}</p>}
               </div>
             )}
 

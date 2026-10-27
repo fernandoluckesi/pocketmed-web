@@ -33,8 +33,7 @@ export default function Atestados() {
       const mapped: Certificate[] = (Array.isArray(data) ? data : []).map(
         (cert: any) => ({
           id: cert.id,
-          patientName:
-            cert.patient?.name || cert.dependent?.name || "Paciente",
+          patientName: cert.patient?.name || cert.dependent?.name || "Paciente",
           patientAvatar: cert.patient?.profileImage || undefined,
           cid: cert.cid,
           daysOff: cert.daysOff,
@@ -59,7 +58,7 @@ export default function Atestados() {
     <MainLayout>
       <div className="space-y-6">
         <div>
-          <h2 className="font-display text-4xl font-extrabold text-slate-900 tracking-tight">
+          <h2 className="font-display text-2xl font-extrabold text-slate-900 tracking-tight">
             Atestados
           </h2>
           <p className="text-slate-500 font-medium mt-1">
@@ -82,7 +81,10 @@ export default function Atestados() {
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="text-center py-16 text-slate-400 text-sm">
+                    <td
+                      colSpan={5}
+                      className="text-center py-16 text-slate-400 text-sm"
+                    >
                       Carregando...
                     </td>
                   </tr>
@@ -94,8 +96,8 @@ export default function Atestados() {
                         Nenhum atestado emitido
                       </p>
                       <p className="text-xs text-slate-400 mt-1">
-                        Atestados adicionados a partir de uma consulta
-                        aparecem aqui.
+                        Atestados adicionados a partir de uma consulta aparecem
+                        aqui.
                       </p>
                     </td>
                   </tr>

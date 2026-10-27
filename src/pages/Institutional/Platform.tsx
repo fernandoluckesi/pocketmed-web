@@ -44,7 +44,7 @@ export default function InstitutionalPlatform() {
               <Monitor size={16} />
               Plataforma Web
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight mb-4 sm:mb-6">
+            <h1 className="text-2xl sm:text-2xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight mb-4 sm:mb-6">
               Gestão completa para
               <br />
               <span className="text-primary">profissionais de saúde</span>
@@ -67,7 +67,7 @@ export default function InstitutionalPlatform() {
 
       {/* Funcionalidades */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-14 sm:py-20">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 text-center mb-3 sm:mb-4">
+        <h2 className="text-2xl sm:text-2xl font-extrabold text-slate-900 text-center mb-3 sm:mb-4">
           Funcionalidades da Plataforma
         </h2>
         <p className="text-base sm:text-lg text-slate-600 text-center max-w-2xl mx-auto mb-12 sm:mb-16">
@@ -165,13 +165,13 @@ export default function InstitutionalPlatform() {
       <section className="bg-primary/5 py-14 sm:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-4">
+            <h2 className="text-2xl sm:text-2xl font-extrabold text-slate-900 mb-4">
               Um histórico completo muda a qualidade do atendimento
             </h2>
             <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto">
               Doenças, cirurgias, alergias, vacinas e atestados não são só
-              registros, são o contexto clínico que ajuda você a decidir
-              melhor e mais rápido.
+              registros, são o contexto clínico que ajuda você a decidir melhor
+              e mais rápido.
             </p>
           </div>
           <div className="grid sm:grid-cols-2 gap-6 sm:gap-8">
@@ -197,9 +197,7 @@ export default function InstitutionalPlatform() {
                 key={item.title}
                 className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-100 shadow-sm"
               >
-                <h4 className="font-bold text-slate-900 mb-2">
-                  {item.title}
-                </h4>
+                <h4 className="font-bold text-slate-900 mb-2">{item.title}</h4>
                 <p className="text-sm text-slate-600 leading-relaxed">
                   {item.desc}
                 </p>
@@ -212,7 +210,7 @@ export default function InstitutionalPlatform() {
       {/* Diferenciais */}
       <section className="bg-slate-50 py-14 sm:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 text-center mb-12 sm:mb-16">
+          <h2 className="text-2xl sm:text-2xl font-extrabold text-slate-900 text-center mb-12 sm:mb-16">
             Por que escolher o Hispora?
           </h2>
           <div className="grid sm:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
@@ -260,7 +258,7 @@ export default function InstitutionalPlatform() {
 
       {/* Perfis de Acesso */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-14 sm:py-20">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 text-center mb-12 sm:mb-16">
+        <h2 className="text-2xl sm:text-2xl font-extrabold text-slate-900 text-center mb-12 sm:mb-16">
           Perfis de Acesso
         </h2>
         <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
@@ -332,7 +330,7 @@ export default function InstitutionalPlatform() {
       <section className="bg-slate-900 text-white py-14 sm:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
           <Shield className="mx-auto mb-5 sm:mb-6 text-primary" size={40} />
-          <h2 className="text-2xl sm:text-3xl font-extrabold mb-4">
+          <h2 className="text-2xl sm:text-2xl font-extrabold mb-4">
             Segurança e Conformidade
           </h2>
           <p className="text-slate-400 text-base sm:text-lg max-w-2xl mx-auto mb-10 sm:mb-12">
@@ -359,7 +357,7 @@ export default function InstitutionalPlatform() {
 
       {/* CTA */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-14 sm:py-20 text-center">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-4">
+        <h2 className="text-2xl sm:text-2xl font-extrabold text-slate-900 mb-4">
           Comece a usar agora
         </h2>
         <p className="text-base sm:text-lg text-slate-600 mb-8 sm:mb-10 max-w-xl mx-auto">

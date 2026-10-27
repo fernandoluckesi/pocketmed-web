@@ -43,7 +43,7 @@ export default function InstitutionalMobile() {
                 <Smartphone size={16} />
                 Aplicativo Mobile
               </div>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight mb-4 sm:mb-6">
+              <h1 className="text-2xl sm:text-2xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight mb-4 sm:mb-6">
                 Seu prontuário
                 <br />
                 <span className="text-primary">no bolso</span>
@@ -76,7 +76,7 @@ export default function InstitutionalMobile() {
 
       {/* Funcionalidades */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-14 sm:py-20">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 text-center mb-3 sm:mb-4">
+        <h2 className="text-2xl sm:text-2xl font-extrabold text-slate-900 text-center mb-3 sm:mb-4">
           O que você pode fazer no app
         </h2>
         <p className="text-base sm:text-lg text-slate-600 text-center max-w-2xl mx-auto mb-12 sm:mb-16">
@@ -159,7 +159,7 @@ export default function InstitutionalMobile() {
       <section className="bg-primary/5 py-14 sm:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-4">
+            <h2 className="text-2xl sm:text-2xl font-extrabold text-slate-900 mb-4">
               Não é só um app. É o seu histórico de saúde.
             </h2>
             <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto">
@@ -191,9 +191,7 @@ export default function InstitutionalMobile() {
                 key={item.title}
                 className="bg-white rounded-2xl p-6 sm:p-7 border border-slate-100 shadow-sm"
               >
-                <h4 className="font-bold text-slate-900 mb-2">
-                  {item.title}
-                </h4>
+                <h4 className="font-bold text-slate-900 mb-2">{item.title}</h4>
                 <p className="text-sm text-slate-600 leading-relaxed">
                   {item.desc}
                 </p>
@@ -206,7 +204,7 @@ export default function InstitutionalMobile() {
       {/* Segurança */}
       <section className="bg-slate-900 text-white py-20">
         <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-3xl font-extrabold text-center mb-16">
+          <h2 className="text-2xl font-extrabold text-center mb-16">
             Segurança em primeiro lugar
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
@@ -218,8 +216,12 @@ export default function InstitutionalMobile() {
               },
               {
                 icon: Shield,
+                // Was "Criptografia em trânsito e em repouso. Conformidade
+                // total com a LGPD." Both claims were indefensible: at-rest
+                // encryption was rolled back, and "conformidade total" is an
+                // absolute no platform can assert.
                 title: "Dados Protegidos",
-                desc: "Criptografia em trânsito e em repouso. Conformidade total com a LGPD.",
+                desc: "Comunicação criptografada (HTTPS/TLS) e documentos em armazenamento privado, com links temporários.",
               },
               {
                 icon: CheckCircle,
@@ -244,7 +246,7 @@ export default function InstitutionalMobile() {
 
       {/* Como Funciona */}
       <section className="max-w-6xl mx-auto px-6 py-20">
-        <h2 className="text-3xl font-extrabold text-slate-900 text-center mb-16">
+        <h2 className="text-2xl font-extrabold text-slate-900 text-center mb-16">
           Como funciona
         </h2>
         <div className="grid md:grid-cols-4 gap-6">
@@ -288,7 +290,7 @@ export default function InstitutionalMobile() {
       {/* CTA */}
       <section className="bg-gradient-to-r from-primary to-primary py-16">
         <div className="max-w-4xl mx-auto px-6 text-center text-white">
-          <h2 className="text-3xl font-extrabold mb-4">
+          <h2 className="text-2xl font-extrabold mb-4">
             Baixe o Hispora agora
           </h2>
           <p className="text-blue-200 text-lg mb-8">

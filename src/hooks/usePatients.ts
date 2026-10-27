@@ -22,6 +22,7 @@ async function fetchWithRetry(
 export interface PatientFromAPI {
   id: string;
   name: string;
+  username?: string | null;
   email: string;
   phone: string;
   gender: string;
@@ -588,6 +589,27 @@ export function useRequestCrossClinicAccess() {
   );
 
   return { requestCrossClinicAccess, loading, error };
+}
+
+export function useResendCrossClinicLink() {
+  const [loading, setLoading] = useState(false);
+
+  const resendCrossClinicLink = useCallback(
+    async (requestId: string): Promise<{ emailStatus: "sent" | "failed" }> => {
+      setLoading(true);
+      try {
+        return await api(
+          `/doctors/access-requests/${requestId}/resend-cross-clinic-link`,
+          { method: "POST" },
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  return { resendCrossClinicLink, loading };
 }
 
 // --- useResendInvite ---

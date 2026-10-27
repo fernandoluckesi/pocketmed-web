@@ -996,7 +996,7 @@ export default function Account() {
         animate={{ opacity: 1, y: 0 }}
       >
         <div>
-          <h1 className="text-4xl font-display font-extrabold text-slate-900 tracking-tight">
+          <h1 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight">
             Minha Conta
           </h1>
           <p className="text-slate-500 font-medium mt-1">
