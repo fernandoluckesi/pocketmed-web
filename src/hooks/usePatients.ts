@@ -265,6 +265,9 @@ export function usePatientDetail(id: string | undefined) {
               visitType: apt.visitType || undefined,
               paymentType: apt.paymentType || undefined,
               convenioId: apt.convenioId || undefined,
+              startedAt: apt.startedAt || undefined,
+              endedAt: apt.endedAt || undefined,
+              durationSeconds: apt.durationSeconds ?? undefined,
             })) || [],
             medications: medicalRecord?.medications?.map((med: any) => ({
               id: med.id,
