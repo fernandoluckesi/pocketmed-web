@@ -1,8 +1,19 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import Login from "../pages/Auth/Login";
-import Signup from "../pages/Auth/Signup";
-import ForgotPassword from "../pages/Auth/ForgotPassword";
-import ActivateAccount from "../pages/Auth/ActivateAccount";
+import { ProtectedRoute } from "../components/ProtectedRoute";
+
+/*
+ * Public pages are imported eagerly; the authenticated app is lazy.
+ *
+ * Why the split matters for SEO: every public page used to download the
+ * whole 2 MB bundle — including jsPDF, html2canvas, QRCode and TipTap,
+ * which only the authenticated screens use. That is Largest Contentful
+ * Paint spent parsing JavaScript a visitor to the landing page can never
+ * reach, and Core Web Vitals is a direct ranking factor.
+ *
+ * The public pages stay eager on purpose: they are the LCP-critical ones,
+ * and a lazy chunk would add a round trip before the first paint.
+ */
 import LandingPage from "../pages/LandingPage";
 import InstitutionalHome from "../pages/Institutional";
 import InstitutionalMobile from "../pages/Institutional/Mobile";
@@ -11,35 +22,48 @@ import LegalPage from "../pages/Institutional/LegalPage";
 import SecurityPage from "../pages/Institutional/SecurityPage";
 import SupportPage from "../pages/Institutional/SupportPage";
 import DataDeletionPage from "../pages/Institutional/DataDeletionPage";
-import AccessConsent from "../pages/AccessConsent";
-import Verification from "../pages/Verification";
-import SignatureSimulator from "../pages/SignatureSimulator";
-import Dashboard from "../pages/Dashboard";
-import Consultations from "../pages/Consultations";
-import Atestados from "../pages/Atestados";
-import AtestadoDetail from "../pages/Atestados/AtestadoDetail";
-import Patients from "../pages/Patients";
-import PatientDetail from "../pages/Patients/PatientDetail";
-import Doctors from "../pages/Doctors";
-import DoctorProfile from "../pages/Doctors/DoctorProfile";
-import Schedule from "../pages/Schedule";
-import ClinicalManagement from "../pages/ClinicalManagement";
-import Account from "../pages/Account/index";
-import PlansCompare from "../pages/Plans/Compare";
-import FinancialDashboard from "../pages/Financial/Dashboard";
-import Revenue from "../pages/Financial/Revenue";
-import Expenses from "../pages/Financial/Expenses";
-import CashFlow from "../pages/Financial/CashFlow";
-import Insurance from "../pages/Financial/Insurance";
-import Transfers from "../pages/Financial/Transfers";
-import Costs from "../pages/Financial/Costs";
-import DRE from "../pages/Financial/DRE";
-import Reports from "../pages/Financial/Reports";
-import { ProtectedRoute } from "../components/ProtectedRoute";
+
+// Auth screens: not public-facing content, but reached before login, so a
+// small lazy chunk is the right trade.
+const Login = lazy(() => import("../pages/Auth/Login"));
+const Signup = lazy(() => import("../pages/Auth/Signup"));
+const ForgotPassword = lazy(() => import("../pages/Auth/ForgotPassword"));
+const ActivateAccount = lazy(() => import("../pages/Auth/ActivateAccount"));
+const AccessConsent = lazy(() => import("../pages/AccessConsent"));
+
+// Authenticated application.
+const Verification = lazy(() => import("../pages/Verification"));
+const SignatureSimulator = lazy(() => import("../pages/SignatureSimulator"));
+const Dashboard = lazy(() => import("../pages/Dashboard"));
+const Consultations = lazy(() => import("../pages/Consultations"));
+const Atestados = lazy(() => import("../pages/Atestados"));
+const AtestadoDetail = lazy(() => import("../pages/Atestados/AtestadoDetail"));
+const Patients = lazy(() => import("../pages/Patients"));
+const PatientDetail = lazy(() => import("../pages/Patients/PatientDetail"));
+const Doctors = lazy(() => import("../pages/Doctors"));
+const DoctorProfile = lazy(() => import("../pages/Doctors/DoctorProfile"));
+const Schedule = lazy(() => import("../pages/Schedule"));
+const ClinicalManagement = lazy(() => import("../pages/ClinicalManagement"));
+const Account = lazy(() => import("../pages/Account/index"));
+const PlansCompare = lazy(() => import("../pages/Plans/Compare"));
+const FinancialDashboard = lazy(() => import("../pages/Financial/Dashboard"));
+const Revenue = lazy(() => import("../pages/Financial/Revenue"));
+const Expenses = lazy(() => import("../pages/Financial/Expenses"));
+const CashFlow = lazy(() => import("../pages/Financial/CashFlow"));
+const Insurance = lazy(() => import("../pages/Financial/Insurance"));
+const Transfers = lazy(() => import("../pages/Financial/Transfers"));
+const Costs = lazy(() => import("../pages/Financial/Costs"));
+const DRE = lazy(() => import("../pages/Financial/DRE"));
+const Reports = lazy(() => import("../pages/Financial/Reports"));
 
 export default function AppRoutes() {
   return (
-    <Routes>
+    // Suspense boundary for the lazy chunks above. The fallback is
+    // deliberately blank rather than a spinner: the public pages are eager,
+    // so this only ever shows for a fraction of a second on an
+    // authenticated route, and a flashing spinner there reads as a glitch.
+    <Suspense fallback={null}>
+      <Routes>
       {/* Public routes */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
@@ -275,7 +299,8 @@ export default function AppRoutes() {
       />
 
       {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 }

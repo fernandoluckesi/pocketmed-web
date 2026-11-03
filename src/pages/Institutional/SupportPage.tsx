@@ -1,7 +1,16 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Mail, LifeBuoy, Trash2, ShieldCheck } from "lucide-react";
 import { InstitutionalHeader } from "./InstitutionalHeader";
+import {
+  SkipToContent,
+  MAIN_CONTENT_ID,
+} from "../../components/SkipToContent";
 import { InstitutionalFooter } from "./InstitutionalFooter";
+import { SEO } from "../../components/SEO";
+import { faqJsonLd } from "../../utils/structured-data";
+import { PUBLIC_PAGES } from "../../constants/seo";
+
+const SEO_PAGE = PUBLIC_PAGES.find((p) => p.path === "/suporte")!;
 
 /**
  * Public support page. Linked as the App Store "Support URL" and from the
@@ -44,9 +53,21 @@ export default function SupportPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
+      {/* FAQPage markup is built from the same `faqs` array rendered below.
+          Google requires the marked-up Q&A to be visible on the page, so
+          deriving both from one array is what keeps the markup honest —
+          there is no way to mark up a question that isn't shown. */}
+      <SEO
+        title={SEO_PAGE.title}
+        description={SEO_PAGE.description}
+        canonical={SEO_PAGE.path}
+        jsonLd={faqJsonLd(faqs)}
+      />
+
+      <SkipToContent />
       <InstitutionalHeader />
 
-      <main className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <main id={MAIN_CONTENT_ID} className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <Link
           to="/"
           className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-primary transition-colors mb-6"

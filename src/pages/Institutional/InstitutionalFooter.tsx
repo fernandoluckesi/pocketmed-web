@@ -10,7 +10,14 @@ export function InstitutionalFooter() {
 
         <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:justify-between sm:text-left">
           <div className="flex items-center">
-            <img src={logoHorizontal} alt="Hispora" className="h-14 w-auto" />
+            <img
+              src={logoHorizontal}
+              alt="Hispora"
+              width={1718}
+              height={600}
+              loading="lazy"
+              className="h-14 w-auto"
+            />
           </div>
 
           <div className="text-xs sm:text-sm text-slate-400">

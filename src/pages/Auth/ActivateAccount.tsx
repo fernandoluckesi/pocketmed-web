@@ -6,6 +6,7 @@ import * as Yup from "yup";
 import { PasswordStrengthIndicator } from "../../components/PasswordStrengthIndicator";
 import iconLogo from "../../assets/images/icon.png";
 import api from "../../config/api";
+import { SEO } from "../../components/SEO";
 
 type Step = "email" | "code" | "password";
 
@@ -136,6 +137,13 @@ export default function ActivateAccount() {
     formik.touched[field] && formik.errors[field] ? formik.errors[field] : null;
 
   return (
+    <>
+      <SEO
+        title="Ativar conta — Hispora"
+        description="Ative sua conta Hispora."
+        canonical="/activate-account"
+        noindex
+      />
     <div className="min-h-screen flex items-center justify-center bg-white px-4">
       <div className="w-full max-w-md">
         {/* Logo */}
@@ -320,5 +328,6 @@ export default function ActivateAccount() {
         </div>
       </div>
     </div>
+    </>
   );
 }

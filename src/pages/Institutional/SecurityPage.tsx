@@ -1,8 +1,16 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { InstitutionalHeader } from "./InstitutionalHeader";
+import {
+  SkipToContent,
+  MAIN_CONTENT_ID,
+} from "../../components/SkipToContent";
 import { InstitutionalFooter } from "./InstitutionalFooter";
 import { SecurityStandardsContent } from "./LegalModal";
+import { SEO } from "../../components/SEO";
+import { PUBLIC_PAGES } from "../../constants/seo";
+
+const SEO_PAGE = PUBLIC_PAGES.find((p) => p.path === "/seguranca")!;
 
 /**
  * Standalone page for the Security Standards. The footer previously opened
@@ -13,9 +21,17 @@ import { SecurityStandardsContent } from "./LegalModal";
 export default function SecurityPage() {
   return (
     <div className="min-h-screen flex flex-col bg-white">
+      <SEO
+        title={SEO_PAGE.title}
+        description={SEO_PAGE.description}
+        canonical={SEO_PAGE.path}
+        type="article"
+      />
+
+      <SkipToContent />
       <InstitutionalHeader />
 
-      <main className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <main id={MAIN_CONTENT_ID} className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <Link
           to="/"
           className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-primary transition-colors mb-6"

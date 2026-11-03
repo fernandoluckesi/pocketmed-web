@@ -5,14 +5,20 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "start": "serve dist -s -l $PORT",
+    "build": "node scripts/generate-seo-files.mjs && tsc -b && vite build && node scripts/inject-font-preload.mjs && node scripts/prerender.mjs && node scripts/verify-seo.mjs",
+    "start": "node scripts/serve-static.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "seo:generate": "node scripts/generate-seo-files.mjs",
+    "prerender": "node scripts/prerender.mjs",
+    "seo:og-image": "node scripts/generate-og-image.mjs",
+    "seo:verify": "node scripts/verify-seo.mjs",
+    "images:optimize": "node scripts/optimize-images.mjs",
+    "perf": "node scripts/measure-vitals.mjs"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",
@@ -52,6 +58,8 @@
     "fast-check": "^4.9.0",
     "globals": "^17.6.0",
     "jsdom": "^25.0.1",
+    "playwright": "^1.61.1",
+    "serve-handler": "^6.1.7",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12",

@@ -38,8 +38,30 @@ export interface CompanyLegalInfo {
   tradeName: string;
   /** CNPJ, formatted: "00.000.000/0000-00". */
   cnpj: string;
-  /** Registered address, single line: street, number, district, city/UF, CEP. */
+  /** Registered address, single line: street, number, district, city/UF, CEP.
+   * This is the human-readable form rendered in the footer and the Privacy
+   * Policy. For machine-readable output see `addressParts`. */
   address: string;
+  /**
+   * The same address split into Schema.org `PostalAddress` fields.
+   *
+   * Kept separate rather than parsed out of `address` at runtime: parsing a
+   * free-form Brazilian address with a regex is the kind of code that works
+   * until the company moves. Both forms are written by hand from the same
+   * CNPJ registration, and a test asserts they describe the same place.
+   */
+  addressParts: {
+    /** Street and number. */
+    street: string;
+    /** Bairro — Schema.org has no dedicated field; maps to addressLocality's
+     * sibling `addressRegion` poorly, so it rides along with the street. */
+    district: string;
+    city: string;
+    /** Two-letter UF. */
+    state: string;
+    /** CEP, formatted with the hyphen. */
+    postalCode: string;
+  };
   /** Contact e-mail for legal/privacy matters.
    *
    * Should move to the @hispora.com.br domain (already configured in Resend).
@@ -66,6 +88,13 @@ export const COMPANY: CompanyLegalInfo = {
   tradeName: "Hispora Clinical Systems",
   cnpj: "69.831.823/0001-65",
   address: "Rua Pais Leme, 215 - Pinheiros, São Paulo/SP - CEP 05424-150",
+  addressParts: {
+    street: "Rua Pais Leme, 215",
+    district: "Pinheiros",
+    city: "São Paulo",
+    state: "SP",
+    postalCode: "05424-150",
+  },
   contactEmail: "hispora.suporte@yahoo.com",
 
   // LGPD art. 41: the "encarregado" (DPO) must be publicly identified.

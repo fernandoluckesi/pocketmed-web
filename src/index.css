@@ -4,16 +4,35 @@
    é transferência de dado pessoal a terceiro sem informar o titular (LGPD)
    e já rendeu condenação sob o GDPR na Alemanha (LG München, 2022).
    Servindo do próprio domínio, a questão deixa de existir.
-   Mesmos pesos que eram pedidos na query do CDN. */
-@import "@fontsource/inter/400.css";
-@import "@fontsource/inter/500.css";
-@import "@fontsource/inter/600.css";
-@import "@fontsource/inter/700.css";
-@import "@fontsource/manrope/400.css";
-@import "@fontsource/manrope/500.css";
-@import "@fontsource/manrope/600.css";
-@import "@fontsource/manrope/700.css";
-@import "@fontsource/manrope/800.css";
+   Mesmos pesos que eram pedidos na query do CDN.
+
+   Importamos **somente** o subconjunto `latin`, não o pacote completo.
+   O import genérico (`@fontsource/inter/400.css`) traz cirílico, grego e
+   vietnamita também: 53 arquivos e ~1,5 MB de fontes no deploy, para um
+   site inteiramente em pt-BR.
+
+   ⚠️ Detalhe que não é óbvio: os arquivos `latin-*.css` do @fontsource
+   **não declaram `unicode-range`** (o genérico declara). Importar `latin`
+   e `latin-ext` juntos cria dois `@font-face` para a mesma família/peso sem
+   range — e aí o navegador baixa os dois, em vez de escolher. Medido: 8
+   arquivos baixados em vez de 4. Ou seja, importar os dois subconjuntos
+   reduz o deploy mas *piora* o que o visitante baixa.
+
+   Por isso só `latin`. Ele cobre U+00C0–U+00FF, que é todo o acento do
+   português (á â ã à ç é ê í ó ô õ ú e as maiúsculas) — verificado
+   renderizando o texto e comparando a métrica com a fonte de fallback.
+   `latin-ext` só acrescenta caracteres do leste europeu (Ś, Ž, ł); um nome
+   próprio estrangeiro cai no fallback do sistema, que é um custo cosmético
+   aceitável frente a dobrar o download de fontes de todo mundo. */
+@import "@fontsource/inter/latin-400.css";
+@import "@fontsource/inter/latin-500.css";
+@import "@fontsource/inter/latin-600.css";
+@import "@fontsource/inter/latin-700.css";
+@import "@fontsource/manrope/latin-400.css";
+@import "@fontsource/manrope/latin-500.css";
+@import "@fontsource/manrope/latin-600.css";
+@import "@fontsource/manrope/latin-700.css";
+@import "@fontsource/manrope/latin-800.css";
 @import "tailwindcss";
 
 /*

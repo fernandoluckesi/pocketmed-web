@@ -7,6 +7,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { Snackbar } from "../../components/Snackbar";
 import logoHorizontal from "../../assets/logos/hispora-horizontal-primary.png";
 import { LegalLinks } from "../../components/LegalLinks";
+import { SEO } from "../../components/SEO";
 
 const loginSchema = Yup.object({
   email: Yup.string().email("E-mail inválido").required("E-mail é obrigatório"),
@@ -50,6 +51,13 @@ export default function Login() {
 
   return (
     <div className="h-screen flex overflow-hidden">
+      <SEO
+        title="Entrar — Hispora"
+        description="Acesse sua conta Hispora."
+        canonical="/login"
+        noindex
+      />
+
       {/* Left Side: Visual */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-neutral-900 overflow-hidden select-none h-screen sticky top-0">
         <img

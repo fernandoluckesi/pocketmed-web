@@ -11,6 +11,7 @@ import {
   Building2,
 } from "lucide-react";
 import { InstitutionalHeader } from "../Institutional/InstitutionalHeader";
+import { SEO } from "../../components/SEO";
 import { InstitutionalFooter } from "../Institutional/InstitutionalFooter";
 import { api, ApiError } from "../../services/api";
 
@@ -128,6 +129,16 @@ export default function AccessConsent() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
+      {/* noindex: the URL contains a single-use authorization id. See the
+          note in robots.txt — the Disallow there stops the fetch, this
+          stops indexing of a URL discovered some other way. */}
+      <SEO
+        title="Autorização de acesso ao prontuário — Hispora"
+        description="Página de autorização de acesso ao prontuário."
+        canonical="/acesso-prontuario"
+        noindex
+      />
+
       <InstitutionalHeader />
 
       <main className="flex-1 w-full max-w-xl mx-auto px-4 sm:px-6 py-10 sm:py-14">

@@ -32,6 +32,7 @@ import logoHorizontal from "../../assets/logos/hispora-horizontal-primary.png";
 import api from "../../config/api";
 import { LegalLinks } from "../../components/LegalLinks";
 import { UF_LIST } from "../../utils/uf";
+import { SEO } from "../../components/SEO";
 
 // Empty by default: without a site key, the widget below never renders and
 // registration behaves exactly as before — see TURNSTILE_SECRET_KEY in the
@@ -1173,6 +1174,13 @@ export default function Signup() {
 
   return (
     <div className="h-screen flex overflow-hidden">
+      <SEO
+        title="Criar conta — Hispora"
+        description="Crie sua conta no Hispora."
+        canonical="/signup"
+        noindex
+      />
+
       {/* Left Side: Visual */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-primary overflow-hidden select-none h-screen sticky top-0">
         <div className="absolute inset-0 opacity-15 pointer-events-none">

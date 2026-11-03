@@ -6,14 +6,47 @@
     <link rel="shortcut icon" type="image/png" href="/icon.png" />
     <link rel="apple-touch-icon" href="/icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hispora — Prontuário eletrônico e gestão de clínicas</title>
-    <!-- Description kept factual on purpose: it is advertising copy as much
-         as SEO metadata (CDC art. 37), so it states what the platform does
-         without absolute claims about security or compliance. -->
-    <meta
-      name="description"
-      content="Plataforma de saúde que conecta pacientes e profissionais: prontuário eletrônico, agendamento, receitas e exames em um só lugar. Gratuito para pacientes."
-    />
+
+    <!--
+      Preconnect to the API origin so the first data request doesn't pay for
+      DNS + TLS after the bundle executes. Fonts are self-hosted (see
+      src/index.css), so there is no third-party origin to warm up — and
+      deliberately so: loading them from Google's CDN would send every
+      visitor's IP to a third party (LGPD), which is why they were brought
+      in-house.
+    -->
+    <link rel="preconnect" href="https://api.hispora.com.br" crossorigin />
+
+    <!--
+      Replaced at build time by scripts/inject-font-preload.mjs with preload
+      tags for the two above-the-fold fonts. The filenames are hashed by
+      Vite, so they cannot be written here by hand — a stale hash would
+      preload a 404, which is worse than not preloading at all.
+
+      Keep this marker. The build fails if it is missing.
+    -->
+    <!-- FONT_PRELOAD -->
+
+    <!--
+      Title and description are NOT set here.
+
+      They are rendered per page by src/components/SEO.tsx, which React 19
+      hoists into this <head>. A static <title> here would not be replaced
+      but *kept alongside* the hoisted one, giving every page two <title>
+      elements — so the single source of truth has to be one or the other,
+      and per-page wins.
+
+      The build prerenders every public route to static HTML
+      (scripts/prerender.mjs), so crawlers that do not execute JavaScript —
+      which includes every social-media preview bot — still receive the
+      correct title, description and Open Graph tags.
+
+      There is intentionally NO <title> element here. React appends its
+      hoisted one rather than replacing a static one, so any title in this
+      file becomes a second <title> on every page. The browser shows the
+      URL for the fraction of a second before hydration, which is a far
+      smaller problem than shipping two titles to a crawler.
+    -->
   </head>
   <body class="bg-background text-on-surface min-h-screen">
     <div id="root"></div>

@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { CheckCircle2, Loader2, PenLine, ShieldAlert } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { api, ApiError } from "../services/api";
+import { SEO } from "../components/SEO";
 
 interface PendingSignatureInfo {
   documentId: string;
@@ -88,6 +89,14 @@ export default function SignatureSimulator() {
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6">
+      {/* noindex: the URL contains a signing token. */}
+      <SEO
+        title="Assinatura de documento — Hispora"
+        description="Página de assinatura de documento."
+        canonical="/assinatura-simulada"
+        noindex
+      />
+
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div className="bg-slate-800 px-6 py-4 flex items-center gap-2">
           <PenLine className="w-4 h-4 text-white" />

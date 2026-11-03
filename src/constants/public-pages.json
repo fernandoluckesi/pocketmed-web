@@ -1,0 +1,96 @@
+{
+  "$comment": [
+    "Single source of truth for the public, indexable pages.",
+    "",
+    "This is JSON rather than TypeScript on purpose: it is consumed both by",
+    "the app (src/constants/seo.ts imports it, typed) and by build scripts",
+    "running in plain Node (scripts/generate-seo-files.mjs and",
+    "scripts/prerender.mjs). JSON is the only format both read without a",
+    "TypeScript runtime or a brittle regex parse of a .ts file.",
+    "",
+    "Adding a public page means adding it here — then the sitemap, the",
+    "prerender step and the page metadata all pick it up, and the build",
+    "fails if the router doesn't actually serve it.",
+    "",
+    "`aliases` are extra paths that render the same page. They get static",
+    "HTML (so an inbound link to /legal works) but are NOT listed in the",
+    "sitemap, because each one declares the canonical path instead."
+  ],
+  "pages": [
+    {
+      "path": "/",
+      "title": "Hispora — Prontuário eletrônico e gestão de clínicas",
+      "description": "Plataforma de saúde que conecta pacientes e profissionais: prontuário eletrônico, agendamento, receitas e exames em um só lugar. Gratuito para pacientes.",
+      "changefreq": "weekly",
+      "priority": 1.0
+    },
+    {
+      "path": "/institutional",
+      "title": "Sobre o Hispora — Prontuário eletrônico para clínicas e pacientes",
+      "description": "Conheça o Hispora: prontuário eletrônico, agenda médica e gestão de clínicas em uma plataforma só, com o paciente no controle dos próprios dados de saúde.",
+      "changefreq": "monthly",
+      "priority": 0.8
+    },
+    {
+      "path": "/institutional/platform",
+      "title": "Plataforma para clínicas e médicos — Hispora",
+      "description": "Agenda, prontuário eletrônico, receitas, atestados e gestão financeira para clínicas e médicos autônomos. Conheça a plataforma Hispora.",
+      "changefreq": "monthly",
+      "priority": 0.8
+    },
+    {
+      "path": "/institutional/mobile",
+      "title": "Aplicativo Hispora para pacientes — seu prontuário no celular",
+      "description": "Tenha exames, receitas, vacinas e histórico de consultas no celular. O app Hispora é gratuito para pacientes e funciona para você e seus dependentes.",
+      "changefreq": "monthly",
+      "priority": 0.8
+    },
+    {
+      "path": "/termos",
+      "title": "Termos de Uso e Política de Privacidade — Hispora",
+      "description": "Termos de Uso e Política de Privacidade do Hispora: como tratamos seus dados de saúde, base legal LGPD, direitos do titular e política de reembolso.",
+      "changefreq": "monthly",
+      "priority": 0.5,
+      "aliases": ["/legal", "/privacidade"]
+    },
+    {
+      "path": "/seguranca",
+      "title": "Segurança e proteção de dados — Hispora",
+      "description": "Como o Hispora protege dados de saúde: criptografia em trânsito, controle de acesso por perfil, auditoria de operações e conformidade com a LGPD.",
+      "changefreq": "monthly",
+      "priority": 0.5,
+      "aliases": ["/security"]
+    },
+    {
+      "path": "/suporte",
+      "title": "Suporte e perguntas frequentes — Hispora",
+      "description": "Central de ajuda do Hispora: perguntas frequentes, como excluir conta e dados, redefinir senha, compartilhar prontuário e gerenciar dependentes.",
+      "changefreq": "monthly",
+      "priority": 0.5,
+      "aliases": ["/support"]
+    },
+    {
+      "path": "/exclusao-de-dados",
+      "title": "Exclusão de conta e dados — Hispora",
+      "description": "Solicite a exclusão da sua conta ou apenas dos seus dados no Hispora. Formulário público, sem necessidade de acesso ao aplicativo.",
+      "changefreq": "yearly",
+      "priority": 0.3,
+      "aliases": ["/exclusao-de-conta", "/delete-account", "/data-deletion"]
+    }
+  ],
+  "intentionallyUnlisted": {
+    "$comment": [
+      "Public routes deliberately kept out of the sitemap. Listing them here",
+      "is what tells the generator they were considered, so it can fail on",
+      "any OTHER public route that is neither indexed nor excluded."
+    ],
+    "paths": [
+      "/login",
+      "/signup",
+      "/forgot-password",
+      "/activate-account",
+      "/plans",
+      "/acesso-prontuario/:requestId"
+    ]
+  }
+}

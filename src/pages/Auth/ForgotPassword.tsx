@@ -6,6 +6,7 @@ import * as Yup from "yup";
 import { PasswordStrengthIndicator } from "../../components/PasswordStrengthIndicator";
 import iconLogo from "../../assets/images/icon.png";
 import api from "../../config/api";
+import { SEO } from "../../components/SEO";
 
 type Step = "email" | "code" | "password";
 
@@ -107,6 +108,13 @@ export default function ForgotPassword() {
     formik.touched[field] && formik.errors[field] ? formik.errors[field] : null;
 
   return (
+    <>
+      <SEO
+        title="Recuperar senha — Hispora"
+        description="Redefina a senha da sua conta Hispora."
+        canonical="/forgot-password"
+        noindex
+      />
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 px-4">
       <div className="w-full max-w-md">
         {/* Logo */}
@@ -266,5 +274,6 @@ export default function ForgotPassword() {
         </div>
       </div>
     </div>
+    </>
   );
 }

@@ -28,7 +28,7 @@ export function LegalLinks({
             )}
             <Link
               to={link.to}
-              className="hover:text-primary transition-colors whitespace-nowrap"
+              className="inline-flex items-center py-2.5 hover:text-primary transition-colors whitespace-nowrap"
             >
               {link.label}
             </Link>
@@ -46,7 +46,7 @@ export function LegalLinks({
         <Link
           key={link.to}
           to={link.to}
-          className="text-xs font-bold text-slate-500 uppercase tracking-wider hover:text-primary transition-colors"
+          className="inline-flex items-center py-4 text-xs font-bold text-slate-500 uppercase tracking-wider hover:text-primary transition-colors"
         >
           {link.label}
         </Link>
