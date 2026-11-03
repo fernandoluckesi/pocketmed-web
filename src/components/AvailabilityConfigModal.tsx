@@ -427,6 +427,7 @@ export function AvailabilityConfigModal({
                 </div>
               </div>
               <button
+                aria-label="Fechar"
                 onClick={onClose}
                 className="p-2 hover:bg-slate-100 rounded-full transition-colors cursor-pointer border-none bg-transparent"
               >
@@ -487,6 +488,9 @@ export function AvailabilityConfigModal({
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <button
+                              aria-label={`Atender ${d.label}`}
+                              role="switch"
+                              aria-checked={day.enabled}
                               type="button"
                               onClick={() => toggleDay(d.key)}
                               className={`relative w-10 h-6 rounded-full transition-colors cursor-pointer border-none ${
@@ -555,6 +559,7 @@ export function AvailabilityConfigModal({
                                   className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm cursor-pointer outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
                                 />
                                 <button
+                                  aria-label="Remover este intervalo"
                                   type="button"
                                   onClick={() => removeInterval(d.key, i)}
                                   className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors cursor-pointer border-none bg-transparent"
@@ -721,6 +726,7 @@ export function AvailabilityConfigModal({
                             />
                             {excIntervals.length > 1 && (
                               <button
+                                aria-label="Remover este intervalo"
                                 type="button"
                                 onClick={() => removeExcInterval(i)}
                                 className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors cursor-pointer border-none bg-transparent"
@@ -790,6 +796,7 @@ export function AvailabilityConfigModal({
                                 </div>
                               </div>
                               <button
+                                aria-label="Remover esta exceção"
                                 type="button"
                                 onClick={() => handleRemoveException(g.ids)}
                                 className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors cursor-pointer border-none bg-transparent shrink-0"

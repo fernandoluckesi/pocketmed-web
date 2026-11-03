@@ -1038,9 +1038,11 @@ export default function Account() {
               {/* Avatar */}
               <div className="flex items-center gap-6">
                 <div className="relative">
-                  <div
+                  <button
+                    type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-24 h-24 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden hover:border-primary hover:bg-primary/5 transition-all group cursor-pointer"
+                    aria-label="Alterar foto de perfil"
+                    className="w-24 h-24 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden hover:border-primary hover:bg-primary/5 transition-all group cursor-pointer p-0"
                   >
                     {profilePreview || user?.profileImage ? (
                       <img
@@ -1054,7 +1056,7 @@ export default function Account() {
                         className="text-slate-400 group-hover:text-primary transition-colors"
                       />
                     )}
-                  </div>
+                  </button>
                   <input
                     ref={fileInputRef}
                     type="file"

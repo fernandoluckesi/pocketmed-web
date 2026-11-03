@@ -25,6 +25,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useActiveConsultation } from "../contexts/ActiveConsultationContext";
 import { useDialog } from "./ui/Dialog";
 import { formatElapsedTime } from "../utils/format-duration";
+import { clickableProps } from "../utils/clickableProps";
 import { Button } from "../components/ui/Button";
 import { NotificationsDropdown } from "./NotificationsDropdown";
 import logoHorizontal from "../assets/logos/hispora-horizontal-primary.png";
@@ -308,12 +309,16 @@ export function MainLayout({ children }: MainLayoutProps) {
               from any screen while a consultation's timer is running. */}
           {activeConsultation ? (
             <div
-              onClick={() => {
-                if (!activeConsultation.patientId) return;
-                navigate(
-                  `/patients/${activeConsultation.patientId}?consulta=${activeConsultation.appointmentId}&edit=1`,
-                );
-              }}
+              {...clickableProps(
+                () =>
+                  navigate(
+                    `/patients/${activeConsultation.patientId}?consulta=${activeConsultation.appointmentId}&edit=1`,
+                  ),
+                {
+                  label: `Abrir a consulta em andamento de ${activeConsultation.patientName}`,
+                  disabled: !activeConsultation.patientId,
+                },
+              )}
               className={`w-[460px] shrink-0 flex items-center gap-3 bg-green-50 border-r border-green-100 pl-8 pr-6 py-4 ${
                 activeConsultation.patientId
                   ? "cursor-pointer hover:bg-green-100 transition-colors"
@@ -364,9 +369,13 @@ export function MainLayout({ children }: MainLayoutProps) {
             <div className="h-8 w-px bg-slate-200 mx-1"></div>
 
             <div className="relative" ref={dropdownRef}>
-              <div
+              <button
+                type="button"
                 onClick={() => setAvatarDropdown(!avatarDropdown)}
-                className="flex items-center gap-3 cursor-pointer group"
+                aria-haspopup="menu"
+                aria-expanded={avatarDropdown}
+                aria-label="Abrir menu da conta"
+                className="flex items-center gap-3 cursor-pointer group border-none bg-transparent p-0"
               >
                 <div className="text-right hidden sm:block">
                   <p className="text-xs font-bold text-slate-900 group-hover:text-primary transition-colors">
@@ -396,7 +405,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                 <ChevronDown
                   className={`w-4 h-4 text-slate-400 transition-transform ${avatarDropdown ? "rotate-180" : ""}`}
                 />
-              </div>
+              </button>
 
               {/* Dropdown Menu */}
               {avatarDropdown && (

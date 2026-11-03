@@ -42,6 +42,7 @@ export function Modal({
                 </h4>
               </div>
               <button
+                aria-label="Fechar"
                 onClick={onClose}
                 className="text-on-surface-variant hover:text-on-surface p-2 bg-surface-container-low rounded-full transition-colors cursor-pointer border-none"
               >

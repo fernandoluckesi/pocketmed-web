@@ -76,13 +76,14 @@ export default function Atestados() {
                   <th className="px-6 py-5">Dias de Afastamento</th>
                   <th className="px-6 py-5">Data</th>
                   <th className="px-6 py-5 text-center">Anexo</th>
+                  <th className="px-6 py-5 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={6}
                       className="text-center py-16 text-slate-400 text-sm"
                     >
                       Carregando...
@@ -90,7 +91,7 @@ export default function Atestados() {
                   </tr>
                 ) : certificates.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="text-center py-16">
+                    <td colSpan={6} className="text-center py-16">
                       <FileCheck className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                       <p className="text-sm font-bold text-slate-800">
                         Nenhum atestado emitido
@@ -143,10 +144,32 @@ export default function Atestados() {
                       </td>
                       <td className="px-6 py-4 text-center">
                         {cert.fileUrl ? (
-                          <Paperclip className="w-4 h-4 text-primary inline" />
+                          <Paperclip
+                            className="w-4 h-4 text-primary inline"
+                            aria-label="Possui anexo"
+                            role="img"
+                          />
                         ) : (
                           <span className="text-slate-300 text-xs">—</span>
                         )}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        {/* Keyboard/screen-reader path into the row. The
+                            row's own onClick stays as a mouse shortcut, but
+                            a <tr> must not become role="button" — that
+                            would hide the column semantics the screen
+                            reader relies on to read the cells. */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/atestados/${cert.id}`);
+                          }}
+                          aria-label={`Abrir atestado de ${cert.patientName}`}
+                          className="text-xs font-bold text-primary hover:underline cursor-pointer border-none bg-transparent"
+                        >
+                          Abrir
+                        </button>
                       </td>
                     </tr>
                   ))

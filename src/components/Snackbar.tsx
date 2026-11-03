@@ -24,6 +24,7 @@ export function Snackbar({ message, visible, onClose, duration = 5000 }: Snackba
         <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
         <p className="text-sm font-medium flex-1">{message}</p>
         <button
+          aria-label="Fechar aviso"
           onClick={onClose}
           className="text-slate-400 hover:text-white transition-colors border-none bg-transparent cursor-pointer shrink-0"
         >

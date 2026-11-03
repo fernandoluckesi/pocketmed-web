@@ -441,6 +441,7 @@ export default function Insurance() {
                 </p>
               </div>
               <button
+                aria-label="Fechar"
                 type="button"
                 onClick={() => setManagingProceduresFor(null)}
                 className="text-on-surface-variant hover:text-on-surface p-2 bg-surface-container-low rounded-full transition-colors cursor-pointer"
@@ -557,12 +558,14 @@ export default function Insurance() {
                             {editingProcedureId === p.id ? (
                               <>
                                 <button
+                                  aria-label="Salvar valor do procedimento"
                                   onClick={() => handleSaveEditProcedure(p)}
                                   className="text-emerald-600 hover:bg-emerald-50 rounded p-1 cursor-pointer"
                                 >
                                   <Check className="w-3.5 h-3.5" />
                                 </button>
                                 <button
+                                  aria-label="Cancelar edição"
                                   onClick={() => setEditingProcedureId(null)}
                                   className="text-slate-400 hover:bg-slate-100 rounded p-1 cursor-pointer"
                                 >
@@ -572,12 +575,14 @@ export default function Insurance() {
                             ) : (
                               <>
                                 <button
+                                  aria-label="Editar procedimento"
                                   onClick={() => handleStartEditProcedure(p)}
                                   className="text-slate-500 hover:bg-slate-100 rounded p-1 cursor-pointer"
                                 >
                                   <Edit2 className="w-3.5 h-3.5" />
                                 </button>
                                 <button
+                                  aria-label="Excluir procedimento"
                                   onClick={() => handleDeleteProcedure(p)}
                                   className="text-rose-500 hover:bg-rose-50 rounded p-1 cursor-pointer"
                                 >
@@ -609,6 +614,7 @@ export default function Insurance() {
                 </p>
               </div>
               <button
+                aria-label="Fechar"
                 type="button"
                 onClick={() => setManagingPlansFor(null)}
                 className="text-on-surface-variant hover:text-on-surface p-2 bg-surface-container-low rounded-full transition-colors cursor-pointer"
@@ -684,12 +690,14 @@ export default function Insurance() {
                             {editingPlanId === p.id ? (
                               <>
                                 <button
+                                  aria-label="Salvar nome do plano"
                                   onClick={() => handleSaveEditPlan(p)}
                                   className="text-emerald-600 hover:bg-emerald-50 rounded p-1 cursor-pointer"
                                 >
                                   <Check className="w-3.5 h-3.5" />
                                 </button>
                                 <button
+                                  aria-label="Cancelar edição"
                                   onClick={() => setEditingPlanId(null)}
                                   className="text-slate-400 hover:bg-slate-100 rounded p-1 cursor-pointer"
                                 >
@@ -699,12 +707,14 @@ export default function Insurance() {
                             ) : (
                               <>
                                 <button
+                                  aria-label="Editar plano"
                                   onClick={() => handleStartEditPlan(p)}
                                   className="text-slate-500 hover:bg-slate-100 rounded p-1 cursor-pointer"
                                 >
                                   <Edit2 className="w-3.5 h-3.5" />
                                 </button>
                                 <button
+                                  aria-label="Excluir plano"
                                   onClick={() => handleDeletePlan(p)}
                                   className="text-rose-500 hover:bg-rose-50 rounded p-1 cursor-pointer"
                                 >
@@ -755,12 +765,14 @@ export default function Insurance() {
                     <Tag className="w-3.5 h-3.5 text-indigo-500" />
                   </button>
                   <button
+                    aria-label="Editar convênio"
                     onClick={() => openEdit(conv)}
                     className="p-1.5 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
                   >
                     <Edit2 className="w-3.5 h-3.5 text-slate-500" />
                   </button>
                   <button
+                    aria-label="Excluir convênio"
                     onClick={() => handleDelete(conv.id)}
                     className="p-1.5 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
                   >

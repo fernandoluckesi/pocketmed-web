@@ -121,6 +121,7 @@ export function PromoBanner() {
             <ChevronLeft className="w-4 h-4" />
           </button>
           <button
+            aria-label="Próximo destaque"
             onClick={() => setCurrent((current + 1) % banners.length)}
             className="p-1.5 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors border-none cursor-pointer"
           >

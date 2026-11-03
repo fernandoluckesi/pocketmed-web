@@ -167,14 +167,18 @@ function APIPatientCard({
 
       <div className="pt-2.5 border-t border-gray-100">
         {accessStatus === "approved" ? (
-          <div
+          // Botão de verdade (e não `<div onClick>`): é uma ação simples,
+          // sem elementos interativos dentro, então o elemento semântico
+          // resolve foco, Enter/Espaço e leitor de tela de uma vez.
+          <button
+            type="button"
             onClick={() => navigate(`/patients/${patient.id}`)}
-            className="w-full py-1.5 bg-green-50 hover:bg-green-100 rounded-2xl font-bold flex items-center justify-center gap-2 text-green-700 cursor-pointer transition-colors"
+            className="w-full py-1.5 bg-green-50 hover:bg-green-100 rounded-2xl font-bold flex items-center justify-center gap-2 text-green-700 cursor-pointer transition-colors border-none"
           >
             <CheckCircle className="w-5 h-5" />
             Acesso Concedido
             <ArrowRight className="w-5 h-5" />
-          </div>
+          </button>
         ) : accessStatus === "pending" ? (
           <div className="w-full py-1.5 bg-amber-50 rounded-2xl font-bold flex items-center justify-center gap-2 text-amber-700 cursor-default">
             <Clock className="w-5 h-5" />
@@ -258,14 +262,15 @@ function APIPatientListRow({
 
       <div className="shrink-0 w-full md:w-auto">
         {accessStatus === "approved" ? (
-          <div
+          <button
+            type="button"
             onClick={() => navigate(`/patients/${patient.id}`)}
-            className="w-full md:w-auto px-6 py-3 bg-green-50 hover:bg-green-100 text-green-700 rounded-xl font-bold flex items-center justify-center gap-2 cursor-pointer transition-colors"
+            className="w-full md:w-auto px-6 py-3 bg-green-50 hover:bg-green-100 text-green-700 rounded-xl font-bold flex items-center justify-center gap-2 cursor-pointer transition-colors border-none"
           >
             <CheckCircle className="w-4 h-4" />
             Acesso Concedido
             <ArrowRight className="w-4 h-4" />
-          </div>
+          </button>
         ) : accessStatus === "pending" ? (
           <div className="w-full md:w-auto px-6 py-3 bg-amber-50 text-amber-700 rounded-xl font-bold flex items-center justify-center gap-2 cursor-default">
             <Clock className="w-4 h-4" />
@@ -788,6 +793,7 @@ function AddPatientModal({
           </h4>
         </div>
         <button
+          aria-label="Fechar"
           onClick={handleClose}
           className="text-on-surface-variant hover:text-on-surface p-2 bg-surface-container-low rounded-full transition-colors cursor-pointer"
         >
@@ -1287,12 +1293,16 @@ function SearchTabContent({
             </div>
             <div className="flex gap-2 bg-white p-1 rounded-xl shadow-sm border border-gray-100">
               <button
+                aria-label="Ver em grade"
+                aria-pressed={view === "grid"}
                 onClick={() => setView("grid")}
                 className={`cursor-pointer p-2 rounded-lg transition-all ${view === "grid" ? "bg-primary text-white shadow-md" : "text-gray-400 hover:text-primary"}`}
               >
                 <LayoutGrid className="w-5 h-5" />
               </button>
               <button
+                aria-label="Ver em lista"
+                aria-pressed={view === "list"}
                 onClick={() => setView("list")}
                 className={`cursor-pointer p-2 rounded-lg transition-all ${view === "list" ? "bg-primary text-white shadow-md" : "text-gray-400 hover:text-primary"}`}
               >

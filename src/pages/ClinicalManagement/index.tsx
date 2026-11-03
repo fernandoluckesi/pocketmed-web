@@ -323,6 +323,7 @@ function MembersSection({
                               }
                             >
                               <button
+                                aria-label="Reenviar código de acesso"
                                 onClick={() => onResendCode(member.id)}
                                 disabled={resendCooldown > 0}
                                 className="p-2 rounded-lg hover:bg-blue-50 text-slate-500 hover:text-blue-600 transition-all cursor-pointer border-none bg-transparent disabled:opacity-40 disabled:cursor-not-allowed"
@@ -334,6 +335,7 @@ function MembersSection({
                           {member.role === "doctor" && member.professional && (
                             <Tooltip label="Ver perfil">
                               <button
+                                aria-label="Ver perfil"
                                 onClick={() => onViewProfile(member)}
                                 className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-primary transition-all cursor-pointer border-none bg-transparent"
                               >
@@ -344,6 +346,7 @@ function MembersSection({
                           {member.role !== "doctor" && (
                             <Tooltip label="Editar">
                               <button
+                                aria-label="Editar membro"
                                 onClick={() => onEdit(member)}
                                 className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-primary transition-all cursor-pointer border-none bg-transparent"
                               >
@@ -353,6 +356,7 @@ function MembersSection({
                           )}
                           <Tooltip label="Remover">
                             <button
+                              aria-label="Remover membro"
                               onClick={() => onRemove(member.id)}
                               className="p-2 rounded-lg hover:bg-red-50 text-slate-500 hover:text-red-600 transition-all cursor-pointer border-none bg-transparent"
                             >
@@ -377,6 +381,7 @@ function MembersSection({
         </p>
         <div className="flex items-center gap-2">
           <button
+            aria-label="Página anterior"
             disabled={page <= 1}
             onClick={() => onPageChange(Math.max(page - 1, 1))}
             className="p-1.5 text-slate-400 hover:text-primary transition-all disabled:opacity-30 cursor-pointer border-none bg-transparent"
@@ -401,6 +406,7 @@ function MembersSection({
             )}
           </div>
           <button
+            aria-label="Próxima página"
             disabled={page >= totalPages}
             onClick={() => onPageChange(Math.min(page + 1, totalPages))}
             className="p-1.5 text-slate-400 hover:text-primary transition-all disabled:opacity-30 cursor-pointer border-none bg-transparent"
@@ -515,6 +521,7 @@ function LinkedPatientsSection({ patients }: { patients: LinkedPatient[] }) {
         </p>
         <div className="flex items-center gap-2">
           <button
+            aria-label="Página anterior"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
             className="p-1.5 text-slate-400 hover:text-primary transition-all disabled:opacity-30 cursor-pointer border-none bg-transparent"
@@ -537,6 +544,7 @@ function LinkedPatientsSection({ patients }: { patients: LinkedPatient[] }) {
             ))}
           </div>
           <button
+            aria-label="Próxima página"
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
             className="p-1.5 text-slate-400 hover:text-primary transition-all disabled:opacity-30 cursor-pointer border-none bg-transparent"
@@ -838,6 +846,7 @@ export default function ClinicalManagement() {
                   : "Adicionar Secretário(a)"}
               </h2>
               <button
+                aria-label="Fechar"
                 onClick={() => setShowAddModal(false)}
                 className="p-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer border-none bg-transparent"
               >

@@ -134,6 +134,8 @@ export default function Login() {
                     {...formik.getFieldProps("password")}
                   />
                   <button
+                    aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                    aria-pressed={showPassword}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-md border-none bg-transparent cursor-pointer"
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}

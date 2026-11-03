@@ -295,6 +295,9 @@ function ClinicSignupForm({
           state: values.state,
           noNumber: values.noNumber,
           captchaToken: captchaToken || undefined,
+          // Envia o aceite para ser registrado com data e versão no
+          // backend — o checkbox sozinho não deixava rastro algum.
+          acceptedTerms: values.acceptTerms,
         });
         // If we're still here, email verification is needed
         onVerificationNeeded(values.email);
@@ -840,6 +843,8 @@ function ClinicSignupForm({
                 {...formik.getFieldProps("password")}
               />
               <button
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                aria-pressed={showPassword}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-md border-none bg-transparent cursor-pointer"
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
@@ -1102,6 +1107,9 @@ export default function Signup() {
           rqe: values.rqe || undefined,
           profileImage: profileImage || undefined,
           captchaToken: captchaToken || undefined,
+          // Envia o aceite para ser registrado com data e versão no
+          // backend — o checkbox sozinho não deixava rastro algum.
+          acceptedTerms: values.acceptTerms,
         });
         // If we're still here, email verification is needed
         setPendingVerification(values.email);
@@ -1361,9 +1369,11 @@ export default function Signup() {
                 {/* Profile Image */}
                 <div className="flex justify-center mb-2">
                   <div className="relative">
-                    <div
+                    <button
+                      type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-20 h-20 rounded-full bg-slate-50 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden hover:border-primary hover:bg-primary/5 transition-all group cursor-pointer"
+                      aria-label="Escolher foto de perfil (opcional)"
+                      className="w-20 h-20 rounded-full bg-slate-50 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden hover:border-primary hover:bg-primary/5 transition-all group cursor-pointer p-0"
                     >
                       {profilePreview ? (
                         <img
@@ -1377,7 +1387,7 @@ export default function Signup() {
                           className="text-slate-400 group-hover:text-primary transition-colors"
                         />
                       )}
-                    </div>
+                    </button>
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -1681,6 +1691,8 @@ export default function Signup() {
                       {...formik.getFieldProps("password")}
                     />
                     <button
+                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                      aria-pressed={showPassword}
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-md border-none bg-transparent cursor-pointer"
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}

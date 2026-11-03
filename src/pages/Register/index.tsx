@@ -171,9 +171,11 @@ export default function Register() {
             {/* Profile Image */}
             <div className="flex justify-center">
               <div className="relative">
-                <div
+                <button
+                  type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-24 h-24 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden hover:border-primary hover:bg-primary/5 transition-all group cursor-pointer"
+                  aria-label="Escolher foto de perfil (opcional)"
+                  className="w-24 h-24 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden hover:border-primary hover:bg-primary/5 transition-all group cursor-pointer p-0"
                 >
                   {profilePreview ? (
                     <img
@@ -187,7 +189,7 @@ export default function Register() {
                       className="text-slate-400 group-hover:text-primary transition-colors"
                     />
                   )}
-                </div>
+                </button>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -260,6 +262,8 @@ export default function Register() {
                     placeholder="••••••"
                   />
                   <button
+                    aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                    aria-pressed={showPassword}
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 cursor-pointer"

@@ -53,6 +53,7 @@ export function ConfirmModal({
                   </p>
                 </div>
                 <button
+                  aria-label="Fechar"
                   onClick={onClose}
                   disabled={loading}
                   className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all disabled:opacity-50 cursor-pointer"

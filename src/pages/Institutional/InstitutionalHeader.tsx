@@ -57,6 +57,8 @@ export function InstitutionalHeader({ currentPage }: InstitutionalHeaderProps) {
 
         {/* Mobile menu button */}
         <button
+          aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
+          aria-expanded={menuOpen}
           onClick={() => setMenuOpen(!menuOpen)}
           className="md:hidden p-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer border-none bg-transparent"
         >

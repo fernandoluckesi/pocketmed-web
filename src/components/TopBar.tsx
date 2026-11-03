@@ -1,5 +1,15 @@
 import { ICONS, IMAGES } from "../constants";
 
+/**
+ * NOTE: this component is not rendered anywhere — `MainLayout` builds its own
+ * header. It also carries placeholder content ("Dr. Smith", "Cardiologista
+ * Sênior"), so it looks like an early mock that was left behind.
+ *
+ * It is kept (rather than deleted) because removing code was out of scope,
+ * but the two icon buttons below were given accessible names anyway: if it
+ * ever gets mounted, it should not reintroduce the gap that the rest of the
+ * app just closed.
+ */
 export const TopBar = () => {
   return (
     <header className="w-full sticky top-0 z-40 bg-slate-50/80 backdrop-blur-lg flex justify-between items-center px-8 py-4">
@@ -19,11 +29,19 @@ export const TopBar = () => {
           />
         </div>
 
-        <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-200/50 transition-colors active:scale-95 duration-150 text-on-surface-variant">
+        <button
+          type="button"
+          aria-label="Notificações"
+          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-200/50 transition-colors active:scale-95 duration-150 text-on-surface-variant"
+        >
           <ICONS.Bell size={20} />
         </button>
 
-        <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-200/50 transition-colors active:scale-95 duration-150 text-on-surface-variant">
+        <button
+          type="button"
+          aria-label="Configurações"
+          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-200/50 transition-colors active:scale-95 duration-150 text-on-surface-variant"
+        >
           <ICONS.Settings size={20} />
         </button>
 

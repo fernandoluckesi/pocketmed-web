@@ -46,12 +46,14 @@ export function PhoneCarousel({
       <div className="relative">
         {/* Navigation arrows - visible on hover */}
         <button
+          aria-label="Tela anterior"
           onClick={prev}
           className="absolute left-[-40px] sm:left-[-50px] top-1/2 -translate-y-1/2 z-10 w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-slate-600 hover:text-primary hover:scale-110 transition-all cursor-pointer border border-slate-200"
         >
           <ChevronLeft size={20} />
         </button>
         <button
+          aria-label="Próxima tela"
           onClick={next}
           className="absolute right-[-40px] sm:right-[-50px] top-1/2 -translate-y-1/2 z-10 w-9 h-9 sm:w-10 sm:h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-slate-600 hover:text-primary hover:scale-110 transition-all cursor-pointer border border-slate-200"
         >

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Bell, Check, Loader2 } from "lucide-react";
 import { api } from "../services/api";
+import { clickableProps } from "../utils/clickableProps";
 
 interface NotificationItem {
   id: string;
@@ -162,9 +163,10 @@ export function NotificationsDropdown() {
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  onClick={() =>
-                    !notification.isRead && markAsRead(notification.id)
-                  }
+                  {...clickableProps(() => markAsRead(notification.id), {
+                    label: `Marcar como lida: ${notification.title}`,
+                    disabled: notification.isRead,
+                  })}
                   className={`px-5 py-3.5 flex items-start gap-3 hover:bg-slate-50 transition-colors cursor-pointer border-b border-slate-50 last:border-none ${
                     !notification.isRead ? "bg-primary/[0.02]" : ""
                   }`}

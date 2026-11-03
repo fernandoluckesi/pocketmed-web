@@ -103,7 +103,7 @@ describe("ScrollToTop", () => {
     // Forcing the top on a back navigation is its own UX bug: scrolling a
     // long patient list, opening a record, then going back must return the
     // user to where they were.
-    const { getByText } = render(
+    render(
       <MemoryRouter initialEntries={["/a", "/b"]} initialIndex={1}>
         <Harness to="/a" />
       </MemoryRouter>,

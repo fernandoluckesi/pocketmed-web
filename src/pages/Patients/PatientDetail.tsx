@@ -92,6 +92,7 @@ import {
   isWithinEditWindow,
   EDIT_EXPIRED_MESSAGE,
 } from "../../utils/edit-window";
+import { clickableProps } from "../../utils/clickableProps";
 
 // --- Types ---
 
@@ -348,6 +349,7 @@ function PatientHeroFromAPI({
       {onEdit && (
         <div className="flex gap-2 self-start pt-2">
           <button
+            aria-label="Editar"
             onClick={onEdit}
             className="p-3 rounded-xl bg-slate-200 text-slate-700 hover:bg-slate-300 transition-colors cursor-pointer border-none"
           >
@@ -388,7 +390,7 @@ function AppointmentsSection({
         return (
           <div
             key={apt.id}
-            onClick={() => onSelect(apt)}
+            {...clickableProps(() => onSelect(apt))}
             className={`group bg-white hover:bg-slate-50 rounded-2xl p-4 flex flex-col md:flex-row items-center gap-4 transition-all duration-300 border border-slate-100 shadow-sm cursor-pointer border-l-4 ${
               apt.status === "completed"
                 ? "border-l-green-500"
@@ -480,7 +482,7 @@ function MedicationsSection({
       {medications.map((med) => (
         <div
           key={med.id}
-          onClick={() => onSelect(med)}
+          {...clickableProps(() => onSelect(med))}
           className={`group bg-white hover:bg-slate-50 rounded-2xl p-5 border border-slate-200 shadow-sm flex items-start gap-4 cursor-pointer transition-all border-l-4 ${
             med.active ? "border-l-green-500" : "border-l-slate-300"
           }`}
@@ -1036,7 +1038,7 @@ function ExamsSection({
                   {group.exams.map((exam) => (
                     <div
                       key={exam.id}
-                      onClick={() => onSelect(exam)}
+                      {...clickableProps(() => onSelect(exam))}
                       className="flex items-center justify-between py-2 cursor-pointer rounded-lg hover:bg-slate-50 transition-colors px-2 -mx-2"
                     >
                       <div className="min-w-0">
@@ -1952,6 +1954,7 @@ function PrescriptionForm({
       {submissionErrors.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 relative">
           <button
+            aria-label="Fechar erros"
             type="button"
             onClick={() => setSubmissionErrors([])}
             className="absolute top-3 right-3 text-amber-600 hover:text-amber-800 cursor-pointer border-none bg-transparent p-0"
@@ -2764,6 +2767,7 @@ function ConsultaForm({
       {submissionErrors.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 relative">
           <button
+            aria-label="Fechar erros"
             type="button"
             onClick={() => setSubmissionErrors([])}
             className="absolute top-3 right-3 text-amber-600 hover:text-amber-800 cursor-pointer border-none bg-transparent p-0"
@@ -4344,7 +4348,7 @@ function DiseasesSection({
           {diseases.map((disease) => (
             <div
               key={disease.id}
-              onClick={() => setViewingDisease(disease)}
+              {...clickableProps(() => setViewingDisease(disease))}
               className={`group bg-white hover:bg-slate-50 rounded-2xl p-6 flex items-center gap-6 transition-all border border-slate-100 shadow-sm cursor-pointer border-l-4 ${
                 disease.status === "resolved"
                   ? "border-l-green-500"
@@ -4862,7 +4866,7 @@ function SurgeriesSection({ patientId }: { patientId: string }) {
           {surgeries.map((surgery) => (
             <div
               key={surgery.id}
-              onClick={() => setViewingSurgery(surgery)}
+              {...clickableProps(() => setViewingSurgery(surgery))}
               className={`group bg-white hover:bg-slate-50 rounded-2xl p-6 flex items-center gap-6 transition-all border border-slate-100 shadow-sm cursor-pointer border-l-4 ${getSurgeryBorderStyle(
                 surgery.status,
               )}`}
@@ -5708,7 +5712,7 @@ function AllergiesSection({ patientId }: { patientId: string }) {
           {allergies.map((allergy) => (
             <div
               key={allergy.id}
-              onClick={() => setViewingAllergy(allergy)}
+              {...clickableProps(() => setViewingAllergy(allergy))}
               className="group bg-white hover:bg-slate-50 rounded-2xl p-6 flex items-center gap-6 border border-slate-100 shadow-sm cursor-pointer transition-all"
             >
               <div className="flex-grow min-w-0">
@@ -6168,7 +6172,7 @@ function AtestadosSection({ patientId }: { patientId: string }) {
           {certificates.map((cert) => (
             <div
               key={cert.id}
-              onClick={() => setViewing(cert)}
+              {...clickableProps(() => setViewing(cert))}
               className="group bg-white hover:bg-slate-50 rounded-2xl p-6 flex items-center gap-6 border border-slate-100 shadow-sm cursor-pointer transition-all"
             >
               <div className="flex-grow min-w-0">
@@ -6323,7 +6327,7 @@ function LaudosSection({ patientId }: { patientId: string }) {
           {reports.map((report) => (
             <div
               key={report.id}
-              onClick={() => setViewing(report)}
+              {...clickableProps(() => setViewing(report))}
               className="group bg-white hover:bg-slate-50 rounded-2xl p-6 flex items-center gap-6 border border-slate-100 shadow-sm cursor-pointer transition-all"
             >
               <div className="flex-grow min-w-0">
@@ -6416,7 +6420,7 @@ function DependentsSection({
           {dependents.map((dep) => (
             <div
               key={dep.id}
-              onClick={() => onSelectDependent(dep.id)}
+              {...clickableProps(() => onSelectDependent(dep.id))}
               className="bg-white rounded-2xl p-6 flex items-center gap-5 border border-slate-100 shadow-sm hover:border-primary/30 hover:shadow-md transition-all cursor-pointer"
             >
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -6586,7 +6590,7 @@ function VaccinesSection({
           {vaccines.map((vaccine) => (
             <div
               key={vaccine.id}
-              onClick={() => setViewingVaccine(vaccine)}
+              {...clickableProps(() => setViewingVaccine(vaccine))}
               className="group bg-white hover:bg-slate-50 rounded-2xl p-6 flex items-center gap-6 border border-slate-100 shadow-sm cursor-pointer transition-all"
             >
               <div className="flex-grow min-w-0">

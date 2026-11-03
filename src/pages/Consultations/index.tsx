@@ -485,6 +485,7 @@ export default function Consultations() {
                               e.stopPropagation();
                               setSelectedConsultation(con);
                             }}
+                            aria-label={`Ver detalhes da consulta de ${con.patientName}`}
                             className="p-1.5 text-slate-400 hover:text-primary hover:bg-blue-50 rounded-lg transition-all cursor-pointer border-none bg-transparent"
                           >
                             <Edit3 className="w-4 h-4" />
@@ -494,6 +495,7 @@ export default function Consultations() {
                               e.stopPropagation();
                               handleDeleteConsultation(con.id);
                             }}
+                            aria-label={`Excluir consulta de ${con.patientName}`}
                             className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer border-none bg-transparent"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -515,6 +517,7 @@ export default function Consultations() {
             </p>
             <div className="flex items-center gap-2">
               <button
+                aria-label="Página anterior"
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                 className="p-1.5 text-slate-400 hover:text-primary transition-all disabled:opacity-30 cursor-pointer border-none bg-transparent"
@@ -539,6 +542,7 @@ export default function Consultations() {
                 )}
               </div>
               <button
+                aria-label="Próxima página"
                 disabled={currentPage === totalPages}
                 onClick={() =>
                   setCurrentPage((p) => Math.min(p + 1, totalPages))
@@ -572,6 +576,7 @@ export default function Consultations() {
                 </h3>
               </div>
               <button
+                aria-label="Fechar detalhes da consulta"
                 onClick={() => setSelectedConsultation(null)}
                 className="p-2 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors cursor-pointer border-none bg-transparent"
               >

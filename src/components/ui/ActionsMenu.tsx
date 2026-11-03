@@ -63,6 +63,9 @@ export function ActionsMenu({ items }: ActionsMenuProps) {
   return (
     <>
       <button
+        aria-label="Mais ações"
+        aria-haspopup="menu"
+        aria-expanded={open}
         ref={buttonRef}
         type="button"
         onClick={() => setOpen((v) => !v)}

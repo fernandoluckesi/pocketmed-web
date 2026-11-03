@@ -17,6 +17,7 @@ import { AvailabilityConfigModal } from "../../components/AvailabilityConfigModa
 import { MainLayout } from "../../components/MainLayout";
 import { Button } from "../../components/ui/Button";
 import { api } from "../../services/api";
+import { clickableProps } from "../../utils/clickableProps";
 
 // --- API Data Hook ---
 
@@ -185,6 +186,7 @@ function DayView({
         </div>
         <div className="flex items-center gap-3">
           <button
+            aria-label="Dia anterior"
             onClick={prevDay}
             className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all cursor-pointer border-none"
           >
@@ -197,6 +199,7 @@ function DayView({
             Hoje
           </button>
           <button
+            aria-label="Próximo dia"
             onClick={nextDay}
             className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all cursor-pointer border-none"
           >
@@ -309,6 +312,7 @@ function WeekView({
         </div>
         <div className="flex items-center gap-3">
           <button
+            aria-label="Semana anterior"
             onClick={prevWeek}
             className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all cursor-pointer border-none"
           >
@@ -321,6 +325,7 @@ function WeekView({
             Semana atual
           </button>
           <button
+            aria-label="Próxima semana"
             onClick={nextWeek}
             className="p-2 rounded-full bg-slate-200/50 hover:bg-slate-200 transition-all cursor-pointer border-none"
           >
@@ -340,7 +345,7 @@ function WeekView({
             return (
               <div
                 key={i}
-                onClick={() => onDayClick(d)}
+                {...clickableProps(() => onDayClick(d))}
                 className={`py-4 text-center cursor-pointer hover:bg-primary/5 transition-colors ${isToday ? "bg-primary/5" : ""}`}
               >
                 <p className="text-[10px] font-bold uppercase text-slate-400">
@@ -563,12 +568,14 @@ function CalendarView({
           </h3>
           <div className="flex gap-2">
             <button
+              aria-label="Mês anterior"
               onClick={prevMonth}
               className="p-2 hover:bg-white rounded-full transition-all border border-transparent hover:border-slate-200 cursor-pointer"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
+              aria-label="Próximo mês"
               onClick={nextMonth}
               className="p-2 hover:bg-white rounded-full transition-all border border-transparent hover:border-slate-200 cursor-pointer"
             >
@@ -606,10 +613,16 @@ function CalendarView({
             return (
               <div
                 key={idx}
-                onClick={() =>
-                  item.month === "current" &&
-                  onDayClick?.(new Date(currentYear, currentMonth, item.day))
-                }
+                {...clickableProps(
+                  () =>
+                    onDayClick?.(
+                      new Date(currentYear, currentMonth, item.day),
+                    ),
+                  {
+                    label: `Ver o dia ${item.day}`,
+                    disabled: item.month !== "current",
+                  },
+                )}
                 className={`h-32 p-3 border-r border-b border-slate-100 last:border-r-0 relative transition-all cursor-pointer
                   ${item.month !== "current" ? "bg-slate-50/50 opacity-40" : "hover:bg-primary/[0.02]"}
                   ${item.isToday ? "bg-primary/[0.03]" : ""}`}

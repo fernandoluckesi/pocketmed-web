@@ -657,6 +657,7 @@ export default function Revenue() {
                         />
                         <span className="text-[11px] text-slate-400">%</span>
                         <button
+                          aria-label="Salvar percentual"
                           type="button"
                           onClick={handleSavePercentage}
                           disabled={savingPercentage}
@@ -665,6 +666,7 @@ export default function Revenue() {
                           <Check className="w-3 h-3" />
                         </button>
                         <button
+                          aria-label="Cancelar edição do percentual"
                           type="button"
                           onClick={() => setEditingPercentage(false)}
                           className="text-slate-400 hover:bg-slate-100 rounded p-0.5 cursor-pointer"

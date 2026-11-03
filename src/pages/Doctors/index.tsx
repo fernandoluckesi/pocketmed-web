@@ -7,6 +7,7 @@ import { SearchWithViewToggle } from "../../components/ui/SearchWithViewToggle";
 import { Button } from "../../components/ui/Button";
 import { useToast } from "../../contexts/ToastContext";
 import { formatCrm } from "../../utils/crm";
+import { clickableProps } from "../../utils/clickableProps";
 import api from "../../config/api";
 
 // --- Types ---
@@ -84,9 +85,11 @@ function DoctorCard({
       whileHover={{ y: -6 }}
       className="group"
     >
-      <div
+      <button
+        type="button"
         onClick={onClick}
-        className="block bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all cursor-pointer"
+        aria-label={`Ver perfil de ${doctor.name}`}
+        className="block w-full text-left bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all cursor-pointer"
       >
         <div className="flex items-start gap-4">
           <div className="w-7 h-7 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
@@ -114,7 +117,7 @@ function DoctorCard({
             </p>
           </div>
         </div>
-      </div>
+      </button>
     </motion.div>
   );
 }
@@ -131,7 +134,9 @@ function DoctorListRow({
   return (
     <motion.div
       whileHover={{ y: -2 }}
-      onClick={onClick}
+      {...clickableProps(() => onClick?.(), {
+        label: `Ver perfil de ${doctor.name}`,
+      })}
       className="bg-white p-5 rounded-2xl border border-slate-100 hover:border-primary/20 hover:shadow-xl hover:shadow-slate-200/50 transition-all flex items-center justify-between gap-6 cursor-pointer"
     >
       <div className="flex items-center gap-4 flex-1 min-w-0">

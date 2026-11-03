@@ -95,6 +95,7 @@ export function AppointmentDetailModal({
                 {/* Header */}
                 <div className="relative h-36 bg-gradient-to-r from-primary to-primary-gradient-end p-8 flex items-end">
                   <button
+                    aria-label="Fechar"
                     onClick={handleClose}
                     className="absolute top-6 right-6 text-white/60 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full cursor-pointer border-none bg-transparent"
                   >

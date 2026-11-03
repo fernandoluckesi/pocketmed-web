@@ -77,6 +77,7 @@ export function Pagination({
       {/* Page numbers */}
       <div className="flex items-center gap-1">
         <button
+          aria-label="Página anterior"
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
           className="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer border-none bg-transparent"
@@ -108,6 +109,7 @@ export function Pagination({
         )}
 
         <button
+          aria-label="Próxima página"
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
           className="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer border-none bg-transparent"

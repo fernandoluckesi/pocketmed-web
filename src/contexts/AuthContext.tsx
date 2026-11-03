@@ -50,6 +50,10 @@ interface RegisterDoctorPayload {
   noNumber?: boolean;
   profileImage?: File;
   captchaToken?: string;
+  /** Whether the user ticked the Terms/Privacy checkbox. The backend records
+   * the timestamp and the document version from it (LGPD art. 11 — consent
+   * for health data must be specific and demonstrable). */
+  acceptedTerms?: boolean;
 }
 
 interface AuthContextType {

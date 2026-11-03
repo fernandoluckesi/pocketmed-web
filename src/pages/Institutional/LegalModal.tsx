@@ -33,6 +33,7 @@ export function LegalModal({
             {title}
           </h2>
           <button
+            aria-label="Fechar"
             onClick={onClose}
             className="p-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer border-none bg-transparent"
           >
@@ -289,6 +290,48 @@ export function PrivacyPolicyContent() {
           claims are each backed by real code — access control (guards +
           RBAC), audit trail (src/audit), anomaly detection
           (audit-anomaly.service.ts) and retention (audit-retention.service). */}
+      {/* Audit item 3: the platform uses no cookies and no third-party
+          tracker, so a cookie banner would be noise. But it does store data
+          on the device via localStorage, and that has to be declared. */}
+      <h3 className="text-lg font-bold text-slate-900">
+        5.3. Armazenamento no seu Dispositivo
+      </h3>
+      <p>
+        O Hispora <strong>não utiliza cookies</strong> de rastreamento, nem
+        ferramentas de analytics, pixels ou rastreadores de terceiros. Também
+        não vendemos nem compartilhamos dados para publicidade.
+      </p>
+      <p>
+        Para manter você conectado e preservar o seu contexto de uso, guardamos
+        as seguintes informações no armazenamento local (<em>localStorage</em>)
+        do seu navegador:
+      </p>
+      <ul className="list-disc pl-6 space-y-1">
+        <li>
+          <strong>Token de autenticação</strong> — mantém a sessão ativa para
+          que você não precise fazer login a cada acesso;
+        </li>
+        <li>
+          <strong>Dados básicos do seu perfil</strong> (nome, e-mail, tipo de
+          conta) — para exibir a interface correta sem nova consulta ao
+          servidor;
+        </li>
+        <li>
+          <strong>Consulta em andamento</strong> — para que um atendimento
+          iniciado não se perca se a página for recarregada.
+        </li>
+      </ul>
+      <p>
+        Esses dados ficam apenas no seu dispositivo, não são enviados a
+        terceiros e podem ser removidos a qualquer momento ao sair da conta ou
+        limpar os dados do navegador.
+      </p>
+      <p>
+        As fontes tipográficas usadas na plataforma são servidas pelo nosso
+        próprio domínio, e não por redes de distribuição de terceiros — assim o
+        seu acesso não é informado a nenhum outro provedor.
+      </p>
+
       <h3 className="text-lg font-bold text-slate-900">
         6. Armazenamento e Segurança
       </h3>

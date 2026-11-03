@@ -632,6 +632,7 @@ export function NewAppointmentModal({
                   </div>
                 </div>
                 <button
+                  aria-label="Fechar"
                   onClick={handleClose}
                   className="p-2 hover:bg-slate-100 rounded-full transition-colors cursor-pointer border-none bg-transparent"
                 >

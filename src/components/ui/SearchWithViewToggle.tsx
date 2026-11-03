@@ -29,12 +29,16 @@ export function SearchWithViewToggle({
       </div>
       <div className="flex gap-2 bg-white p-1 rounded-xl shadow-sm border border-gray-100">
         <button
+          aria-label="Ver em grade"
+          aria-pressed={view === "grid"}
           onClick={() => onViewChange("grid")}
           className={`p-2 rounded-lg transition-all cursor-pointer border-none ${view === "grid" ? "bg-primary text-white shadow-md" : "text-gray-400 hover:text-primary bg-transparent"}`}
         >
           <LayoutGrid className="w-5 h-5" />
         </button>
         <button
+          aria-label="Ver em lista"
+          aria-pressed={view === "list"}
           onClick={() => onViewChange("list")}
           className={`p-2 rounded-lg transition-all cursor-pointer border-none ${view === "list" ? "bg-primary text-white shadow-md" : "text-gray-400 hover:text-primary bg-transparent"}`}
         >

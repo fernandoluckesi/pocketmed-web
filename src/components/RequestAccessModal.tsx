@@ -103,6 +103,7 @@ export function RequestAccessModal({
                     </h4>
                   </div>
                   <button
+                    aria-label="Fechar"
                     onClick={onClose}
                     className="text-gray-400 hover:text-gray-600 p-2 bg-gray-50 rounded-full transition-colors cursor-pointer"
                   >

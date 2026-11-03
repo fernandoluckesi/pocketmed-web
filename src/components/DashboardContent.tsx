@@ -4,6 +4,7 @@ import { PromoBanner } from "./PromoBanner";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
+import { clickableProps } from "../utils/clickableProps";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -158,7 +159,9 @@ export const DashboardContent = () => {
 
       <motion.div
         variants={itemVariants}
-        onClick={() => navigate("/atestados")}
+        {...clickableProps(() => navigate("/atestados"), {
+          label: "Ver atestados emitidos",
+        })}
         className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 flex items-center justify-between cursor-pointer hover:shadow-md transition-shadow max-w-sm"
       >
         <div>
